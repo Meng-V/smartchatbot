@@ -19,15 +19,16 @@ class PromptWithTools implements PromptTemplate {
   private toolDocumentationList: ToolDocumentation[];
   private toolsDesription: string;
   private reActModelDescription: string;
+  private modelScratchpad: string;
 
   constructor(
-    modelDescription: string,
     toolDocumentationList: ToolDocumentation[],
     conversationMemory: ConversationMemory | null = null
   ) {
-    this.modelDescription = modelDescription;
+    this.modelDescription =
+      "You are a helpful assistant. You should try your best to answer the question. Unfortunately, you are very bad at math and don't know anything about the library and people's age so you have to always rely on the tool or the given context for every math-related, library-related, and age-related question.";
 
-    this.conversationMemory = conversationMemory
+    this.conversationMemory = conversationMemory;
 
     this.toolDocumentationList = toolDocumentationList;
     this.toolsDesription = this.constructToolsDescription(
@@ -37,22 +38,27 @@ class PromptWithTools implements PromptTemplate {
     this.reActModelDescription = this.constructReActModelDescription(
       toolDocumentationList
     );
+    this.modelScratchpad = "";
   }
 
   private constructReActModelDescription(
     toolDocumentationList: ToolDocumentation[]
   ): string {
-    const reActModelDescription: string = `Use the following format: \n\
-        Question: the input question you must answer. Do not complete the question yourself!\n\
-        Thought: you should always think about what to do.\n\
-        Action: the action to take, always should be one of [${toolDocumentationList.map(
-          (toolDocumentation) => toolDocumentation.name
-        )}].\n
-        Action Input: the input to the action\n\
-        Observation: the result of the action\n\
-        ... (this Thought/Action/Action Input/Observation can repeat N times until you decide you have sufficient information to answer the original input question)\n\
-        Thought: I now know the final answer\n\
-        Final Answer: the final answer to the original input question.\n`;
+    const reActModelDescription: string = `Populate the scratchpad (delimited by the triple quote) to guide yourself toward the answer. For the scratchpad, always choose to follow only one of the situations listed below (inside the triple curly braces) and then end your answer. You CAN NOT populate the Observation field yourself\n\
+    {{{\
+      Situation 1: When you decide you need to use a tool (based on the observations and input question), please follow this format to answer the question:\n\
+      - Thought: you should always think about what to do.\n\
+      - Action: the action to take, should always be one of [${toolDocumentationList.map(
+        (toolDocumentation) => toolDocumentation.name
+      )}].\n\
+      - Action Input: the input to the action. Should list the input parameter as this format suggest: "parameter1", "parameter", ...]\n\
+      End Answer\n\n\
+
+      Situation 2: When you don't need to use a tool, please follow this format to answer the question: \n\
+      - Thought: you should always think about what to do.\n\
+      - Final Answer: Provide your final answer for the input question from the input question or the Observation (if it exists).\n\
+      End Answer\n\
+    }}}\n`;
     return reActModelDescription;
   }
   private constructToolsDescription(
@@ -77,14 +83,20 @@ class PromptWithTools implements PromptTemplate {
           `- ${currentToolDescription.name}: ${currentToolDescription.description}. Parameters names and types:\n${toolParamtersDescription}`
         );
       },
-      "\nTry your best to answer the input question. You have access to these tools: \n"
+      "\nYou have access to these tools (delimited by triple backticks) to assist you:\n"
     );
 
     return toolsDescription;
   }
 
-  public updateConversationMemory(newConversationMemory: ConversationMemory | null): void {
+  public updateConversationMemory(
+    newConversationMemory: ConversationMemory | null
+  ): void {
     this.conversationMemory = newConversationMemory;
+  }
+
+  public updateScratchpad(inputScratch: string): void {
+    this.modelScratchpad += inputScratch;
   }
 
   getPrompt(): string {
@@ -92,41 +104,10 @@ class PromptWithTools implements PromptTemplate {
       this.modelDescription +
       this.toolsDesription +
       this.reActModelDescription +
-      `\nThis is the conversation so far:\n${this.conversationMemory?.getConversationAsString()}\n`;
-
+      `\nThis is the conversation so far (delimited by the triple dashes):\n---\n${this.conversationMemory?.getConversationAsString()}\n---\n` +
+      `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`
     return wholePrompt;
   }
 }
 
-class PromptAnalyzeInformation implements PromptTemplate {
-  public modelDescription: string;
-  public conversationMemory: ConversationMemory | null;
-
-  private analyzingInstruction: string;
-  private context: string;
-
-  constructor(
-    modelDescription: string,
-    conversationMemory: ConversationMemory | null = null
-  ) {
-    this.modelDescription = modelDescription;
-    this.analyzingInstruction =
-      "You are trying to answer the customer's based on the context provided below\n";
-    this.conversationMemory = conversationMemory;
-    this.context = "";
-  }
-
-  setContext(context: string) {
-    this.context = context;
-  }
-  public updateConversationMemory(newConversationMemory: ConversationMemory | null) {
-    this.conversationMemory = newConversationMemory;
-  }
-  getPrompt(): string {
-    const wholePrompt = this.modelDescription + "\n" + this.analyzingInstruction + this.context + "\n\nThis is the conversation so far:\n" + this.conversationMemory?.getConversationAsString();
-
-    return wholePrompt;
-  }
-}
-
-export { PromptWithTools, PromptAnalyzeInformation, ToolDocumentation };
+export { PromptWithTools, ToolDocumentation };

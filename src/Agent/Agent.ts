@@ -1,7 +1,6 @@
 import { OpenAIModel } from "../LLM/OpenAIAgent";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import {
-  PromptAnalyzeInformation,
   PromptWithTools,
   ToolDocumentation,
 } from "../Prompt/Prompts";
@@ -19,13 +18,11 @@ type AgentOutput = {
 class Agent implements IAgent{
   llmModel: OpenAIModel;
   basePrompt: PromptWithTools;
-  promptAnalyzeInformation: PromptAnalyzeInformation | null;
   memory: ConversationMemory | null;
 
   toolListMap: Map<string, ToolFunction>;
 
   constructor(
-    modelDescription: string,
     llmModel: OpenAIModel,
     toolLlist: ToolFunction[],
     toolDocumentationList: ToolDocumentation[],
@@ -34,12 +31,7 @@ class Agent implements IAgent{
     this.llmModel = llmModel;
     this.memory = memory;
     this.basePrompt = new PromptWithTools(
-      modelDescription,
       toolDocumentationList,
-      this.memory
-    );
-    this.promptAnalyzeInformation = new PromptAnalyzeInformation(
-      modelDescription,
       this.memory
     );
     this.toolListMap = new Map<string, ToolFunction>;
@@ -50,17 +42,22 @@ class Agent implements IAgent{
 
   async agentRun(userInput: string): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(`Request Time Out. Prompt so far: ${this.basePrompt.getPrompt()}`);
+      }, 5000);
+
       this.memory?.addToConversation("Customer", userInput);
       this.basePrompt.updateConversationMemory(this.memory);
-      const initialResponse: string = await this.llmModel.getModelResponse(userInput, this.basePrompt);
-      const outputParsed = this.parseLLMOutput(initialResponse);
-      if (outputParsed.outputType === 'action') {
+      let llmResponse: string = await this.llmModel.getModelResponse(this.basePrompt);
+      let outputParsed = this.parseLLMOutput(llmResponse);
+      while (outputParsed.outputType !== 'final') {
+        const toolResponse = this.accessToolList(outputParsed.action, outputParsed.actionInput)
+        this.basePrompt.updateScratchpad(`Observation: Tool returns ${toolResponse}`);
 
-      } else if (outputParsed.outputType === 'final') {
-
-      } else {
-        throw new Error("Failed to parse LLMOutput");
+        llmResponse = await this.llmModel.getModelResponse(this.basePrompt)
+        outputParsed = this.parseLLMOutput(llmResponse);
       }
+      resolve(outputParsed.finalAnswer);
 
     })
   }
