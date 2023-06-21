@@ -2,8 +2,9 @@ import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import {
   PromptWithTools,
-  Tool,
 } from "../Prompt/Prompts";
+
+import { Tool } from "../ToolBox/ToolTemplates";
 import { IAgent } from "./IAgent";
 
 type AgentOutput = {

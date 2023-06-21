@@ -1,7 +1,8 @@
 import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { PromptTemplate } from "../Prompt/PromptTemplate";
-import { PromptWithTools, Tool } from "../Prompt/Prompts";
+import { PromptWithTools } from "../Prompt/Prompts";
+import { Tool } from "../ToolBox/ToolTemplates";
 
 interface IAgent {
   llmModel: OpenAIModel;
@@ -11,4 +12,4 @@ interface IAgent {
   agentRun(userInput: string): Promise<string>;
 }
 
-export { IAgent, Tool };
+export { IAgent };

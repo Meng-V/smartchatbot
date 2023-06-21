@@ -1,14 +1,6 @@
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { PromptTemplate } from "./PromptTemplate";
-
-type Tool = {
-  name: string;
-  description: string;
-  parameters: {
-    [parameterName: string]: string; //paramter_name: type as string
-  };
-  run: (...args: string[]) => string;
-};
+import { Tool } from "../ToolBox/ToolTemplates";
 
 class PromptWithTools implements PromptTemplate {
   public modelDescription: string;
@@ -109,4 +101,4 @@ class PromptWithTools implements PromptTemplate {
   }
 }
 
-export { PromptWithTools, Tool };
+export { PromptWithTools };
