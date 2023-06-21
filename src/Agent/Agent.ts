@@ -1,10 +1,10 @@
-import { OpenAIModel } from "../LLM/OpenAIAgent";
+import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import {
   PromptWithTools,
-  ToolDocumentation,
+  Tool,
 } from "../Prompt/Prompts";
-import { IAgent, ToolFunction } from "./IAgent";
+import { IAgent } from "./IAgent";
 
 type AgentOutput = {
   outputType: "final",
@@ -20,22 +20,21 @@ class Agent implements IAgent{
   basePrompt: PromptWithTools;
   memory: ConversationMemory | null;
 
-  toolListMap: Map<string, ToolFunction>;
+  toolListMap: Map<string, Tool>;
 
   constructor(
     llmModel: OpenAIModel,
-    toolLlist: ToolFunction[],
-    toolDocumentationList: ToolDocumentation[],
+    tools: Tool[],
     memory: ConversationMemory
   ) {
     this.llmModel = llmModel;
     this.memory = memory;
     this.basePrompt = new PromptWithTools(
-      toolDocumentationList,
+      tools,
       this.memory
     );
-    this.toolListMap = new Map<string, ToolFunction>;
-    toolLlist.forEach((tool) => {
+    this.toolListMap = new Map<string, Tool>;
+    tools.forEach((tool) => {
       this.toolListMap.set(tool.name, tool);
     })
   }
@@ -66,7 +65,7 @@ class Agent implements IAgent{
     if (this.toolListMap.has(toolName)) {
       const tool = this.toolListMap.get(toolName);
 
-      return tool!.func(...toolInput);
+      return tool!.run(...toolInput);
     }
     else {
       throw new Error("Tool does not exist")

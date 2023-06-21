@@ -1,14 +1,13 @@
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { PromptTemplate } from "./PromptTemplate";
 
-type ToolDocumentation = {
+type Tool = {
   name: string;
   description: string;
   parameters: {
     [parameterName: string]: string; //paramter_name: type as string
   };
-
-  returnType: string; //type as string
+  run: (...args: string[]) => string;
 };
 
 class PromptWithTools implements PromptTemplate {
@@ -16,13 +15,13 @@ class PromptWithTools implements PromptTemplate {
   public conversationMemory: ConversationMemory | null;
 
   //Context
-  private toolDocumentationList: ToolDocumentation[];
+  private tools: Tool[];
   private toolsDesription: string;
   private reActModelDescription: string;
   private modelScratchpad: string;
 
   constructor(
-    toolDocumentationList: ToolDocumentation[],
+    tools: Tool[],
     conversationMemory: ConversationMemory | null = null
   ) {
     this.modelDescription =
@@ -30,25 +29,25 @@ class PromptWithTools implements PromptTemplate {
 
     this.conversationMemory = conversationMemory;
 
-    this.toolDocumentationList = toolDocumentationList;
+    this.tools = tools;
     this.toolsDesription = this.constructToolsDescription(
-      this.toolDocumentationList
+      this.tools
     );
 
     this.reActModelDescription = this.constructReActModelDescription(
-      toolDocumentationList
+      tools
     );
     this.modelScratchpad = "";
   }
 
   private constructReActModelDescription(
-    toolDocumentationList: ToolDocumentation[]
+    tools: Tool[]
   ): string {
     const reActModelDescription: string = `Populate the scratchpad (delimited by the triple quote) to guide yourself toward the answer. For the scratchpad, always choose to follow only one of the situations listed below (inside the triple curly braces) and then end your answer. You CAN NOT populate the Observation field yourself\n\
     {{{\
       Situation 1: When you decide you need to use a tool (based on the observations and input question), please follow this format to answer the question:\n\
       - Thought: you should always think about what to do.\n\
-      - Action: the action to take, should always be one of [${toolDocumentationList.map(
+      - Action: the action to take, should always be one of [${tools.map(
         (toolDocumentation) => toolDocumentation.name
       )}].\n\
       - Action Input: the input to the action. Should list the input parameter as this format suggest: "parameter1", "parameter", ...]\n\
@@ -62,12 +61,12 @@ class PromptWithTools implements PromptTemplate {
     return reActModelDescription;
   }
   private constructToolsDescription(
-    toolDocumentationList: ToolDocumentation[]
+    tools: Tool[]
   ) {
-    const toolsDescription = toolDocumentationList.reduce(
+    const toolsDescription = tools.reduce(
       (
         previousToolsDescription: string,
-        currentToolDescription: ToolDocumentation
+        currentToolDescription: Tool
       ) => {
         const toolParamtersDescription = Object.keys(
           currentToolDescription.parameters
@@ -110,4 +109,4 @@ class PromptWithTools implements PromptTemplate {
   }
 }
 
-export { PromptWithTools, ToolDocumentation };
+export { PromptWithTools, Tool };
