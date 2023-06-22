@@ -8,7 +8,7 @@ class LibCalAPI implements Tool {
 
   public name: string = "StudyRoomReservation";
   public description: string =
-    "This tool is for study room reservation. This tool has 8 parameters. Don't include any quotes or double quotes in the paramter";
+    "This tool is for study room reservation. This tool has 8 parameters. Please use HumanAssist tool to ask for more parameters if you don't have enough parameters yet. Don't include any quotes or double quotes in the paramter";
 
   public readonly parameters: { [parameterName: string]: string } = {
     firstName: "string",

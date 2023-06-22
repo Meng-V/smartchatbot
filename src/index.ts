@@ -1,6 +1,7 @@
 import { Agent } from "./Agent/Agent";
 import { OpenAIModel } from "./LLM/LLMModels"
 import { ConversationMemory } from "./Memory/ConversationMemory";
+import { HumanAssist } from "./ToolBox/HumanAssist";
 import { LibCalAPI } from "./ToolBox/LibCalAPI";
 import { SearchEngine } from "./ToolBox/SearchEngine";
 
@@ -10,14 +11,15 @@ async function main() {
 
   const searchTool = SearchEngine.getInstance();
   const reservationTool = LibCalAPI.getInstance();
+  const humanAssistTool = HumanAssist.getInstance();
 
   const agent = new Agent(
     llmModel,
-    [searchTool, reservationTool],
+    [searchTool, reservationTool, humanAssistTool],
     memory,
   )
 
-  const respone = await agent.agentRun("Hi, my name is Nhut Do with email: donm@miamioh.edu. Can you book me a study room with room ID 130627 from 11:30AM to 1:30PM on June 29, 2023? After that, can you tell me what software can I download from King?");
+  const respone = await agent.agentRun("Hi, my name is Nhut Do with email: donm@miamioh.edu. Can you book me a study room?");
   console.log(respone);
 }
 main()

@@ -45,7 +45,7 @@ class PromptWithTools implements PromptTemplate {
       Action Input: the input to the action. Should list the input parameter as this format suggest: "parameter1", "parameter", ...]\n\
       End Answer\n\n\
       [End Answer Here]
-
+      
       Situation 2: When you don't need to use a tool, please follow this format to answer the question: \n\
       Thought: you should always think about what to do.\n\
       Final Answer: Provide your final answer for the input question from the input question or the Observation (if it exists).\n\
