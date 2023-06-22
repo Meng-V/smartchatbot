@@ -38,17 +38,17 @@ class PromptWithTools implements PromptTemplate {
     const reActModelDescription: string = `Populate the scratchpad (delimited by the triple quote) to guide yourself toward the answer. For the scratchpad, always choose to follow only one of the situations listed below (inside the triple curly braces) and then end your answer. You CAN NOT populate the Observation field yourself\n\
     {{{\
       Situation 1: When you decide you need to use a tool (based on the observations and input question), please follow this format to answer the question:\n\
-      - Thought: you should always think about what to do.\n\
-      - Action: the action to take, should always be one of [${tools.map(
+      Thought: you should always think about what to do.\n\
+      Action: the action to take, should always be one of [${tools.map(
         (toolDocumentation) => toolDocumentation.name
       )}].\n\
-      - Action Input: the input to the action. Should list the input parameter as this format suggest: "parameter1", "parameter", ...]\n\
-      End Answer\n\n\
+      Action Input: the input to the action. Should list the input parameter as this format suggest: "parameter1", "parameter", ...]\n\
+      [End Answer]\n\n\
 
       Situation 2: When you don't need to use a tool, please follow this format to answer the question: \n\
-      - Thought: you should always think about what to do.\n\
-      - Final Answer: Provide your final answer for the input question from the input question or the Observation (if it exists).\n\
-      End Answer\n\
+      Thought: you should always think about what to do.\n\
+      Final Answer: Provide your final answer for the input question from the input question or the Observation (if it exists).\n\
+      [End Answer]\n\
     }}}\n`;
     return reActModelDescription;
   }

@@ -23,7 +23,7 @@ class ConversationMemory {
       ""
     );
 
-    conversationString += this.curRole === "AIAgent" ? "Customer: " : "AIAgent";
+    // conversationString += this.curRole === "AIAgent" ? "Customer: " : "AIAgent";
 
     return conversationString;
   }

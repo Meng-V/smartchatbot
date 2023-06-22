@@ -8,14 +8,16 @@ class LibCalAPI implements Tool {
 
   public name: string = "StudyRoomReservation";
   public description: string =
-    "This tool is for study room reservation. It needs information about start time, end time, firstname, lastname, email, roomID";
+    "This tool is for study room reservation. This tool has 8 parameters. Don't include any quotes or double quotes in the paramter";
 
   public readonly parameters: { [parameterName: string]: string } = {
     firstName: "string",
     lastName: "string",
     email: "string",
-    startTime: "string <range from 00:00 to 23:59>",
-    endTime: "string <range from 00:00 to 23:59>",
+    startDate: "string [format YYYY-MM-DD]",
+    startTime: "string [format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
+    endDate: "string [format YYYY-MM-DD]",
+    endTime: "string [format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
     roomID: "string",
   };
 
@@ -33,9 +35,9 @@ class LibCalAPI implements Tool {
 
   private async getAccessToken(): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject("Request Time Out");
-      }, 5000);
+      //const timeout = setTimeout(() => {
+//        reject("Request Time Out");
+//      }, 5000);
       const response = await axios({
         method: "post",
         url: this.oauth_url,
@@ -47,6 +49,8 @@ class LibCalAPI implements Tool {
       });
 
       resolve(response.data.access_token!);
+      // console.log(this.oauth_url);
+      // resolve("yay")
     });
   }
 
@@ -54,26 +58,71 @@ class LibCalAPI implements Tool {
     firstName: string,
     lastName: string,
     email: string,
+    startDate: string,
     startTime: string,
+    endDate: string,
+    endTime: string,
+    roomID: string
+  ): Promise<string> {
+    return new Promise<string>(async(resolve, reject) => {
+      const response = await LibCalAPI.run(firstName, lastName, email, startDate, startTime, endDate, endTime, roomID);
+      resolve(response)
+    })
+  }
+
+  public static getInstance(): LibCalAPI {
+    if (!LibCalAPI.instance) {
+      LibCalAPI.instance = new LibCalAPI();
+    }
+    return LibCalAPI.instance;
+  }
+
+  static async run(
+    firstName: string,
+    lastName: string,
+    email: string,
+    startDate: string,
+    startTime: string,
+    endDate: string,
     endTime: string,
     roomID: string
   ): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject("Request Time Out");
-      }, 5000);
+      // const timeout = setTimeout(() => {
+      //   reject("Request Time Out");
+      // }, 5000);
 
-      const accessToken: string = await this.getAccessToken();
+      const instance = LibCalAPI.getInstance();
+      const accessToken: string = await instance.getAccessToken();
       const header = {
         "Authorization": `Bearer ${accessToken}`
       }
+
+      const payload = {
+        "start": `${startDate}T${startTime}-05:00`,
+        "fname": firstName,
+        "lname": lastName,
+        "email": email,
+        "bookings": [
+            {
+                "id": roomID,
+                "to": `${endDate}T${endTime}-05:00`
+            },
+        ]
+    }
+      
       const response = await axios({
         method: "post",
         headers: header,
-        url: this.reservation_url,
+        url: instance.reservation_url,
+        data: payload
       });
+      console.log(instance.reservation_url);
 
-      resolve(JSON.stringify(response.data))
+      resolve(`Study Room is booked successfully. Please tell the customer this booking confirmation information: ${JSON.stringify(response.data)}`)
+      // resolve("Yay");
     });
   }
 }
+
+export {LibCalAPI};

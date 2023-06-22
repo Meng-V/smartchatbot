@@ -23,9 +23,9 @@ class OpenAIModel {
    */
   async getModelResponse(promptTemplate: PromptTemplate): Promise<string> {
     return new Promise(async (resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject("Request Time Out");
-      }, 5000);
+      // const timeout = setTimeout(() => {
+      //   reject("Request Time Out");
+      // }, 5000);
       const prompt = promptTemplate.getPrompt();
 
       const response = await this.model.createChatCompletion({

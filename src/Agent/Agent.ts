@@ -1,3 +1,4 @@
+import { rejects } from "assert";
 import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import {
@@ -21,7 +22,7 @@ class Agent implements IAgent{
   basePrompt: PromptWithTools;
   memory: ConversationMemory | null;
 
-  toolListMap: Map<string, Tool>;
+  toolsMap: Map<string, Tool>;
 
   constructor(
     llmModel: OpenAIModel,
@@ -34,24 +35,25 @@ class Agent implements IAgent{
       tools,
       this.memory
     );
-    this.toolListMap = new Map<string, Tool>;
+    this.toolsMap = new Map<string, Tool>;
     tools.forEach((tool) => {
-      this.toolListMap.set(tool.name, tool);
+      this.toolsMap.set(tool.name, tool);
     })
   }
 
   async agentRun(userInput: string): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(`Request Time Out. Prompt so far: ${this.basePrompt.getPrompt()}`);
-      }, 5000);
+      // const timeout = setTimeout(() => {
+      //   reject(`Request Time Out. Prompt so far: ${this.basePrompt.getPrompt()}`);
+      // }, 5000);
 
       this.memory?.addToConversation("Customer", userInput);
       this.basePrompt.updateConversationMemory(this.memory);
       let llmResponse: string = await this.llmModel.getModelResponse(this.basePrompt);
+      console.log(llmResponse)
       let outputParsed = this.parseLLMOutput(llmResponse);
       while (outputParsed.outputType !== 'final') {
-        const toolResponse = this.accessToolList(outputParsed.action, outputParsed.actionInput)
+        const toolResponse = await this.accessToolBox(outputParsed.action, outputParsed.actionInput)
         this.basePrompt.updateScratchpad(`Observation: Tool returns ${toolResponse}`);
 
         llmResponse = await this.llmModel.getModelResponse(this.basePrompt)
@@ -62,36 +64,50 @@ class Agent implements IAgent{
     })
   }
 
-  private accessToolList(toolName: string, toolInput: string[]): string {
-    if (this.toolListMap.has(toolName)) {
-      const tool = this.toolListMap.get(toolName);
+  private async accessToolBox(toolName: string, toolInput: string[]): Promise<string> {
+    return new Promise<string>(async (resolve, reject) => {
+      //const timeout = setTimeout(() => {
+//        reject("Request Time Out");
+//      }, 5000);
+      
+      if (this.toolsMap.has(toolName)) {
+        const tool = this.toolsMap.get(toolName);
 
-      return tool!.run(...toolInput);
-    }
-    else {
-      throw new Error("Tool does not exist")
-    }
+        resolve(await tool!.run(...toolInput));
+      }
+      else {
+        throw new Error("Tool does not exist");
+        reject("Tool does not exist")
+      }
+    })
   }
 
   parseLLMOutput(llmOutput: string): AgentOutput {
-    const actionRegex: RegExp = /(.*)Action: (.+?)\nAction Input: (.+?)\nEnd Answer$/;
-    const finalAnswerRegex: RegExp = /(.*)Final Answer: (.+?)\nEnd Answer$/;
+    const actionRegex: RegExp = /Action: ([\s\S]*)\nAction Input: ([\s\S]*)$/;
+    const finalAnswerRegex: RegExp = /Final Answer: ([\s\S]*)$/;
 
     const actionMatch = llmOutput.match(actionRegex);
     const finalAnswerMatch = llmOutput.match(finalAnswerRegex)
 
-    if (actionMatch) {
-      return {
-        outputType: "action",
-        action: actionMatch[1],
-        actionInput: actionMatch[2].split(','),
-      }
+    console.log("action: ", actionMatch)
+    console.log("finalAnswer: ", finalAnswerMatch)
+
+    function trim(text: string) {
+      //Trim leading space and new line character
+      return text.replace(/^\s+|\s+$/g, '').replace(/"/g, '');
     }
 
-    else if (finalAnswerMatch) {
+    if (finalAnswerMatch) {
       return {
         outputType: "final",
-        finalAnswer: finalAnswerMatch[1],
+        finalAnswer: trim(finalAnswerMatch[1]),
+      }
+    }
+    else if (actionMatch) {
+      return {
+        outputType: "action",
+        action: trim(actionMatch[1]),
+        actionInput: actionMatch[2].split(',').map((item) => trim(item)),
       }
     }
     else {

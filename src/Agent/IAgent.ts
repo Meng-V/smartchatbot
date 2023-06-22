@@ -7,7 +7,7 @@ import { Tool } from "../ToolBox/ToolTemplates";
 interface IAgent {
   llmModel: OpenAIModel;
   memory: ConversationMemory | null;
-  toolListMap: Map<string, Tool>;
+  toolsMap: Map<string, Tool>;
 
   agentRun(userInput: string): Promise<string>;
 }
