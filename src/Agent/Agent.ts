@@ -57,6 +57,7 @@ class Agent implements IAgent{
         this.basePrompt.updateScratchpad(`Observation: Tool returns ${toolResponse}`);
 
         llmResponse = await this.llmModel.getModelResponse(this.basePrompt)
+        console.log(llmResponse);
         outputParsed = this.parseLLMOutput(llmResponse);
       }
       resolve(outputParsed.finalAnswer);
@@ -83,8 +84,8 @@ class Agent implements IAgent{
   }
 
   parseLLMOutput(llmOutput: string): AgentOutput {
-    const actionRegex: RegExp = /Action: ([\s\S]*)\nAction Input: ([\s\S]*)$/;
-    const finalAnswerRegex: RegExp = /Final Answer: ([\s\S]*)$/;
+    const actionRegex: RegExp = /Action: ([\s\S]*)\nAction Input: ([\s\S]*)End Answer$/;
+    const finalAnswerRegex: RegExp = /Final Answer: ([\s\S]*)End Answer$/;
 
     const actionMatch = llmOutput.match(actionRegex);
     const finalAnswerMatch = llmOutput.match(finalAnswerRegex)
@@ -94,7 +95,7 @@ class Agent implements IAgent{
 
     function trim(text: string) {
       //Trim leading space and new line character
-      return text.replace(/^\s+|\s+$/g, '').replace(/"/g, '');
+      return text.replace(/^\s+|\s+$/g, '').replace(/"/g, '').replace(/\n/g, '');
     }
 
     if (finalAnswerMatch) {

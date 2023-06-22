@@ -119,7 +119,7 @@ class LibCalAPI implements Tool {
       });
       console.log(instance.reservation_url);
 
-      resolve(`Study Room is booked successfully. Please tell the customer this booking confirmation information: ${JSON.stringify(response.data)}`)
+      resolve(`Study Room is booked successfully. Please tell the customer this booking number information: ${JSON.stringify(response.data)}`)
       // resolve("Yay");
     });
   }
