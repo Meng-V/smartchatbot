@@ -1,1 +1,25 @@
-node_modules/*
+# Ignore node_modules directory
+node_modules/
+
+# Ignore compiled JavaScript and TypeScript files
+*.js
+*.js.map
+*.d.ts
+
+# Ignore logs
+logs/
+
+# Ignore environment-specific files
+.env
+
+# Ignore built output
+dist/
+
+# Ignore editor-specific files
+.vscode/
+.idea/
+*.sublime-*
+
+# Ignore npm/yarn lock files
+package-lock.json
+yarn.lock
