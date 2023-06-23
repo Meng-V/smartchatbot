@@ -23,3 +23,5 @@ dist/
 # Ignore npm/yarn lock files
 package-lock.json
 yarn.lock
+
+**/openai.ts

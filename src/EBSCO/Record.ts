@@ -138,8 +138,8 @@ interface Holdings {
     author: string;
     publicationYear: number;
     bookType: string;
-    subjects: string[];
-    locationInformation: { sublocation: string, shelfLocator: string }[];
+    subjects: string;
+    locationInformation: { Sublocation: string, ShelfLocator: string }[];
 }
 
 

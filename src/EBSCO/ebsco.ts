@@ -1,21 +1,137 @@
-import { Configuration, OpenAIApi, CreateChatCompletionRequest } from "openai";
 import { Either, isLeft, left, right } from 'fp-ts/lib/Either';
 import * as dotenv from 'dotenv';
 import { performSearch, endSession } from './accessEBSCOAPI';
 import { SearchResponse, Record, DisplayRecord, Item, Holdings, CopyInformation } from './Record';
 const he = require('he');
 
-
 dotenv.config();
 
-async function queryEbscoApi(query: string, sessionToken: string, numOfBooks: number): Promise<Either<Error, DisplayRecord[]>> {
+// Helper function to retrieve and validate the necessary environment variables
+function getEnvironmentVariables(): { userId: string, password: string, profile: string } {
   const userId = process.env.EBSCO_USER_ID ?? '';
   const password = process.env.EBSCO_USER_PASSWORD ?? '';
   const profile = process.env.EBSCO_USER_PROFILE ?? '';
 
   if (!userId || !password || !profile) {
-    console.error('EBSCO_USER_ID or EBSCO_PASSWORD or EBSCO_USER_PROFILE environment variables are missing.');
+    throw new Error('EBSCO_USER_ID or EBSCO_PASSWORD or EBSCO_USER_PROFILE environment variables are missing.');
   }
+
+  return { userId, password, profile };
+}
+
+/**
+ * Extracts specific item data from a given list of items.
+ * 
+ * @param items - A list of items from which data is to be extracted.
+ * @param name - The name of the item data to extract.
+ * 
+ * @returns The extracted data if it exists, 'Not available' otherwise.
+ */
+function extractItemData(items: Item[] | undefined, name: string): string {
+  if (!Array.isArray(items) || items.length === 0) {
+    return 'Not available';
+  }
+  const item = items.find((i: Item) => i.Name === name);
+  return item?.Data || 'Not available';
+}
+
+/**
+ * Extracts the publication year from a given list of items.
+ * 
+ * @param items - A list of items from which the publication year is to be extracted.
+ * 
+ * @returns The extracted publication year if it exists, NaN otherwise.
+ */
+function extractPublicationYear(items: Item[] | undefined): number {
+  if (!Array.isArray(items) || items.length === 0) {
+    return NaN;
+  }
+
+  const titleSource = extractItemData(items, 'TitleSource');
+  const publicationYearMatch = titleSource.match(/(\d{4})/);
+
+  if (publicationYearMatch) {
+    return Number(publicationYearMatch[1]);
+  }
+
+  return NaN;
+}
+
+/**
+ * Extracts the subject from a given list of items.
+ * 
+ * @param items - A list of items from which the subject is to be extracted.
+ * 
+ * @returns The extracted subject if it exists, 'Not available' otherwise.
+ */
+function extractSubjects(items: Item[] | undefined): string {
+  if (!Array.isArray(items) || items.length === 0) {
+    return 'Not available';
+  }
+  const subjectData = extractItemData(items, 'Subject');
+  return subjectData ? subjectData : 'Not available';
+}
+
+/**
+ * Transforms a record into a display record.
+ * 
+ * @param record - The record to transform.
+ * 
+ * @returns A promise that resolves with the transformed display record.
+ */
+function extractLocationInformation(record: Record | undefined): { Sublocation: string; ShelfLocator: string }[] {
+  let locationInformation: CopyInformation[] = [];
+
+  if (Array.isArray(record?.Holdings)) {
+    const firstHolding = record?.Holdings[0];
+    const copyInformationList = firstHolding?.HoldingSimple.CopyInformationList;
+    if (Array.isArray(copyInformationList)) {
+      locationInformation = copyInformationList;
+    }
+  }
+  return locationInformation ? locationInformation : [{ Sublocation: 'Not available', ShelfLocator: 'Not available' }];
+}
+
+/**
+ * Transforms a raw Record object into a more user-friendly DisplayRecord object.
+ * It extracts the necessary data from the raw record using various helper functions.
+ *
+ * @param record - The raw Record object to be transformed.
+ *
+ * @returns A Promise that resolves to a DisplayRecord object.
+ */
+async function transformToDisplayRecord(record: Record): Promise<DisplayRecord> {
+  const items = record?.Items?.map((item: any) => item) || [];
+  const title = extractItemData(items, 'Title');
+  const author = extractItemData(items, 'Author');
+  const publicationYear = extractPublicationYear(items);
+  const bookType = record.Header?.PubType || 'Not available';
+  const subjects = extractSubjects(items);
+  const locationInformation = extractLocationInformation(record);
+  const displayRecord: DisplayRecord = {
+    title,
+    author,
+    publicationYear,
+    bookType,
+    subjects,
+    locationInformation,
+  };
+  return displayRecord;
+}
+
+/**
+ * Main function for querying the Ebsco API. This function performs a search with
+ * the given parameters and transforms the resulting records into DisplayRecord objects.
+ * In case of any error during the process, it returns a Left<Error> object.
+ *
+ * @param query - The query string for the Ebsco API search.
+ * @param sessionToken - The session token used for authenticating with the Ebsco API.
+ * @param numOfBooks - The number of books to return from the search.
+ *
+ * @returns A Promise that resolves to an Either<Error, DisplayRecord[]> object.
+ */
+async function queryEbscoApi(query: string, sessionToken: string, numOfBooks: number): Promise<Either<Error, DisplayRecord[]>> {
+  const { userId, password, profile } = getEnvironmentVariables();
 
   const responseResult = await performSearch(sessionToken, query, numOfBooks);
 
@@ -43,89 +159,19 @@ async function queryEbscoApi(query: string, sessionToken: string, numOfBooks: nu
 
   return right(data);
 }
-function extractLocationInformation(holdings: Holdings | undefined): { sublocation: string; shelfLocator: string }[] {
-  if (!holdings?.Holding?.HoldingSimple?.CopyInformationList?.CopyInformation) {
-    return [{ sublocation: 'Not available', shelfLocator: 'Not available' }];
-  }
 
-  return holdings.Holding.HoldingSimple.CopyInformationList.CopyInformation.map((info: CopyInformation) => ({
-    sublocation: info.Sublocation || 'Not available',
-    shelfLocator: info.ShelfLocator || 'Not available',
-  }));
-}
-async function transformToDisplayRecord(record: Record): Promise<DisplayRecord> {
-  const items = record?.Items?.map((item: any) => item) || [];
-  const title = extractItemData(items, 'Title');
-  const author = extractItemData(items, 'Author');
-  const publicationYear = extractPublicationYear(items);
-  const bookType = record.Header?.PubType || 'Not available';
-  const subjects = extractSubjects(items);
-  const locationInformation = extractLocationInformation(record.Holdings);
-  const displayRecord : DisplayRecord = {
-    title,
-    author,
-    publicationYear,
-    bookType,
-    subjects,
-    locationInformation,
-  };
-  console.log(displayRecord.locationInformation)
-  return displayRecord;
-}
-
-
-function extractItemData(items: Item[] | undefined, name: string): string {
-  if (!Array.isArray(items) || items.length === 0) {
-    return 'Not available';
-  }
-
-  const item = items.find((i: Item) => i.Name === name);
-  return item?.Data || 'Not available';
-}
-
-function extractPublicationYear(items: Item[] | undefined): number {
-  if (!Array.isArray(items) || items.length === 0) {
-    return NaN;
-  }
-
-  const titleSource = extractItemData(items, 'TitleSource');
-  const publicationYearMatch = titleSource.match(/(\d{4})/);
-
-  if (publicationYearMatch) {
-    return Number(publicationYearMatch[1]);
-  }
-
-  return NaN;
-}
-
-function extractSubjects(items: Item[] | undefined): string[] {
-  if (!Array.isArray(items) || items.length === 0) {
-    return ['Not available'];
-  }
-
-  const subjectData = extractItemData(items, 'Subject');
-  return subjectData ? subjectData.split('<br />') : ['Not available'];
-}
-
-async function main(): Promise<void> {
-  const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY || '',
-  });
-  const openai = new OpenAIApi(configuration);
-
-  const chatCompletionRequest: CreateChatCompletionRequest = {
-    model: "gpt-4",
-    messages: [{ role: "user", content: "I have an EBSCO API that I need to process to a chatbot that gives back information about book/journal title and library call number location, how do I write ts code for accessing the API and getting the necessary information back." }],
-  };
-
-  // try {
-  //   const res = await searchForBook("Harry Potter");
-  //   console.log(res);
-  // } catch (error) {
-  //   console.error("Error:", error);
-  // }
-}
-
+/**
+ * Exposed function to search for a book using the Ebsco API. This function uses the 
+ * queryEbscoApi function and processes its result to either return the list of found books
+ * or throw an error.
+ *
+ * @param query - The query string for the Ebsco API search.
+ * @param sessionToken - The session token used for authenticating with the Ebsco API.
+ * @param numOfBooks - The number of books to return from the search.
+ *
+ * @returns A Promise that resolves to an array of DisplayRecord objects if successful, 
+ *          or throws an Error if unsuccessful.
+ */
 export async function searchForBook(query: string, sessionToken: string, numOfBooks: number): Promise<DisplayRecord[]> {
   const dataResult = await queryEbscoApi(query, sessionToken, numOfBooks);
   if (isLeft(dataResult)) {
@@ -141,32 +187,3 @@ export async function searchForBook(query: string, sessionToken: string, numOfBo
     throw new Error('No results found');
   }
 }
-
-
-main().catch((error) => {
-  console.error("Error:", error);
-});
-
-// function stripHtmlTagsAndDecode(input: string): string {
-//   // Decode HTML entities
-//   // let decodedInput = he.decode(input);
-
-//   // // Use regular expression to extract words from the decoded string
-//   // let regex = />([^<]+)</g;
-
-//   // // Extract words
-//   // let words = decodedInput.match(regex);
-//   // return words ? words.map((item: string) => item.replace('>', '').replace('<', '')).join("; ") : '';
-//   return he.decode(input.replace(/<\/?[^>]+(>|$)/g, ""));
-// }
-
-// function cleanData(data: DisplayRecord): DisplayRecord | PromiseLike<DisplayRecord> {
-//   return {
-//     title: stripHtmlTagsAndDecode(data.title),
-//     author: stripHtmlTagsAndDecode(data.author),
-//     publicationYear: data.publicationYear,
-//     bookType: data.bookType,
-//     subjects: data.subjects.map(stripHtmlTagsAndDecode),
-//     locationInformation: data.locationInformation  // Assuming locationInformation doesn't need cleaning
-//   };
-// }

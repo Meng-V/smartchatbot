@@ -1,6 +1,5 @@
 import axios, { AxiosError } from 'axios';
 import { Either, left, right } from 'fp-ts/lib/Either';
-import * as t from 'io-ts';
 import { SearchResponse } from './Record';
 const SEARCH_URL = 'http://eds-api.ebscohost.com/edsapi/rest/Search?query-1=AND';
 const END_SESSION_URL = 'http://eds-api.ebscohost.com/edsapi/rest/endsession';
