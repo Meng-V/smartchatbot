@@ -11,10 +11,10 @@ async function main(): Promise<void> {
     apiKey: process.env.OPENAI_API_KEY || '',
   });
   const openai = new OpenAIApi(configuration);
-
+  var today = new Date();
   const chatCompletion = await openai.createChatCompletion({
     model: "gpt-3.5-turbo",
-    messages: [{ role: "user", content: "A student is looking to book a study room at King Library from 3-5pm next Tuesday using all of this return back a JSON output with library name, exact date and time, duration" }],
+    messages: [{ role: "user", content: `A student is looking to book a study room at King Library from 3-5pm next Tuesday, today is ${today}. Using all of this return back a JSON output with the intent that is study room reservation, the library name, exact date and time, duration` }],
   });
 
   const content = chatCompletion?.data?.choices[0]?.message?.content;
