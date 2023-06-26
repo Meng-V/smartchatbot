@@ -1,15 +1,15 @@
-import { OpenAIModel } from "../LLM/OpenAIAgent";
+import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { PromptTemplate } from "../Prompt/PromptTemplate";
 import { PromptWithTools } from "../Prompt/Prompts";
-type ToolFunction = { name: string; func: (...args: string[]) => string; };
+import { Tool } from "../ToolBox/ToolTemplates";
 
 interface IAgent {
   llmModel: OpenAIModel;
   memory: ConversationMemory | null;
-  toolListMap: Map<string, ToolFunction>;
+  toolsMap: Map<string, Tool>;
 
   agentRun(userInput: string): Promise<string>;
 }
 
-export { IAgent, ToolFunction };
+export { IAgent };

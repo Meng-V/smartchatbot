@@ -1,11 +1,12 @@
-import { OpenAIModel } from "../LLM/OpenAIAgent";
+import { rejects } from "assert";
+import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import {
-  PromptAnalyzeInformation,
   PromptWithTools,
-  ToolDocumentation,
 } from "../Prompt/Prompts";
-import { IAgent, ToolFunction } from "./IAgent";
+
+import { Tool } from "../ToolBox/ToolTemplates";
+import { IAgent } from "./IAgent";
 
 type AgentOutput = {
   outputType: "final",
@@ -19,82 +20,95 @@ type AgentOutput = {
 class Agent implements IAgent{
   llmModel: OpenAIModel;
   basePrompt: PromptWithTools;
-  promptAnalyzeInformation: PromptAnalyzeInformation | null;
   memory: ConversationMemory | null;
 
-  toolListMap: Map<string, ToolFunction>;
+  toolsMap: Map<string, Tool>;
 
   constructor(
-    modelDescription: string,
     llmModel: OpenAIModel,
-    toolLlist: ToolFunction[],
-    toolDocumentationList: ToolDocumentation[],
+    tools: Tool[],
     memory: ConversationMemory
   ) {
     this.llmModel = llmModel;
     this.memory = memory;
     this.basePrompt = new PromptWithTools(
-      modelDescription,
-      toolDocumentationList,
+      tools,
       this.memory
     );
-    this.promptAnalyzeInformation = new PromptAnalyzeInformation(
-      modelDescription,
-      this.memory
-    );
-    this.toolListMap = new Map<string, ToolFunction>;
-    toolLlist.forEach((tool) => {
-      this.toolListMap.set(tool.name, tool);
+    this.toolsMap = new Map<string, Tool>;
+    tools.forEach((tool) => {
+      this.toolsMap.set(tool.name, tool);
     })
   }
 
   async agentRun(userInput: string): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
+      // const timeout = setTimeout(() => {
+      //   reject(`Request Time Out. Prompt so far: ${this.basePrompt.getPrompt()}`);
+      // }, 5000);
+
       this.memory?.addToConversation("Customer", userInput);
       this.basePrompt.updateConversationMemory(this.memory);
-      const initialResponse: string = await this.llmModel.getModelResponse(userInput, this.basePrompt);
-      const outputParsed = this.parseLLMOutput(initialResponse);
-      if (outputParsed.outputType === 'action') {
+      let llmResponse: string = await this.llmModel.getModelResponse(this.basePrompt);
+      console.log(llmResponse)
+      let outputParsed = this.parseLLMOutput(llmResponse);
+      while (outputParsed.outputType !== 'final') {
+        const toolResponse = await this.accessToolBox(outputParsed.action, outputParsed.actionInput)
+        this.basePrompt.updateScratchpad(`Observation: Tool returns ${toolResponse}`);
 
-      } else if (outputParsed.outputType === 'final') {
-
-      } else {
-        throw new Error("Failed to parse LLMOutput");
+        llmResponse = await this.llmModel.getModelResponse(this.basePrompt)
+        console.log(llmResponse);
+        outputParsed = this.parseLLMOutput(llmResponse);
       }
+      resolve(outputParsed.finalAnswer);
 
     })
   }
 
-  private accessToolList(toolName: string, toolInput: string[]): string {
-    if (this.toolListMap.has(toolName)) {
-      const tool = this.toolListMap.get(toolName);
+  private async accessToolBox(toolName: string, toolInput: string[]): Promise<string> {
+    return new Promise<string>(async (resolve, reject) => {
+      //const timeout = setTimeout(() => {
+//        reject("Request Time Out");
+//      }, 5000);
+      
+      if (this.toolsMap.has(toolName)) {
+        const tool = this.toolsMap.get(toolName);
 
-      return tool!.func(...toolInput);
-    }
-    else {
-      throw new Error("Tool does not exist")
-    }
+        resolve(await tool!.run(...toolInput));
+      }
+      else {
+        throw new Error("Tool does not exist");
+        reject("Tool does not exist")
+      }
+    })
   }
 
   parseLLMOutput(llmOutput: string): AgentOutput {
-    const actionRegex: RegExp = /(.*)Action: (.+?)\nAction Input: (.+?)\nEnd Answer$/;
-    const finalAnswerRegex: RegExp = /(.*)Final Answer: (.+?)\nEnd Answer$/;
+    const actionRegex: RegExp = /Action: ([\s\S]*)\nAction Input: ([\s\S]*)End Answer$/;
+    const finalAnswerRegex: RegExp = /Final Answer: ([\s\S]*)End Answer$/;
 
     const actionMatch = llmOutput.match(actionRegex);
     const finalAnswerMatch = llmOutput.match(finalAnswerRegex)
 
-    if (actionMatch) {
-      return {
-        outputType: "action",
-        action: actionMatch[1],
-        actionInput: actionMatch[2].split(','),
-      }
+    console.log("action: ", actionMatch)
+    console.log("finalAnswer: ", finalAnswerMatch)
+
+    function trim(text: string) {
+      //Trim leading space and new line character
+      return text.replace(/^\s+|\s+$/g, '').replace(/"/g, '').replace(/\n/g, '');
     }
 
-    else if (finalAnswerMatch) {
+    if (finalAnswerMatch) {
       return {
         outputType: "final",
-        finalAnswer: finalAnswerMatch[1],
+        finalAnswer: trim(finalAnswerMatch[1]),
+      }
+    }
+    else if (actionMatch) {
+      return {
+        outputType: "action",
+        action: trim(actionMatch[1]),
+        actionInput: actionMatch[2].split(',').map((item) => trim(item)),
       }
     }
     else {

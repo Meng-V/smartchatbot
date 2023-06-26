@@ -1,11 +1,10 @@
-import { Configuration, OpenAIApi, CreateCompletionRequest } from "openai";
-import { PromptAnalyzeInformation, PromptWithTools } from "../Prompt/Prompts";
+import { Configuration, OpenAIApi } from "openai";
 import { PromptTemplate } from "../Prompt/PromptTemplate";
 
 class OpenAIModel {
   private modelConfiguration: Configuration;
   public model: OpenAIApi;
-  public readonly modelName: string = "text-davinci-003";
+  public readonly modelName: string = "gpt-4";
   private temperature: number;
 
   constructor(temperature = 0) {
@@ -22,19 +21,19 @@ class OpenAIModel {
    * @param inputPrompt
    * @returns
    */
-  async getModelResponse(inputPrompt: string, promptTemplate: PromptTemplate): Promise<string> {
+  async getModelResponse(promptTemplate: PromptTemplate): Promise<string> {
     return new Promise(async (resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject("Request Time Out");
-      }, 5000);
+      // const timeout = setTimeout(() => {
+      //   reject("Request Time Out");
+      // }, 5000);
       const prompt = promptTemplate.getPrompt();
 
-      const response = await this.model.createCompletion({
+      const response = await this.model.createChatCompletion({
         model: this.modelName,
-        prompt: prompt,
         temperature: this.temperature,
+        messages: [{role: "user", content: prompt}]
       });
-      if (response.data.choices[0].text) resolve(response.data.choices[0].text);
+      if (response.data.choices[0].message?.content) resolve(response.data.choices[0].message?.content);
       else reject("No response from model");
     });
   }
