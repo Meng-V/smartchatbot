@@ -1,52 +1,43 @@
 import express, { Request, Response } from 'express';
-import { DaVinciAgent } from './LLM/OpenAIAgent';
-import { ConversationMemory } from './Memory/ConversationMemory';
-import { PromptAnalyzeInformation, PromptSelectingTool, ToolDocumentation } from './Prompt/Prompts';
+import { Agent } from "./Agent/Agent";
+import { OpenAIModel } from "./LLM/LLMModels"
+import { ConversationMemory } from "./Memory/ConversationMemory";
+import { HumanAssist } from "./ToolBox/HumanAssist";
+import { LibCalAPI } from "./ToolBox/LibCalAPI";
+import { SearchEngine } from "./ToolBox/SearchEngine";
 
 const app = express();
 
-app.get('/', (req, res) => {
-    // Add your existing code here
-    const tool1 = {
-      name: "tool1",
-      description: "helpful for math",
-      parameters: {
-        param1: "string",
-        param2: "string[]",
-        param3: "number[]",
-      },
-      returnType: "string[]",
-    };
-    const tool2 = {
-      name: "tool2",
-      description: "helpful for physics",
-      parameters: {
-        param1: "string",
-        param2: "string[]",
-        param3: "number[]",
-      },
-      returnType: "string",
-    };
-  
-    let conversationMemory = new ConversationMemory();
-    conversationMemory.addToConversation("Customer", "Hi");
-    conversationMemory.addToConversation("Customer", "How are you?");
-    conversationMemory.addToConversation("AIAgent", "Good. How can I help you?");
-  
-    let prompt1 = new PromptSelectingTool("You are a helpful assistant", [tool1, tool2], conversationMemory);
-  
-    let prompt2 = new PromptAnalyzeInformation("You are a helpful assistant", conversationMemory);
-    prompt2.setContext("Hey yeasir");
-  
-    console.log(prompt1.getWholePrompt());
-    console.log(prompt2.getWholePrompt());
-  
-    // Return a response to the user
-    res.json({ message: "Workflow completed" });
-  });
-  
-
+// Middleware
 app.use(express.json());
+
+app.post('/chat', async (req: Request, res: Response) => {
+  const userInput = req.body?.text;
+
+  if (!userInput) {
+    return res.status(400).json({ error: 'Missing text in the request body' });
+  }
+  
+  const llmModel = new OpenAIModel();
+  const memory = new ConversationMemory()
+
+  const searchTool = SearchEngine.getInstance();
+  const reservationTool = LibCalAPI.getInstance();
+  const humanAssistTool = HumanAssist.getInstance();
+
+  const agent = new Agent(
+    llmModel,
+    [searchTool, reservationTool, humanAssistTool],
+    memory,
+  )
+
+  try {
+    const response = await agent.agentRun(userInput);
+    return res.json({ message: response });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).toString() });
+  }
+});
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
