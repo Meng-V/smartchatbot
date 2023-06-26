@@ -1,4 +1,4 @@
-import { Tool } from "./ToolTemplates";
+import { Tool, ToolInput } from "./ToolTemplates";
 
 class HumanAssist implements Tool {
   private static instance: HumanAssist;
@@ -22,9 +22,9 @@ class HumanAssist implements Tool {
     return HumanAssist.instance;
   }
 
-  async run(texts: string[]): Promise<string> {
+  async run(toolInput: ToolInput): Promise<string> {
+    const {text} = toolInput;
     return new Promise<string>(async(resolve, reject) => {
-      const text: string = texts.join(", ");
       const response = await HumanAssist.run(text);
       resolve(response)
     }) 

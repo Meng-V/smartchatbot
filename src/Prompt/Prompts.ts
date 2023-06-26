@@ -17,7 +17,7 @@ class PromptWithTools implements PromptTemplate {
     conversationMemory: ConversationMemory | null = null
   ) {
     this.modelDescription =
-      "You are a helpful assistant. You should try your best to answer the question. Unfortunately, you are very bad at math and don't know anything about the library and people's age so you have to always rely on the tool or the given context for every math-related, library-related, and age-related question.";
+      "You are a helpful assistant. You should try your best to answer the question. Unfortunately, you don't know anything about the library, books, and articles so you have to always rely on the tool or the given context for  library-related, book-related, or article-related questions.";
 
     this.conversationMemory = conversationMemory;
 
@@ -35,23 +35,15 @@ class PromptWithTools implements PromptTemplate {
   private constructReActModelDescription(
     tools: Tool[]
   ): string {
-    const reActModelDescription: string = `Populate the scratchpad (delimited by the triple quote) to guide yourself toward the answer. For the scratchpad, always choose to follow only one of the situations listed below (inside the triple curly braces) and then end your answer. You CAN NOT populate the Observation field yourself. Always include word "End Answer" at the end of your answer\n\
-    {{{\
-      Situation 1: You can ONLY choose ONE action at a time. When you decide you need to use a tool (based on the observations and input question), please follow this format to answer the question:\n\
-      Thought: you should always think about what to do.\n\
-      Action: the action to take, should always be one of [${tools.map(
+    const reActModelDescription: string = `Your job is to complete the scratchpad (delimited by the triple quote) to guide yourself toward the answer. For the scratchpad, format your answer as in this JSON structure:\n\
+    {
+      Thought: You should always think about what to do,\n\
+      Action: The action to take, should always be one of [${tools.map(
         (toolDocumentation) => toolDocumentation.name
-      )}].\n\
-      Action Input: the input to the action. Should list the input parameter as this format suggest: "parameter1", "parameter", ...]\n\
-      End Answer\n\n\
-      [End Answer Here]
-      
-      Situation 2: When you don't need to use a tool, please follow this format to answer the question: \n\
-      Thought: you should always think about what to do.\n\
-      Final Answer: Provide your final answer for the input question from the input question or the Observation (if it exists).\n\
-      End Answer\n\n\
-      [End Answer Here]
-    }}}\n`;
+      )}]. If you don't need to use any tool, put "null" here,
+      Action Input: {parameter1: value1, parameter2: value2, parameter3: value3, etc}. Put null here if Action is null,\n\
+      Final Answer: Provide your final answer for the input question from the input question or the Observation (if it exists). Put "null" here if you decide to use any tools,\n\
+      }\n\n`;
     return reActModelDescription;
   }
   private constructToolsDescription(
@@ -86,6 +78,10 @@ class PromptWithTools implements PromptTemplate {
     newConversationMemory: ConversationMemory | null
   ): void {
     this.conversationMemory = newConversationMemory;
+  }
+
+  public emptyScratchpad(): void {
+    this.modelScratchpad = "";
   }
 
   public updateScratchpad(inputScratch: string): void {

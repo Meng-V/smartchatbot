@@ -1,3 +1,5 @@
+type ToolInput = Record<string, string>;
+
 /**
  * Any class implement this interface has to follow Singleton design pattern
  */
@@ -7,7 +9,7 @@ interface Tool {
   parameters: {
     [parameterName: string]: string; //paramter_name: type as string
   };
-  run: (...args: any[]) => Promise<string>;
+  run: (input: ToolInput) => Promise<string>;
 }
 
-export {Tool}
+export {Tool, ToolInput}

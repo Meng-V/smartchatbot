@@ -1,5 +1,5 @@
 import { customsearch, customsearch_v1 } from "@googleapis/customsearch";
-import { Tool } from "./ToolTemplates";
+import { Tool, ToolInput } from "./ToolTemplates";
 
 type searchResult = {
     index: number,
@@ -36,7 +36,8 @@ class SearchEngine implements Tool{
     return SearchEngine.instance;
   }
 
-  async run(query: string): Promise<string> {
+  async run(toolInput: ToolInput): Promise<string> {
+    const {query} = toolInput;
     return new Promise<string>(async(resolve, reject) => {
       const response = await SearchEngine.run(query);
       resolve(response);
