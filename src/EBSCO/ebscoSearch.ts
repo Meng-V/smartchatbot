@@ -2,7 +2,7 @@ import { Either, isLeft, left, right } from 'fp-ts/lib/Either';
 import * as dotenv from 'dotenv';
 import { performSearch, endSession } from './accessEBSCOAPI';
 import { SearchResponse, Record, DisplayRecord, Item, Holdings, CopyInformation } from './Record';
-import {getEnvironmentVariables} from './run'
+import {getEnvironmentVariables} from './ebscoService'
 const he = require('he');
 
 dotenv.config();
