@@ -8,7 +8,6 @@ import { SearchEngine } from "./ToolBox/SearchEngine";
 
 const app = express();
 
-// Middleware
 app.use(express.json());
 
 app.post('/chat', async (req: Request, res: Response) => {
