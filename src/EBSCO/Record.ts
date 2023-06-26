@@ -109,22 +109,22 @@ interface Holdings {
     SearchRequestGet: {
       QueryString: string;
       SearchCriteriaWithActions: {
-        QueriesWithAction: Array<any>; // Replace 'any' with a more specific type if you know it.
+        QueriesWithAction: Array<any>;
       };
     };
     SearchResult: {
       Statistics: {
         TotalHits: number;
         TotalSearchTime: number;
-        Databases: Array<any>; // Replace 'any' with a more specific type if you know it.
+        Databases: Array<any>;
       };
       Data: {
         RecordFormat: string;
         Records: Array<Record>;
       };
-      AvailableFacets: Array<any>; // Replace 'any' with a more specific type if you know it.
+      AvailableFacets: Array<any>;
       AvailableCriteria: {
-        DateRange: any; // Replace 'any' with a more specific type if you know it.
+        DateRange: any;
       };
     };
   }

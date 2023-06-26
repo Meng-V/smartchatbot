@@ -1,17 +1,29 @@
 import { setupTokens } from './setupTokens';
-import { searchForBook } from './ebsco';
+import { searchForBook } from './ebscoSearch';
 import { isLeft } from 'fp-ts/lib/Either';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-async function authenticateUser(): Promise<string> {
+// Helper function to retrieve and validate the necessary environment variables
+function getEnvironmentVariables(): { userId: string, password: string, profile: string } {
     const userId = process.env.EBSCO_USER_ID ?? '';
     const password = process.env.EBSCO_USER_PASSWORD ?? '';
     const profile = process.env.EBSCO_USER_PROFILE ?? '';
+  
+    if (!userId || !password || !profile) {
+        throw new Error('EBSCO_USER_ID or EBSCO_PASSWORD or EBSCO_USER_PROFILE environment variables are missing. Make a copy of the .env.sample and make a file .env, then fill in those variables values.');
+    }
+  
+    return { userId, password, profile };
+  }
+
+  
+async function authenticateUser(): Promise<string> {
+    const { userId, password, profile}  = getEnvironmentVariables();
 
     if (!userId || !password || !profile) {
-        throw new Error('EBSCO_USER_ID or EBSCO_PASSWORD or EBSCO_USER_PROFILE environment variables are missing.');
+        throw new Error('EBSCO_USER_ID or EBSCO_PASSWORD or EBSCO_USER_PROFILE environment variables are missing. Make a copy of the .env.sample and make a file .env, then fill in those variables values.');
     }
 
     const sessionTokenResult = await setupTokens(userId, password, profile);
@@ -28,4 +40,4 @@ async function searchBooks(query: string, numOfBooks: number): Promise<any> {
     return bookInfo;
 }
 
-export { searchBooks };
+export { searchBooks, getEnvironmentVariables };
