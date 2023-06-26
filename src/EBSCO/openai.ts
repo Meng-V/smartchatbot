@@ -6,19 +6,21 @@ dotenv.config();
 /**
  * Calls the OpenAI API to generate a chat completion.
  * @param configuration - The OpenAI configuration object.
+ * @param prompt - The user prompt for the chat completion. Defaults to an empty string.
  * @returns The chat completion response.
  */
-async function generateChatCompletion(configuration: Configuration, prompt: string): Promise<any> {
+async function generateChatCompletion(configuration: Configuration, prompt = ''): Promise<any> {
   const openai = new OpenAIApi(configuration);
   const today = new Date();
 
   const chatCompletion = await openai.createChatCompletion({
     model: "gpt-3.5-turbo",
-    messages: [{ role: "user", content: prompt? prompt : `A student is looking to book a study room at King Library from 3-5pm next Tuesday, today is ${today}. Using all of this return back a JSON output with the intent that is study room reservation, the library name, exact date and time, duration` }],
+    messages: [{ role: "user", content: prompt || `A student is looking to book a study room Room 213 at King Library from 3-5pm next Tuesday, today is ${today}. Using all of this return back a JSON output with the intent that is study room reservation, the library name, room number, exact date and time, duration` }],
   });
 
   return chatCompletion;
 }
+
 
 /**
  * Parses the JSON part from the content string.
