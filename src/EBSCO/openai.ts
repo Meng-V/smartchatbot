@@ -1,39 +1,71 @@
-
 import { Configuration, OpenAIApi } from "openai";
 import * as dotenv from 'dotenv';
 
 dotenv.config();
-/*
- * Main function to run OPEN AI 
+
+/**
+ * Calls the OpenAI API to generate a chat completion.
+ * @param configuration - The OpenAI configuration object.
+ * @returns The chat completion response.
  */
-async function main(): Promise<void> {
-  const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY || '',
-  });
+async function generateChatCompletion(configuration: Configuration, prompt: string): Promise<any> {
   const openai = new OpenAIApi(configuration);
-  var today = new Date();
+  const today = new Date();
+
   const chatCompletion = await openai.createChatCompletion({
     model: "gpt-3.5-turbo",
-    messages: [{ role: "user", content: `A student is looking to book a study room at King Library from 3-5pm next Tuesday, today is ${today}. Using all of this return back a JSON output with the intent that is study room reservation, the library name, exact date and time, duration` }],
+    messages: [{ role: "user", content: prompt? prompt : `A student is looking to book a study room at King Library from 3-5pm next Tuesday, today is ${today}. Using all of this return back a JSON output with the intent that is study room reservation, the library name, exact date and time, duration` }],
   });
-  const content = chatCompletion?.data?.choices[0]?.message?.content;
 
-  console.log("Original content:", content);
+  return chatCompletion;
+}
+
+/**
+ * Parses the JSON part from the content string.
+ * @param content - The content string containing JSON data.
+ * @returns The parsed JSON object.
+ * @throws Error if there's an error parsing the JSON.
+ */
+function parseJSONFromContent(content: string | undefined): any {
+  if (!content) {
+    throw new Error("Content is undefined or empty");
+  }
 
   try {
-    const jsonString = content?.replace(/'/g, '') // Remove single quotes
+    const jsonString = content.replace(/'/g, '') // Remove single quotes
       .replace(/\+/g, '') // Remove "+" signs
       .replace(/\n\s*/g, '') // Remove newlines and spaces
       .replace(/"(\w+)":\s*"([^"]*)"/g, '"$1": "$2"').toString(); // Keep double quotes for property names and values
 
-    console.log("Modified JSON string:", jsonString);
-    const data = JSON.parse(jsonString || "");
-    console.log("Parsed JSON data:", data);
+    const data = JSON.parse(jsonString);
+    return data;
   } catch (error) {
-    console.error("Error parsing JSON:", error);
+    throw new Error("Error parsing JSON: " + (error as Error).message);
   }
 }
 
+/**
+ * Main function to run the OpenAI chat completion and JSON parsing.
+ */
+async function main(): Promise<void> {
+  try {
+    const configuration = new Configuration({
+      apiKey: process.env.OPENAI_API_KEY || '',
+    });
+
+    const chatCompletion = await generateChatCompletion(configuration);
+    const content = chatCompletion?.data?.choices[0]?.message?.content;
+
+    console.log("Original content:", content);
+
+    const data = parseJSONFromContent(content);
+    console.log("Parsed JSON data:", data);
+  } catch (error) {
+    console.error("An error occurred:", error);
+  }
+}
+
+// Run the main function
 main().catch((error) => {
   console.error("An error occurred:", error);
 });
