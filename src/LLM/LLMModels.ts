@@ -4,7 +4,7 @@ import { PromptTemplate } from "../Prompt/PromptTemplate";
 class OpenAIModel {
   private modelConfiguration: Configuration;
   public model: OpenAIApi;
-  public readonly modelName: string = "gpt-4";
+  public readonly modelName: string = "gpt-4-0613";
   private temperature: number;
 
   constructor(temperature = 0) {
@@ -27,7 +27,6 @@ class OpenAIModel {
       //   reject("Request Time Out");
       // }, 5000);
       const prompt = promptTemplate.getPrompt();
-
       const response = await this.model.createChatCompletion({
         model: this.modelName,
         temperature: this.temperature,

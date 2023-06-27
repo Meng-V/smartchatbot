@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Tool } from "./ToolTemplates";
+import { Tool, ToolInput } from "./ToolTemplates";
 import "dotenv/config";
 import { auth } from "@googleapis/customsearch";
 
@@ -8,7 +8,7 @@ class LibCalAPI implements Tool {
 
   public name: string = "StudyRoomReservation";
   public description: string =
-    "This tool is for study room reservation. This tool has 8 parameters. Please use HumanAssist tool to ask for more parameters if you don't have enough parameters yet. Don't include any quotes or double quotes in the paramter";
+    "This tool is for study room reservation. This tool has 8 parameters. Please use Final Answer instead if you don't have enough parameters yet. Don't include any single quotes in the paramter. The year is implicitly 2023";
 
   public readonly parameters: { [parameterName: string]: string } = {
     firstName: "string",
@@ -36,8 +36,8 @@ class LibCalAPI implements Tool {
   private async getAccessToken(): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       //const timeout = setTimeout(() => {
-//        reject("Request Time Out");
-//      }, 5000);
+      //        reject("Request Time Out");
+      //      }, 5000);
       const response = await axios({
         method: "post",
         url: this.oauth_url,
@@ -54,20 +54,30 @@ class LibCalAPI implements Tool {
     });
   }
 
-  async run(
-    firstName: string,
-    lastName: string,
-    email: string,
-    startDate: string,
-    startTime: string,
-    endDate: string,
-    endTime: string,
-    roomID: string
-  ): Promise<string> {
-    return new Promise<string>(async(resolve, reject) => {
-      const response = await LibCalAPI.run(firstName, lastName, email, startDate, startTime, endDate, endTime, roomID);
-      resolve(response)
-    })
+  async run(toolInput: ToolInput): Promise<string> {
+    const {
+      firstName,
+      lastName,
+      email,
+      startDate,
+      startTime,
+      endDate,
+      endTime,
+      roomID,
+    } = toolInput;
+    return new Promise<string>(async (resolve, reject) => {
+      const response = await LibCalAPI.run(
+        firstName,
+        lastName,
+        email,
+        startDate,
+        startTime,
+        endDate,
+        endTime,
+        roomID
+      );
+      resolve(response);
+    });
   }
 
   public static getInstance(): LibCalAPI {
@@ -95,34 +105,40 @@ class LibCalAPI implements Tool {
       const instance = LibCalAPI.getInstance();
       const accessToken: string = await instance.getAccessToken();
       const header = {
-        "Authorization": `Bearer ${accessToken}`
-      }
+        Authorization: `Bearer ${accessToken}`,
+      };
 
       const payload = {
-        "start": `${startDate}T${startTime}-05:00`,
-        "fname": firstName,
-        "lname": lastName,
-        "email": email,
-        "bookings": [
-            {
-                "id": roomID,
-                "to": `${endDate}T${endTime}-05:00`
-            },
-        ]
-    }
-      
+        start: `${startDate}T${startTime}-04:00`,
+        fname: firstName,
+        lname: lastName,
+        email: email,
+        bookings: [
+          {
+            id: roomID,
+            to: `${endDate}T${endTime}-04:00`,
+          },
+        ],
+      };
+
+      // console.log("Payload", payload);
+
       const response = await axios({
         method: "post",
         headers: header,
         url: instance.reservation_url,
-        data: payload
+        data: payload,
       });
-      console.log(instance.reservation_url);
-
-      resolve(`Study Room is booked successfully. Please tell the customer this booking number information: ${JSON.stringify(response.data)}`)
+      // console.log(instance.reservation_url);
+      
+      resolve(
+        `Room ${roomID} is booked successfully from ${startTime} to ${endTime} on ${startDate}. Please tell the customer this booking number information: ${JSON.stringify(
+          response.data
+        )}`
+      );
       // resolve("Yay");
     });
   }
 }
 
-export {LibCalAPI};
+export { LibCalAPI };
