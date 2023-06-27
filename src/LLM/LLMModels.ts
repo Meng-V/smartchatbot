@@ -21,18 +21,22 @@ class OpenAIModel {
    * @param inputPrompt
    * @returns
    */
-  async getModelResponse(promptTemplate: PromptTemplate): Promise<string> {
+  async getModelResponse(promptObject: PromptTemplate): Promise<string> {
     return new Promise(async (resolve, reject) => {
       // const timeout = setTimeout(() => {
       //   reject("Request Time Out");
       // }, 5000);
-      const prompt = promptTemplate.getPrompt();
+      const prompt = promptObject.getPrompt();
       const response = await this.model.createChatCompletion({
         model: this.modelName,
         temperature: this.temperature,
-        messages: [{role: "user", content: prompt}]
+        messages: [
+          { role: "system", content: promptObject.getSystemDescription() },
+          { role: "user", content: prompt },
+        ],
       });
-      if (response.data.choices[0].message?.content) resolve(response.data.choices[0].message?.content);
+      if (response.data.choices[0].message?.content)
+        resolve(response.data.choices[0].message?.content);
       else reject("No response from model");
     });
   }

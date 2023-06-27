@@ -6,7 +6,14 @@ import {
 } from "../Prompt/Prompts";
 
 import { Tool } from "../ToolBox/ToolTemplates";
-import { IAgent } from "./IAgent";
+
+interface IAgent {
+  llmModel: OpenAIModel;
+  memory: ConversationMemory | null;
+  toolsMap: Map<string, Tool>;
+
+  agentRun(userInput: string): Promise<string>;
+}
 
 type AgentOutput = {
   outputType: "final",
@@ -65,6 +72,7 @@ class Agent implements IAgent{
       }
       this.memory?.addToConversation("AIAgent", outputParsed.finalAnswer);
       this.basePrompt.updateConversationMemory(this.memory);
+      console.log(this.basePrompt.getPrompt())
       resolve(outputParsed.finalAnswer);
 
     })

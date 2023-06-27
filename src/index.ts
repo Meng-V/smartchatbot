@@ -2,7 +2,9 @@ import { Agent } from "./Agent/Agent";
 import { OpenAIModel } from "./LLM/LLMModels"
 import { ConversationMemory } from "./Memory/ConversationMemory";
 import { HumanAssist } from "./ToolBox/HumanAssist";
-import { LibCalAPI } from "./ToolBox/LibCalAPI";
+import { CheckRoomAvailabilityTool } from "./ToolBox/LibCalAPI/CheckRoomAvailability";
+import { RoomReservationTool } from "./ToolBox/LibCalAPI/RoomReservation";
+
 import { SearchEngine } from "./ToolBox/SearchEngine";
 
 import * as readline from 'readline';
@@ -25,12 +27,13 @@ async function main() {
   const memory = new ConversationMemory()
 
   const searchTool = SearchEngine.getInstance();
-  const reservationTool = LibCalAPI.getInstance();
+  const reservationTool = RoomReservationTool.getInstance();
+  const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
   // const humanAssistTool = HumanAssist.getInstance();
 
   const agent = new Agent(
     llmModel,
-    [searchTool, reservationTool],
+    [searchTool, reservationTool, checkRoomAvailabilityTool],
     memory,
   )
   let message = await getUserInput("User: ");
@@ -39,5 +42,7 @@ async function main() {
     console.log("AIAgent:", response);
     message = await getUserInput("User: ");
   }
+
+  // console.log(await reservationTool.getAvailableHours("130596", "2023-06-28"));
 }
 main()

@@ -88,11 +88,13 @@ class PromptWithTools implements PromptTemplate {
     this.modelScratchpad += inputScratch;
   }
 
+  getSystemDescription(): string {
+    return this.modelDescription +
+    this.toolsDesription +
+    this.reActModelDescription;
+  }
   getPrompt(): string {
     const wholePrompt: string =
-      this.modelDescription +
-      this.toolsDesription +
-      this.reActModelDescription +
       `\nThis is the conversation so far (delimited by the triple dashes):\n---\n${this.conversationMemory?.getConversationAsString()}\n---\n` +
       `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`
     return wholePrompt;
