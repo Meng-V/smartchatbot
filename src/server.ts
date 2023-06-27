@@ -1,44 +1,31 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import bodyParser from 'body-parser';
 import { Agent } from "./Agent/Agent";
-import { OpenAIModel } from "./LLM/LLMModels"
+import { OpenAIModel } from "./LLM/LLMModels";
 import { ConversationMemory } from "./Memory/ConversationMemory";
-import { HumanAssist } from "./ToolBox/HumanAssist";
 import { LibCalAPI } from "./ToolBox/LibCalAPI";
 import { SearchEngine } from "./ToolBox/SearchEngine";
 
 const app = express();
+app.use(bodyParser.json());
 
-app.use(express.json());
+const llmModel = new OpenAIModel();
+const memory = new ConversationMemory();
+const searchTool = SearchEngine.getInstance();
+const reservationTool = LibCalAPI.getInstance();
 
-app.post('/chat', async (req: Request, res: Response) => {
-  const userInput = req.body?.text;
+const agent = new Agent(
+  llmModel,
+  [searchTool, reservationTool],
+  memory,
+);
 
-  if (!userInput) {
-    return res.status(400).json({ error: 'Missing text in the request body' });
-  }
-  
-  const llmModel = new OpenAIModel();
-  const memory = new ConversationMemory()
-
-  const searchTool = SearchEngine.getInstance();
-  const reservationTool = LibCalAPI.getInstance();
-  const humanAssistTool = HumanAssist.getInstance();
-
-  const agent = new Agent(
-    llmModel,
-    [searchTool, reservationTool, humanAssistTool],
-    memory,
-  )
-
-  try {
-    const response = await agent.agentRun(userInput);
-    return res.json({ message: response });
-  } catch (error) {
-    return res.status(500).json({ error: (error as Error).toString() });
-  }
+app.post('/chatbot', async (req, res) => {
+  const userMessage = req.body.message;
+  const response = await agent.agentRun(userMessage);
+  res.json({ agentResponse: response });
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.listen(3000, () => {
+  console.log('Server is up and running on port 3000');
 });
