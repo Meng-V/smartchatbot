@@ -73,7 +73,9 @@ async function setupTokens(userId: string, password: string, profile: string): P
 async function endSession(sessionToken: string): Promise<Either<Error, void>> {
   try {
     const config = {
-        headers: getHeaders(sessionToken),
+        params: {
+            sessiontoken: sessionToken,
+        },
     }
     await axios.get(process.env.END_SESSION_URL || '', config);
 
@@ -84,6 +86,7 @@ async function endSession(sessionToken: string): Promise<Either<Error, void>> {
     return left(new Error('Failed to end session: ' + (axiosError.message || 'Unknown error')));
   }
 }
+
 
 function getHeaders(sessionToken: string): Record<string, string> {
   return {
