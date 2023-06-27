@@ -1,12 +1,10 @@
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 import { Either, left, right, isLeft } from 'fp-ts/Either';
 import * as t from 'io-ts';
 import { fold } from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
-
-const AUTH_URL = 'https://eds-api.ebscohost.com/authservice/rest/uidauth';
-const SESSION_URL = 'http://eds-api.ebscohost.com/edsapi/rest/createsession';
-
+import * as dotenv from 'dotenv';
+dotenv.config();
 const AuthResponse = t.type({
   AuthToken: t.string,
 });
@@ -24,7 +22,7 @@ async function authenticate(userId: string, password: string): Promise<Either<Er
     Password: password,
   };
 
-  const response: AxiosResponse = await axios.post(AUTH_URL, params);
+  const response: AxiosResponse = await axios.post( process.env.AUTH_URL || '', params);
   return pipe(
     AuthResponse.decode(response.data),
     fold(
@@ -39,7 +37,7 @@ async function createSession(authToken: string, profile: string): Promise<Either
     'x-authenticationToken': authToken,
   };
 
-  const url = `${SESSION_URL}?profile=${profile}`;
+  const url = `${process.env.SESSION_URL}?profile=${profile}`;
 
   const response: AxiosResponse = await axios.get(url, { headers });
   return pipe(
@@ -61,6 +59,7 @@ async function setupTokens(userId: string, password: string, profile: string): P
   const authToken = authResponse.AuthToken;
 
   const sessionResult = await createSession(authToken, profile);
+  console.log(sessionResult)
   if (isLeft(sessionResult)) {
     return sessionResult;
   }
@@ -71,4 +70,25 @@ async function setupTokens(userId: string, password: string, profile: string): P
   return right(sessionToken);
 }
 
-export { setupTokens };
+
+async function endSession(sessionToken: string): Promise<Either<Error, void>> {
+  try {
+    await axios.post(process.env.END_SESSION_URL || '', null, {
+      headers: getHeaders(sessionToken),
+    });
+
+    return right(undefined);
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error('Error ending session:', axiosError.response?.data);
+    return left(new Error('Failed to end session: ' + (axiosError.message || 'Unknown error')));
+  }
+}
+
+function getHeaders(sessionToken: string): Record<string, string> {
+  return {
+    'x-sessionToken': sessionToken,
+  };
+}
+
+export { setupTokens, endSession, getHeaders };

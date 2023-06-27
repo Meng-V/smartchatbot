@@ -40,14 +40,14 @@ async function searchBooks(query: string, numOfBooks: number): Promise<any> {
     return bookInfo;
 }
 
-// async function main() {
-//     const query = "machine learning";
-//     const books = await searchBooks(query, 1);
+async function main() {
+    const query = "machine learning";
+    const books = await searchBooks(query, 1);
   
-//     console.log(books);
-//   }
+    console.log(books);
+  }
   
-//   main();
+  main();
   
 
 export { searchBooks, getEnvironmentVariables };
