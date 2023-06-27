@@ -104,6 +104,7 @@ async function transformToDisplayRecord(record: Record): Promise<DisplayRecord> 
   const subjects = cleanHTMLTags(extractSubjects(items));
   const locationInformation = extractLocationInformation(record);
   const abstract = cleanHTMLTags(extractItemData(items, 'Abstract'));
+  const url = record.PLink;
   const displayRecord: DisplayRecord = {
     title,
     author,
@@ -112,6 +113,7 @@ async function transformToDisplayRecord(record: Record): Promise<DisplayRecord> 
     subjects,
     locationInformation,
     abstract,
+    url,
   };
   return displayRecord;
 }

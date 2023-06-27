@@ -59,7 +59,6 @@ async function setupTokens(userId: string, password: string, profile: string): P
   const authToken = authResponse.AuthToken;
 
   const sessionResult = await createSession(authToken, profile);
-  console.log(sessionResult)
   if (isLeft(sessionResult)) {
     return sessionResult;
   }
@@ -73,9 +72,10 @@ async function setupTokens(userId: string, password: string, profile: string): P
 
 async function endSession(sessionToken: string): Promise<Either<Error, void>> {
   try {
-    await axios.post(process.env.END_SESSION_URL || '', null, {
-      headers: getHeaders(sessionToken),
-    });
+    const config = {
+        headers: getHeaders(sessionToken),
+    }
+    await axios.get(process.env.END_SESSION_URL || '', config);
 
     return right(undefined);
   } catch (error) {

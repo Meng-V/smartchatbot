@@ -4,6 +4,7 @@ interface Item {
   Group: string;
   Data: string;
   Abstract: string;
+  Link: string;
 } 
 
 interface Record {
@@ -142,6 +143,7 @@ interface Holdings {
     subjects: string;
     locationInformation: { Sublocation: string, ShelfLocator: string }[];
     abstract: string;
+    url: string;
 }
 
 
