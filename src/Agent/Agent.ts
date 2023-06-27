@@ -93,8 +93,9 @@ class Agent implements IAgent{
     .replace(/\+/g, '') // Remove "+" signs
     .replace(/\n\s*/g, '') // Remove newlines and spaces
     .replace(/"(\w+)":\s*"([^"]*)"/g, '"$1": "$2"').toString(); // Keep double quotes for property names and values
+    // console.log(jsonString);
     const outputObj = JSON.parse(jsonString);
-
+    console.log(outputObj);
     function trim(text: string) {
       //Trim leading space and new line character
       return text.replace(/^\s+|\s+$/g, '').replace(/"/g, '').replace(/\n/g, '');

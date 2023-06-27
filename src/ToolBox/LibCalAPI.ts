@@ -2,6 +2,9 @@ import axios from "axios";
 import { Tool, ToolInput } from "./ToolTemplates";
 import "dotenv/config";
 import { auth } from "@googleapis/customsearch";
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 class LibCalAPI implements Tool {
   private static instance: LibCalAPI;

@@ -4,7 +4,7 @@ interface Item {
   Group: string;
   Data: string;
   Abstract: string;
-}
+} 
 
 interface Record {
   ResultId: number;
