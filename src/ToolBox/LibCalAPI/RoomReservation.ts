@@ -80,14 +80,14 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       };
 
       const payload = {
-        start: `${startDate}T${startTime}-04:00`,
+        start: `${startDate}T${startTime}-0${RoomReservationTool.timezone}:00`,
         fname: firstName,
         lname: lastName,
         email: email,
         bookings: [
           {
             id: roomID,
-            to: `${endDate}T${endTime}-04:00`,
+            to: `${endDate}T${endTime}-0${RoomReservationTool.timezone}:00`,
           },
         ],
       };

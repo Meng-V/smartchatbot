@@ -89,9 +89,11 @@ class PromptWithTools implements PromptTemplate {
   }
 
   getSystemDescription(): string {
+    const date = new Date();
     return this.modelDescription +
     this.toolsDesription +
-    this.reActModelDescription;
+    this.reActModelDescription +
+    `For context, the current time is ${date.toLocaleString("en-US", { timeZone: "America/New_York" })}\n`;
   }
   getPrompt(): string {
     const wholePrompt: string =

@@ -18,6 +18,11 @@ abstract class LibCalAPIBaseTool implements Tool {
   protected readonly reservation_url = process.env["RESERVATION_URL"]!;
   protected readonly cancel_url = process.env["CANCEL_URL"]!;
 
+  protected static timezone = (() => {
+    const diff = new Date().getTimezoneOffset() / 60;
+    return `${diff}`.slice(1);
+  })();
+
   protected constructor() {
   }
 
