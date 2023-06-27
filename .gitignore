@@ -24,4 +24,5 @@ dist/
 package-lock.json
 yarn.lock
 
+run.ts
 # **/openai.ts

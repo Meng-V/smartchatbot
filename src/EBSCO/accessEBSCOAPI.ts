@@ -6,7 +6,7 @@ const END_SESSION_URL = 'http://eds-api.ebscohost.com/edsapi/rest/endsession';
 
 
 export async function performSearch(sessionToken: string, query: string, numOfBooks: number): Promise<Either<Error, SearchResponse>> {
-  const url = `${SEARCH_URL},${encodeURIComponent(query)}&resultsperpage=${numOfBooks}`;
+  const url = `${SEARCH_URL},${encodeURIComponent(query)}&resultsperpage=${numOfBooks}&view=detailed`;
   try {
     const response = await axios.get<SearchResponse>(url, {
       headers: getHeaders(sessionToken),

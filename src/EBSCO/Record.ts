@@ -3,6 +3,7 @@ interface Item {
   Label: string;
   Group: string;
   Data: string;
+  Abstract: string;
 }
 
 interface Record {
@@ -140,6 +141,7 @@ interface Holdings {
     bookType: string;
     subjects: string;
     locationInformation: { Sublocation: string, ShelfLocator: string }[];
+    abstract: string;
 }
 
 

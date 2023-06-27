@@ -4,7 +4,14 @@ import { performSearch, endSession } from './accessEBSCOAPI';
 import { SearchResponse, Record, DisplayRecord, Item, Holdings, CopyInformation } from './Record';
 import {getEnvironmentVariables} from './ebscoService'
 const he = require('he');
+import { JSDOM } from 'jsdom';
+import striptags from 'striptags';
 
+function cleanHTMLTags(input: string): string {
+  const dom = new JSDOM(input);
+  const stripped = striptags(dom.window.document.body.textContent || '');
+  return he.decode(stripped) || '';
+}
 dotenv.config();
 
 /**
@@ -79,7 +86,6 @@ function extractLocationInformation(record: Record | undefined): { Sublocation: 
   }
   return locationInformation ? locationInformation : [{ Sublocation: 'Not available', ShelfLocator: 'Not available' }];
 }
-
 /**
  * Transforms a raw Record object into a more user-friendly DisplayRecord object.
  * It extracts the necessary data from the raw record using various helper functions.
@@ -90,12 +96,13 @@ function extractLocationInformation(record: Record | undefined): { Sublocation: 
  */
 async function transformToDisplayRecord(record: Record): Promise<DisplayRecord> {
   const items = record?.Items?.map((item: any) => item) || [];
-  const title = extractItemData(items, 'Title');
-  const author = extractItemData(items, 'Author');
+  const title = cleanHTMLTags(extractItemData(items, 'Title'));
+  const author = cleanHTMLTags(extractItemData(items, 'Author'));
   const publicationYear = extractPublicationYear(items);
-  const bookType = record.Header?.PubType || 'Not available';
-  const subjects = extractSubjects(items);
+  const bookType = cleanHTMLTags(record.Header?.PubType || 'Not available');
+  const subjects = cleanHTMLTags(extractSubjects(items));
   const locationInformation = extractLocationInformation(record);
+  const abstract = cleanHTMLTags(extractItemData(items, 'Abstract'));
   const displayRecord: DisplayRecord = {
     title,
     author,
@@ -103,6 +110,7 @@ async function transformToDisplayRecord(record: Record): Promise<DisplayRecord> 
     bookType,
     subjects,
     locationInformation,
+    abstract,
   };
   return displayRecord;
 }
