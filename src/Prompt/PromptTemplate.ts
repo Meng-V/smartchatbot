@@ -5,6 +5,7 @@ interface PromptTemplate {
     conversationMemory: ConversationMemory | null;
     emptyScratchpad(): void;
     updateScratchpad(inputScratch: string): void;
+    getScratchpad(): string;
     updateConversationMemory(newConversationMemory: ConversationMemory | null): void;
     getSystemDescription(): string;
     getPrompt(): string;

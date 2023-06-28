@@ -20,7 +20,7 @@ abstract class LibCalAPIBaseTool implements Tool {
 
   protected static timezone = (() => {
     const diff = new Date().getTimezoneOffset() / 60;
-    return `${diff}`.slice(1);
+    return diff < 0 ? `${diff}`.slice(1) : `${diff}`;
   })();
 
   protected constructor() {

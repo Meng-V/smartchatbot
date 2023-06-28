@@ -17,7 +17,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
 
   public readonly name: string = "CheckRoomAvailabilityTool";
   public readonly description: string =
-    "This tool is for checking the available hours of a specific study room on one specific date. This tool has 2 parameters. Please use Final Answer instead if you don't have enough parameters yet. Don't include any single quotes in the paramter. The year is implicitly 2023";
+    "This tool is for checking the available hours of a specific study room on one specific date. This tool has 2 parameters. Please use Final Answer instead if you don't have enough parameters (roomID and date) yet. Don't include any single quotes in the paramter. The year is implicitly 2023";
 
   public readonly parameters: { [parameterName: string]: string } = {
     date: "string [format YYYY-MM-DD]",
@@ -60,18 +60,30 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
     }
   }
 
-  private timestampStringtify(timestamp: Timestamp): string {
+  private timestampStringtify(
+    timestamp: Timestamp,
+    verbose: boolean = false
+  ): string {
     function fillLeadingZero(number: number): string {
       return `${number < 10 ? "0" : ""}${number}`;
     }
-
-    return `${fillLeadingZero(timestamp.year)}-${fillLeadingZero(
-      timestamp.month
-    )}-${fillLeadingZero(timestamp.date)}T${fillLeadingZero(
-      timestamp.hour
-    )}:${fillLeadingZero(timestamp.minute)}:${fillLeadingZero(
-      timestamp.second
-    )}${timestamp.timezone}`;
+    if (verbose) {
+      return `Date ${fillLeadingZero(timestamp.year)}-${fillLeadingZero(
+        timestamp.month
+      )}-${fillLeadingZero(timestamp.date)} at ${fillLeadingZero(
+        timestamp.hour
+      )}:${fillLeadingZero(timestamp.minute)}:${fillLeadingZero(
+        timestamp.second
+      )}`;
+    } else {
+      return `${fillLeadingZero(timestamp.year)}-${fillLeadingZero(
+        timestamp.month
+      )}-${fillLeadingZero(timestamp.date)}T${fillLeadingZero(
+        timestamp.hour
+      )}:${fillLeadingZero(timestamp.minute)}:${fillLeadingZero(
+        timestamp.second
+      )}${timestamp.timezone}`;
+    }
   }
 
   /**
@@ -140,7 +152,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
     return new Promise<string>(async (resolve, reject) => {
       const response = await CheckRoomAvailabilityTool.run(roomID, date);
 
-      resolve(response);
+      resolve(`Here is the room ${roomID} available time ${response}`);
     });
   }
 
@@ -184,8 +196,8 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
           JSON.stringify(
             mergedTimeBlock.map((timeBlock) => {
               return {
-                from: instance.timestampStringtify(timeBlock.from),
-                to: instance.timestampStringtify(timeBlock.to),
+                from: instance.timestampStringtify(timeBlock.from, true),
+                to: instance.timestampStringtify(timeBlock.to, true),
               };
             })
           )
