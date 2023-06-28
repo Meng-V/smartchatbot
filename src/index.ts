@@ -20,7 +20,7 @@ function getUserInput(prompt: string): Promise<string> {
       resolve(answer);
     });
   });
-}
+} 
 
 async function main() {
   const llmModel = new OpenAIModel();
