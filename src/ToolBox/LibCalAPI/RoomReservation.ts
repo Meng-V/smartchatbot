@@ -94,6 +94,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
 
       // console.log("Payload", payload);
       try {
+        console.log(payload);
         let response = await axios({
           method: "post",
           headers: header,
@@ -101,13 +102,14 @@ class RoomReservationTool extends LibCalAPIBaseTool {
           data: payload,
         });
         resolve(
-          `Room ${roomID} is booked successfully from ${startTime} to ${endTime} on ${startDate}. Confirmation email should be sent to customer's email. Please tell the customer this booking number information: ${JSON.stringify(
+          `Room ${roomID} is booked successfully from ${startTime} to ${endTime} on ${startDate}. Confirmation email should be sent to customer's email. Please tell the customer that the reservation is successful and this booking number information: ${JSON.stringify(
             response.data
           )}`
         );
       } catch (error: any) {
         if (error.response) {
           const errorData = error.response.data as string;
+          console.log(error);
           if (errorData.includes("not a valid starting slot")) {
             resolve(
               "Room reservation is unsuccessful. Time slot is not available for your room"

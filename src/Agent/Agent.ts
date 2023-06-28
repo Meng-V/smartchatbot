@@ -70,7 +70,7 @@ class Agent implements IAgent {
         this.basePrompt.updateScratchpad(`Thought: ${outputParsed.thought}`);
         this.basePrompt.updateScratchpad(`Action: ${outputParsed.action}`);
         this.basePrompt.updateScratchpad(
-          `Action Input: ${outputParsed.actionInput}`
+          `Action Input: ${JSON.stringify(outputParsed.actionInput)}`
         );
         // console.log(this.basePrompt.getScratchpad());
         const toolResponse = await this.accessToolBox(
@@ -78,7 +78,7 @@ class Agent implements IAgent {
           outputParsed.actionInput
         );
         this.basePrompt.updateScratchpad(`Observation: ${toolResponse}`);
-
+        console.log(this.basePrompt.getScratchpad());
         llmResponse = await this.llmModel.getModelResponse(this.basePrompt);
         // console.log(llmResponse);
         outputParsed = this.parseLLMOutput(llmResponse);
