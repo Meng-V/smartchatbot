@@ -1,10 +1,12 @@
 import { Configuration, OpenAIApi } from "openai";
 import { PromptTemplate } from "../Prompt/PromptTemplate";
+import * as dotenv from 'dotenv';
 
+dotenv.config();
 class OpenAIModel {
   private modelConfiguration: Configuration;
   public model: OpenAIApi;
-  public readonly modelName: string = "gpt-4-0613";
+  public readonly modelName: string = "gpt-3.5-turbo";
   private temperature: number;
 
   constructor(temperature = 0) {
