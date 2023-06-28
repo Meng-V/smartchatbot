@@ -43,6 +43,7 @@ const searchTool = SearchEngine.getInstance();
 const reservationTool = RoomReservationTool.getInstance();
 const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
 
+
 const agent = new Agent(
   llmModel,
   [searchTool, reservationTool, checkRoomAvailabilityTool],
@@ -55,6 +56,7 @@ io.on('connection', (socket) => {
   socket.on('sendMessage', async (message, callback) => {
     try {
       const response = await agent.agentRun(message);
+      console.log(response);
       socket.emit('message', response);
       callback('successful');
     } catch (error) {
