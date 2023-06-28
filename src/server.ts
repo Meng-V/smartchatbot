@@ -1,4 +1,6 @@
 import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import bodyParser from 'body-parser';
 import { Agent } from './Agent/Agent';
 import { OpenAIModel } from './LLM/LLMModels';
@@ -8,6 +10,12 @@ import { LibCalAPI } from './ToolBox/LibCalAPI';
 import { SearchEngine } from './ToolBox/SearchEngine';
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: '*', // Configure as per your needs
+  },
+});
 
 app.use(bodyParser.json());
 
@@ -16,7 +24,6 @@ const llmModel = new OpenAIModel();
 const memory = new ConversationMemory();
 const searchTool = SearchEngine.getInstance();
 const reservationTool = LibCalAPI.getInstance();
-// const humanAssistTool = HumanAssist.getInstance();
 
 const agent = new Agent(
   llmModel,
@@ -24,19 +31,27 @@ const agent = new Agent(
   memory,
 );
 
-app.post('/chatbot', async (req, res) => {
-  const userMessage = req.body.message;
+io.on('connection', (socket) => {
+  console.log('New user connected');
 
-  if (typeof userMessage === 'string') {
-    const response = await agent.agentRun(userMessage);
-    return res.json({ response });
-  } else {
-    return res.status(400).json({ error: 'Invalid request. "message" should be a string.' });
-  }
+  socket.on('sendMessage', async (message, callback) => {
+    try {
+      const response = await agent.agentRun(message);
+      socket.emit('message', response);
+      callback();
+    } catch (error) {
+      console.error(error);
+      callback('Error: Unable to connect to the chatbot');
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
 });
 
 const PORT = 3000;
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
