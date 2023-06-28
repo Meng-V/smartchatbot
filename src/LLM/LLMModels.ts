@@ -6,7 +6,7 @@ dotenv.config();
 class OpenAIModel {
   private modelConfiguration: Configuration;
   public model: OpenAIApi;
-  public readonly modelName: string = "gpt-3.5-turbo";
+  public readonly modelName: string = "gpt-4-0613";
   private temperature: number;
 
   constructor(temperature = 0) {
