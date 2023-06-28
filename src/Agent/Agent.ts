@@ -111,15 +111,13 @@ class Agent implements IAgent {
   }
 
   parseLLMOutput(llmOutput: string): AgentOutput {
-    const jsonString = llmOutput
-      .replace(/'/g, "") // Remove single quotes
-      .replace(/\+/g, "") // Remove "+" signs
-      .replace(/\n\s*/g, "") // Remove newlines and spaces
-      .replace(/"(\w+)":\s*"([^"]*)"/g, '"$1": "$2"')
-      .replace(/\\/g, '') // Remove back slash
-      .toString(); // Keep double quotes for property names and values
+    const jsonString = llmOutput.replace(/'/g, '') // Remove single quotes
+    .replace(/\+/g, '') // Remove "+" signs
+    .replace(/\n\s*/g, '') // Remove newlines and spaces
+    .replace(/"(\w+)":\s*"([^"]*)"/g, '"$1": "$2"').toString(); // Keep double quotes for property names and values
+    // console.log(jsonString);
     const outputObj = JSON.parse(jsonString);
-
+    console.log(outputObj);
     function trim(text: string) {
       //Trim leading space and new line character
       return text

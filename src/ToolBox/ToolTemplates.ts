@@ -12,4 +12,4 @@ interface Tool {
   run(input: ToolInput): Promise<string>;
 }
 
-export {Tool, ToolInput}
+export {Tool, ToolInput}  
