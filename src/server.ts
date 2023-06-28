@@ -52,7 +52,9 @@ io.on('connection', (socket) => {
 
   socket.on('sendMessage', async (message, callback) => {
     try {
+      console.log(message);
       const response = await agent.agentRun(message);
+      console.log(response)
       socket.emit('message', response);
       callback();
     } catch (error) {
@@ -62,6 +64,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
+    socket.emit('disconnected', 'User disconnected....');
     console.log('User disconnected');
   });
 });

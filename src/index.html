@@ -55,7 +55,10 @@
         var form = document.getElementById('messageForm');
         var input = document.getElementById('messageInput');
         var chat = document.getElementById('chat');
-
+        var item = document.createElement('li');
+        item.textContent = "Hi this is the Library chatbot, how may I help you?";
+        item.classList.add('chatbot');
+        chat.appendChild(item);
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             if (input.value) {
@@ -71,6 +74,14 @@
         });
 
         socket.on('message', function(message) {
+            var item = document.createElement('li');
+            item.textContent = message;
+            item.classList.add('chatbot');
+            chat.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        socket.on('disconnected', function(message) {
             var item = document.createElement('li');
             item.textContent = message;
             item.classList.add('chatbot');
