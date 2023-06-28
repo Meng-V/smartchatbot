@@ -9,7 +9,7 @@ interface Tool {
   parameters: {
     [parameterName: string]: string; //paramter_name: type as string
   };
-  run: (input: ToolInput) => Promise<string>;
+  run(input: ToolInput): Promise<string>;
 }
 
 export {Tool, ToolInput}  

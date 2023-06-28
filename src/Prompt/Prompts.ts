@@ -88,11 +88,19 @@ class PromptWithTools implements PromptTemplate {
     this.modelScratchpad += inputScratch;
   }
 
+  public getScratchpad(): string {
+    return this.modelScratchpad;
+  }
+
+  getSystemDescription(): string {
+    const date = new Date();
+    return this.modelDescription +
+    this.toolsDesription +
+    this.reActModelDescription +
+    `For context, the current time is ${date.toLocaleString("en-US", { timeZone: "America/New_York" })}\n`;
+  }
   getPrompt(): string {
     const wholePrompt: string =
-      this.modelDescription +
-      this.toolsDesription +
-      this.reActModelDescription +
       `\nThis is the conversation so far (delimited by the triple dashes):\n---\n${this.conversationMemory?.getConversationAsString()}\n---\n` +
       `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`
     return wholePrompt;
