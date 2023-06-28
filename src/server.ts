@@ -8,6 +8,7 @@ import { ConversationMemory } from './Memory/ConversationMemory';
 import { HumanAssist } from './ToolBox/HumanAssist';
 import { LibCalAPI } from './ToolBox/LibCalAPI';
 import { SearchEngine } from './ToolBox/SearchEngine';
+import helmet from 'helmet';
 
 const app = express();
 const httpServer = createServer(app);
@@ -16,8 +17,23 @@ const io = new Server(httpServer, {
     origin: '*', // Configure as per your needs
   },
 });
-
+app.use(express.static('public'));
+app.use(express.static(__dirname));
 app.use(bodyParser.json());
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "default-src": ["'self'", "http://localhost:3000"],
+      "script-src": ["'self'", "'unsafe-inline'"],
+      "style-src": ["'self'", "'unsafe-inline'"],
+      "img-src": ["'self'", "data:", "http://localhost:3000"],
+      "connect-src": ["'self'", "http://localhost:3000"]
+    },
+  },
+}));
+
 
 // Initialize the AI agent
 const llmModel = new OpenAIModel();
