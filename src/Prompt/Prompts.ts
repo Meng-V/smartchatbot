@@ -35,7 +35,7 @@ class PromptWithTools implements PromptTemplate {
   private constructReActModelDescription(
     tools: Tool[]
   ): string {
-    const reActModelDescription: string = `Your job is to complete the scratchpad (delimited by the triple quote) to guide yourself toward the answer. For the scratchpad, format your answer as in the JSON structure below. Format your response as a JSON string, with both keys and values enclosed in double quotes. Like this: "{\"key\": \"value\"}".\n\
+    const reActModelDescription: string = `Your job is to complete the scratchpad to guide yourself toward the answer. For the scratchpad, format your answer as in the JSON structure below. Format your response as a JSON string, with both keys and values enclosed in double quotes. Like this: "{\"key\": \"value\"}".\n\
     {
       Thought: You should always think about what to do,\n\
       Action: The action to take, should always be one of [${tools.map(

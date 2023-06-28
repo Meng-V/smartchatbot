@@ -114,12 +114,12 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
           mergeIntervals[mergeIntervals.length - 1][1]
         );
     }
-    const [year, month, date, timezone] = [
+    const [year, month, date, timezone] = hours.length > 0 ? [
       hours[0].from.year,
       hours[0].from.month,
       hours[0].from.date,
       hours[0].from.timezone,
-    ];
+    ] : [0,0,0, ""];
     const mergeTimestamp = mergeIntervals.map(([start, end], idx) => {
       return {
         from: {

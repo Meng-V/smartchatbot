@@ -1,7 +1,6 @@
 import { Agent } from "./Agent/Agent";
 import { OpenAIModel } from "./LLM/LLMModels"
 import { ConversationMemory } from "./Memory/ConversationMemory";
-import { HumanAssist } from "./ToolBox/HumanAssist";
 import { CheckRoomAvailabilityTool } from "./ToolBox/LibCalAPI/CheckRoomAvailability";
 import { RoomReservationTool } from "./ToolBox/LibCalAPI/RoomReservation";
 
