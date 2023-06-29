@@ -64,25 +64,30 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
     timestamp: Timestamp,
     verbose: boolean = false
   ): string {
-    function fillLeadingZero(number: number): string {
-      return `${number < 10 ? "0" : ""}${number}`;
-    }
     if (verbose) {
-      return `Date ${fillLeadingZero(timestamp.year)}-${fillLeadingZero(
-        timestamp.month
-      )}-${fillLeadingZero(timestamp.date)} at ${fillLeadingZero(
-        timestamp.hour
-      )}:${fillLeadingZero(timestamp.minute)}:${fillLeadingZero(
-        timestamp.second
-      )}`;
+      return `Date ${timestamp.year
+        .toString()
+        .padStart(2, "0")}-${timestamp.month
+        .toString()
+        .padStart(2, "0")}-${timestamp.date
+        .toString()
+        .padStart(2, "0")} at ${timestamp.hour
+        .toString()
+        .padStart(2, "0")}:${timestamp.minute
+        .toString()
+        .padStart(2, "0")}:${timestamp.second.toString().padStart(2, "0")}`;
     } else {
-      return `${fillLeadingZero(timestamp.year)}-${fillLeadingZero(
-        timestamp.month
-      )}-${fillLeadingZero(timestamp.date)}T${fillLeadingZero(
-        timestamp.hour
-      )}:${fillLeadingZero(timestamp.minute)}:${fillLeadingZero(
-        timestamp.second
-      )}${timestamp.timezone}`;
+      return `${timestamp.year.toString().padStart(2, "0")}-${timestamp.month
+        .toString()
+        .padStart(2, "0")}-${timestamp.date
+        .toString()
+        .padStart(2, "0")}T${timestamp.hour
+        .toString()
+        .padStart(2, "0")}:${timestamp.minute
+        .toString()
+        .padStart(2, "0")}:${timestamp.second.toString().padStart(2, "0")}${
+        timestamp.timezone
+      }`;
     }
   }
 
@@ -114,12 +119,15 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
           mergeIntervals[mergeIntervals.length - 1][1]
         );
     }
-    const [year, month, date, timezone] = hours.length > 0 ? [
-      hours[0].from.year,
-      hours[0].from.month,
-      hours[0].from.date,
-      hours[0].from.timezone,
-    ] : [0,0,0, ""];
+    const [year, month, date, timezone] =
+      hours.length > 0
+        ? [
+            hours[0].from.year,
+            hours[0].from.month,
+            hours[0].from.date,
+            hours[0].from.timezone,
+          ]
+        : [0, 0, 0, ""];
     const mergeTimestamp = mergeIntervals.map(([start, end], idx) => {
       return {
         from: {

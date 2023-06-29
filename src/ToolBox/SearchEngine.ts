@@ -10,7 +10,7 @@ type searchResult = {
 class SearchEngine implements Tool{
   private static instance: SearchEngine;
   public name: string = "GoogleCustomSearchEngine"
-  public description: string = "This tool is for search relevant general documents about King Library. This tool has ONE parameter. "
+  public description: string = "This tool is for searching relevant general documents about King Library. This tool has ONE parameter. "
   public parameters: { [parameterName: string]: string; } = {query: "string [only includes keywords in this string, don't include any commas, double quotes or quotes, don't inlcude the word 'King Library' inside the parameter]"}
 
   private GOOGLE_API_KEY: string;
