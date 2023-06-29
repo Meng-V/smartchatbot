@@ -5,9 +5,10 @@ import bodyParser from 'body-parser';
 import { Agent } from './Agent/Agent';
 import { OpenAIModel } from './LLM/LLMModels';
 import { ConversationMemory } from './Memory/ConversationMemory';
-import { HumanAssist } from './ToolBox/HumanAssist';
-import { LibCalAPI } from './ToolBox/LibCalAPI';
-import { SearchEngine } from './ToolBox/SearchEngine';
+import { CheckRoomAvailabilityTool } from "./ToolBox/LibCalAPI/CheckRoomAvailability";
+import { RoomReservationTool } from "./ToolBox/LibCalAPI/RoomReservation";
+
+import { SearchEngine } from "./ToolBox/SearchEngine";
 import helmet from 'helmet';
 
 const app = express();
@@ -39,11 +40,13 @@ app.use(helmet({
 const llmModel = new OpenAIModel();
 const memory = new ConversationMemory();
 const searchTool = SearchEngine.getInstance();
-const reservationTool = LibCalAPI.getInstance();
+const reservationTool = RoomReservationTool.getInstance();
+const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
+
 
 const agent = new Agent(
   llmModel,
-  [searchTool, reservationTool],
+  [searchTool, reservationTool, checkRoomAvailabilityTool],
   memory,
 );
 
@@ -54,9 +57,9 @@ io.on('connection', (socket) => {
     try {
       console.log(message);
       const response = await agent.agentRun(message);
-      console.log(response)
+      console.log(response);
       socket.emit('message', response);
-      callback();
+      callback('successful');
     } catch (error) {
       console.error(error);
       callback('Error: Unable to connect to the chatbot');

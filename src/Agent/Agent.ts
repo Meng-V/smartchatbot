@@ -67,10 +67,10 @@ class Agent implements IAgent {
       while (outputParsed.outputType !== "final") {
         if (llmCallNum > this.LLMCallLimit)
           reject("Too many LMM Call. Possible inifinity loop");
-        this.basePrompt.updateScratchpad(`Thought: ${outputParsed.thought}`);
-        this.basePrompt.updateScratchpad(`Action: ${outputParsed.action}`);
+        this.basePrompt.updateScratchpad(`Thought: ${outputParsed.thought}\n`);
+        this.basePrompt.updateScratchpad(`Action: ${outputParsed.action}\n`);
         this.basePrompt.updateScratchpad(
-          `Action Input: ${JSON.stringify(outputParsed.actionInput)}`
+          `Action Input: ${JSON.stringify(outputParsed.actionInput)}\n`
         );
         // console.log(this.basePrompt.getScratchpad());
         const toolResponse = await this.accessToolBox(
@@ -111,13 +111,15 @@ class Agent implements IAgent {
   }
 
   parseLLMOutput(llmOutput: string): AgentOutput {
-    const jsonString = llmOutput.replace(/'/g, '') // Remove single quotes
-    .replace(/\+/g, '') // Remove "+" signs
-    .replace(/\n\s*/g, '') // Remove newlines and spaces
-    .replace(/"(\w+)":\s*"([^"]*)"/g, '"$1": "$2"').toString(); // Keep double quotes for property names and values
-    // console.log(jsonString);
+    const jsonString = llmOutput
+      .replace(/'/g, "") // Remove single quotes
+      .replace(/\+/g, "") // Remove "+" signs
+      .replace(/\n\s*/g, "") // Remove newlines and spaces
+      .replace(/"(\w+)":\s*"([^"]*)"/g, '"$1": "$2"')
+      .replace(/\\/g, '') // Remove back slash
+      .toString(); // Keep double quotes for property names and values
     const outputObj = JSON.parse(jsonString);
-    console.log(outputObj);
+
     function trim(text: string) {
       //Trim leading space and new line character
       return text

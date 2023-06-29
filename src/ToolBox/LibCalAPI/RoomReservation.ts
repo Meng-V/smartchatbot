@@ -7,7 +7,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
 
   public readonly name: string = "StudyRoomReservationTool";
   public readonly description: string =
-    "This tool is for study room reservation. This tool has 8 parameters. Please use Final Answer instead if you don't have enough parameters yet. Don't include any single quotes in the paramter.";
+    "This tool is for study room reservation. This tool has 8 parameters (firstName, lastName, email, startDate, startTime, endDate, endTime, roomID). None of the parameter can be null. Please use Final Answer instead if you don't have enough parameters yet. Don't include any single quotes in the paramter.";
 
   public readonly parameters: { [parameterName: string]: string } = {
     firstName: "string",
@@ -33,17 +33,31 @@ class RoomReservationTool extends LibCalAPIBaseTool {
   }
 
   async run(toolInput: ToolInput): Promise<string> {
-    const {
-      firstName,
-      lastName,
-      email,
-      startDate,
-      startTime,
-      endDate,
-      endTime,
-      roomID,
-    } = toolInput;
     return new Promise<string>(async (resolve, reject) => {
+      for (const param of Object.keys(toolInput)) {
+        if (toolInput[param] === null || toolInput[param] === "null") {
+          console.log(
+            `Cannot perform booking because missing parameter ${param}. Please ask the customer to provide ${param} to perform booking`
+          );
+          resolve(
+            `Cannot perform booking because missing parameter ${param}. Please ask the customer to provide ${param} to perform booking`
+          );
+
+          return;
+        }
+      }
+
+      const {
+        firstName,
+        lastName,
+        email,
+        startDate,
+        startTime,
+        endDate,
+        endTime,
+        roomID,
+      } = toolInput;
+
       const response = await RoomReservationTool.run(
         firstName,
         lastName,
@@ -124,4 +138,4 @@ class RoomReservationTool extends LibCalAPIBaseTool {
   }
 }
 
-export {RoomReservationTool};
+export { RoomReservationTool };
