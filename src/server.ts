@@ -1,4 +1,5 @@
 import express from 'express';
+// import session from "express-session";
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import bodyParser from 'body-parser';
@@ -7,10 +8,15 @@ import { OpenAIModel } from './LLM/LLMModels';
 import { ConversationMemory } from './Memory/ConversationMemory';
 import { CheckRoomAvailabilityTool } from "./ToolBox/LibCalAPI/CheckRoomAvailability";
 import { RoomReservationTool } from "./ToolBox/LibCalAPI/RoomReservation";
-
 import { SearchEngine } from "./ToolBox/SearchEngine";
 import helmet from 'helmet';
+import session from "express-session";
 
+const sessionMiddleware = session({
+  secret: "changeit",
+  resave: false,
+  saveUninitialized: false
+});
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -18,6 +24,11 @@ const io = new Server(httpServer, {
     origin: '*', // Configure as per your needs
   },
 });
+// app.use(session({
+//   secret: '34SDgsdgspsadfasfgddfsG', // just a long random string
+//   resave: false,
+//   saveUninitialized: true
+// }));
 app.use(express.static('public'));
 app.use(express.static(__dirname));
 app.use(bodyParser.json());
@@ -50,13 +61,16 @@ const agent = new Agent(
   memory,
 );
 
+
+io.engine.use(sessionMiddleware);
+
 io.on('connection', (socket) => {
-  console.log('New user connected');
+  let cookie = socket.handshake.headers.cookie || '';
 
   socket.on('sendMessage', async (message, callback) => {
     try {
       console.log(message);
-      const response = await agent.agentRun(message);
+      const response = await agent.agentRun(message, cookie);
       console.log(response);
       socket.emit('message', response);
       callback('successful');

@@ -4,13 +4,25 @@ import { ConversationMemory } from "../Memory/ConversationMemory";
 import { PromptWithTools } from "../Prompt/Prompts";
 
 import { Tool } from "../ToolBox/ToolTemplates";
+import {createObjectCsvWriter} from 'csv-writer';
+
+const csvWriter = createObjectCsvWriter({
+  path: 'log.csv',
+  header: [
+    {id: 'cookie', title:'COOKIES'},
+    {id: 'timestamp', title: 'TIMESTAMP'},
+    {id: 'tokensUsed', title: 'TOKENS_USED'},
+    // any other fields
+  ],
+  append: true
+});
 
 interface IAgent {
   llmModel: OpenAIModel;
   memory: ConversationMemory | null;
   toolsMap: Map<string, Tool>;
-
-  agentRun(userInput: string): Promise<string>;
+  
+  agentRun(userInput: string, cookie: string): Promise<string>;
 }
 
 type AgentOutput =
@@ -32,8 +44,8 @@ class Agent implements IAgent {
   memory: ConversationMemory | null;
 
   toolsMap: Map<string, Tool>;
-
   LLMCallLimit: number = 5;
+  totalTokensUsed: number = 0;
 
   constructor(
     llmModel: OpenAIModel,
@@ -49,7 +61,7 @@ class Agent implements IAgent {
     });
   }
 
-  async agentRun(userInput: string): Promise<string> {
+  async agentRun(userInput: string, cookie: string): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       // const timeout = setTimeout(() => {
       //   reject(`Request Time Out. Prompt so far: ${this.basePrompt.getPrompt()}`);
@@ -58,15 +70,17 @@ class Agent implements IAgent {
       this.memory?.addToConversation("Customer", userInput);
       this.basePrompt.updateConversationMemory(this.memory);
       this.basePrompt.emptyScratchpad();
-      let llmResponse: string = await this.llmModel.getModelResponse(
-        this.basePrompt
-      );
+      let llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
+      let llmResponse = llmResponseObj.response;
+      this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
+      
       // console.log(llmResponse)
       let outputParsed = this.parseLLMOutput(llmResponse);
       let llmCallNum = 1;
       while (outputParsed.outputType !== "final") {
         if (llmCallNum > this.LLMCallLimit)
           reject("Too many LMM Call. Possible inifinity loop");
+
         this.basePrompt.updateScratchpad(`Thought: ${outputParsed.thought}\n`);
         this.basePrompt.updateScratchpad(`Action: ${outputParsed.action}\n`);
         this.basePrompt.updateScratchpad(
@@ -77,15 +91,31 @@ class Agent implements IAgent {
           outputParsed.action,
           outputParsed.actionInput
         );
+
         this.basePrompt.updateScratchpad(`Observation: ${toolResponse}`);
         console.log(this.basePrompt.getScratchpad());
-        llmResponse = await this.llmModel.getModelResponse(this.basePrompt);
-        // console.log(llmResponse);
+
+        llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
+        llmResponse = llmResponseObj.response;
+        this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
+
         outputParsed = this.parseLLMOutput(llmResponse);
         llmCallNum++;
       }
       this.memory?.addToConversation("AIAgent", outputParsed.finalAnswer);
       this.basePrompt.updateConversationMemory(this.memory);
+
+      //loggin file
+      const record = {
+        cookie: cookie,
+        timestamp: new Date().toISOString(),
+        tokensUsed: this.totalTokensUsed,
+        // any other fields
+      };
+      csvWriter.writeRecords([record]);       // returns a promise
+        // .then(() => console.log('Data logged successfully.'));
+
+      this.totalTokensUsed = 0;
       resolve(outputParsed.finalAnswer);
     });
   }
