@@ -62,7 +62,7 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      var socket = io(); // Connect to the server
+      var socket = io({transports: ['websocket'], upgrade: false}); // Connect to the server
 
         var form = document.getElementById('messageForm');
         var input = document.getElementById('messageInput');

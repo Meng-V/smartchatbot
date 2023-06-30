@@ -1,12 +1,16 @@
 import { Agent } from "./Agent/Agent";
-import { OpenAIModel } from "./LLM/LLMModels"
+import { OpenAIModel } from "./LLM/LLMModels";
 import { ConversationMemory } from "./Memory/ConversationMemory";
 import { CheckRoomAvailabilityTool } from "./ToolBox/LibCalAPI/CheckRoomAvailability";
 import { RoomReservationTool } from "./ToolBox/LibCalAPI/RoomReservation";
 
+import { searchBooks } from "./ToolBox/EBSCO/utils/ebscoService";
+
 import { SearchEngine } from "./ToolBox/SearchEngine";
 
-import * as readline from 'readline';
+import * as readline from "readline";
+import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
+import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -19,7 +23,7 @@ function getUserInput(prompt: string): Promise<string> {
       resolve(answer);
     });
   });
-} 
+}
 
 async function main() {
   const llmModel = new OpenAIModel();
@@ -28,11 +32,12 @@ async function main() {
   const searchTool = SearchEngine.getInstance();
   const reservationTool = RoomReservationTool.getInstance();
   const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
-  // const humanAssistTool = HumanAssist.getInstance();
+  const ebscoBookSearchTool = EBSCOBookSearchTool.getInstance();
+  const checkOpenHourTool = CheckOpenHourTool.getInstance();
 
   const agent = new Agent(
     llmModel,
-    [searchTool, reservationTool, checkRoomAvailabilityTool],
+    [searchTool, reservationTool, checkRoomAvailabilityTool, ebscoBookSearchTool, checkOpenHourTool],
     memory,
   )
   let message = await getUserInput("User: ");
@@ -41,8 +46,5 @@ async function main() {
     console.log("AIAgent:", response);
     message = await getUserInput("User: ");
   }
-
-  // console.log(await reservationTool.getAvailableHours("130596", "2023-06-28"));
 }
-main()
-
+main();

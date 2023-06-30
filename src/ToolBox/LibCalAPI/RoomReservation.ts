@@ -19,7 +19,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     endTime: "string [format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
     roomID: "string",
   };
-
+  
   constructor() {
     super();
     RoomReservationTool.instance = this;
@@ -32,7 +32,17 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     return RoomReservationTool.instance;
   }
 
-  async run(toolInput: ToolInput): Promise<string> {
+  async run(toolInput: {
+    [key: string]: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    startDate: string,
+    startTime: string,
+    endDate: string,
+    endTime: string,
+    roomID: string,
+  }): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       for (const param of Object.keys(toolInput)) {
         if (toolInput[param] === null || toolInput[param] === "null") {

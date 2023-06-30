@@ -2,6 +2,7 @@ import { setupTokens } from './setupTokens';
 import { searchForBook } from './ebscoSearch';
 import { isLeft } from 'fp-ts/lib/Either';
 import * as dotenv from 'dotenv';
+import { DisplayRecord } from './Record';
 
 dotenv.config();
 
@@ -34,20 +35,20 @@ async function authenticateUser(): Promise<string> {
     return sessionTokenResult.right;
 }
 
-async function searchBooks(query: string, numOfBooks: number): Promise<any> {
+async function searchBooks(query: string, numOfBooks: number): Promise<DisplayRecord[]> {
     const sessionToken = await authenticateUser();
     const bookInfo = await searchForBook(query, sessionToken, numOfBooks);
     return bookInfo;
 }
 
-async function main() {
-    const query = "machine learning";
-    const books = await searchBooks(query, 1);
+// async function main() {
+//     const query = "machine learning";
+//     const books = await searchBooks(query, 1);
   
-    console.log(books);
-  }
+//     console.log(books);
+//   }
   
-  main();
+//   main();
   
 
 export { searchBooks, getEnvironmentVariables };

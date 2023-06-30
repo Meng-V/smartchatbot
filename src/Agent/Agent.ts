@@ -144,9 +144,7 @@ class Agent implements IAgent {
     const jsonString = llmOutput
       .replace(/'/g, "") // Remove single quotes
       .replace(/\+/g, "") // Remove "+" signs
-      .replace(/\n\s*/g, "") // Remove newlines and spaces
       .replace(/"(\w+)":\s*"([^"]*)"/g, '"$1": "$2"')
-      .replace(/\\/g, '') // Remove back slash
       .toString(); // Keep double quotes for property names and values
     const outputObj = JSON.parse(jsonString);
 
@@ -154,8 +152,6 @@ class Agent implements IAgent {
       //Trim leading space and new line character
       return text
         .replace(/^\s+|\s+$/g, "")
-        .replace(/"/g, "")
-        .replace(/\n/g, "");
     }
 
     if (outputObj["Final Answer"] && outputObj["Final Answer"] !== "null") {
