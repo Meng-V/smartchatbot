@@ -13,6 +13,8 @@ import helmet from "helmet";
 import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
 
+const PORT=3000
+
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -77,12 +79,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on('disconnect', () => {
-    socket.emit('disconnected', 'User disconnected....');
     console.log('User disconnected');
   });
 });
-
-const PORT = 3000;
 
 httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

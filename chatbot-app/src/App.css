@@ -1,0 +1,29 @@
+.chat {
+  height: 60vh;
+  border: 1px solid #ccc;
+  margin-bottom: 15px;
+  padding: 10px;
+  overflow-y: auto;
+  border-radius: 15px;
+  background-color: #f8f8f8;
+}
+.chat li {
+  margin-bottom: 10px;
+  padding: 5px;
+  border-radius: 15px;
+  list-style-type: none;
+}
+.user {
+  text-align: right;
+  background-color: #007bff;
+  color: white;
+}
+.chatbot {
+  text-align: left;
+  background-color: #e5e5e5;
+}
+
+.chatbox {
+  width: 350px;
+  margin:100px;
+}
