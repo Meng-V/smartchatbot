@@ -173,6 +173,7 @@ class Agent implements IAgent {
         actionInput: outputObj["Action Input"],
       };
     } else {
+      console.log(outputObj)
       throw new Error("Cannot parse LLM Output");
     }
   }
