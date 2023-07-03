@@ -55,7 +55,7 @@ class SearchEngine implements Tool{
             auth: instance.GOOGLE_API_KEY,
             cx: instance.GOOGLE_CSE_ID,
             q: query,
-            num: 2,
+            num: 1,
         });
         let searchResults: searchResult[] = [];
         response.data.items?.forEach((item, idx) => {

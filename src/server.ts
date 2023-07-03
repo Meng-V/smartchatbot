@@ -12,6 +12,7 @@ import { SearchEngine } from "./ToolBox/SearchEngine";
 import helmet from "helmet";
 import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
+import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
 
 const app = express();
 const httpServer = createServer(app);
@@ -43,8 +44,9 @@ app.use(
 const llmModel = new OpenAIModel();
 const memory = new ConversationMemory();
 const searchTool = SearchEngine.getInstance();
-const reservationTool = RoomReservationTool.getInstance();
 const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
+const reservationTool = RoomReservationTool.getInstance();
+const cancelReservationTool = CancelReservationTool.getInstance();
 const ebscoBookSearchTool = EBSCOBookSearchTool.getInstance();
 const checkOpenHourTool = CheckOpenHourTool.getInstance();
 
@@ -53,6 +55,7 @@ const agent = new Agent(
   [
     searchTool,
     reservationTool,
+    cancelReservationTool,
     checkRoomAvailabilityTool,
     ebscoBookSearchTool,
     checkOpenHourTool,
