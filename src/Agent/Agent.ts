@@ -6,6 +6,11 @@ import { PromptWithTools } from "../Prompt/Prompts";
 import { Tool } from "../ToolBox/ToolTemplates";
 import {createObjectCsvWriter} from 'csv-writer';
 
+type AgentResponse = {
+  action: string | null,
+  response: string[],
+}
+
 const csvWriter = createObjectCsvWriter({
   path: 'log.csv',
   header: [
@@ -22,7 +27,7 @@ interface IAgent {
   memory: ConversationMemory | null;
   toolsMap: Map<string, Tool>;
   
-  agentRun(userInput: string, cookie: string): Promise<string>;
+  agentRun(userInput: string, cookie: string): Promise<AgentResponse>;
 }
 
 type AgentOutput =
@@ -47,6 +52,8 @@ class Agent implements IAgent {
   LLMCallLimit: number = 5;
   totalTokensUsed: number = 0;
 
+  mostRecentAction: string | null = null;
+
   constructor(
     llmModel: OpenAIModel,
     tools: Tool[],
@@ -61,8 +68,8 @@ class Agent implements IAgent {
     });
   }
 
-  async agentRun(userInput: string, cookie: string): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
+  async agentRun(userInput: string, cookie: string): Promise<AgentResponse> {
+    return new Promise<AgentResponse>(async (resolve, reject) => {
       // const timeout = setTimeout(() => {
       //   reject(`Request Time Out. Prompt so far: ${this.basePrompt.getPrompt()}`);
       // }, 5000);
@@ -116,7 +123,12 @@ class Agent implements IAgent {
         // .then(() => console.log('Data logged successfully.'));
 
       this.totalTokensUsed = 0;
-      resolve(outputParsed.finalAnswer);
+      resolve(
+        {
+          action: this.mostRecentAction,
+          response: outputParsed.finalAnswer.split('\n'),
+        }
+      );
     });
   }
 
@@ -166,10 +178,11 @@ class Agent implements IAgent {
       outputObj["Action"] !== "null" &&
       outputObj["Action Input"] !== "null"
     ) {
+      this.mostRecentAction = trim(outputObj["Action"])
       return {
         outputType: "action",
         thought: trim(outputObj["Thought"]),
-        action: trim(outputObj["Action"]),
+        action: this.mostRecentAction,
         actionInput: outputObj["Action Input"],
       };
     } else {
