@@ -76,7 +76,7 @@ const App = () => {
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent maxW="350px" position="fixed" bottom="60px" right="10" borderRadius="md">
-          <ModalHeader>Chat with Chatbot</ModalHeader>
+          <ModalHeader>LibChat Library Chatbot</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Box ref={chatRef} borderWidth={1} borderRadius="md" p={3} mb={3} overflowY="auto" height="60vh">
