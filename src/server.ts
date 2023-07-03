@@ -7,13 +7,20 @@ import { OpenAIModel } from "./LLM/LLMModels";
 import { ConversationMemory } from "./Memory/ConversationMemory";
 import { CheckRoomAvailabilityTool } from "./ToolBox/LibCalAPI/CheckRoomAvailability";
 import { RoomReservationTool } from "./ToolBox/LibCalAPI/RoomReservation";
-
 import { SearchEngine } from "./ToolBox/SearchEngine";
-import helmet from "helmet";
+import helmet from 'helmet';
+import session from "express-session";
 import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
 import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
 
+const PORT=3000
+
+const sessionMiddleware = session({
+  secret: "changeit",
+  resave: false,
+  saveUninitialized: false
+});
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -21,7 +28,12 @@ const io = new Server(httpServer, {
     origin: "*", // Configure as per your needs
   },
 });
-app.use(express.static("public"));
+// app.use(session({
+//   secret: '34SDgsdgspsadfasfgddfsG', // just a long random string
+//   resave: false,
+//   saveUninitialized: true
+// }));
+app.use(express.static('public'));
 app.use(express.static(__dirname));
 app.use(bodyParser.json());
 
@@ -63,12 +75,17 @@ const agent = new Agent(
   memory
 );
 
-io.on("connection", (socket) => {
+
+io.engine.use(sessionMiddleware);
+
+io.on('connection', (socket) => {
+  let cookie = socket.handshake.headers.cookie || '';
   console.log("New user connected");
 
   socket.on("sendMessage", async (message, callback) => {
     try {
-      const response = await agent.agentRun(message);
+      console.log(message);
+      const response = await agent.agentRun(message, cookie);
       console.log(response);
       socket.emit("message", response);
       callback("successful");
@@ -78,12 +95,10 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected");
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
   });
 });
-
-const PORT = 3000;
 
 httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
