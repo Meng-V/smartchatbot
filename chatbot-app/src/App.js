@@ -69,8 +69,8 @@ const App = () => {
         position="fixed"
         bottom={10}
         right={10}
-        width={30}
-        height={30}
+        width={50}
+        height={50}
       />
 
       <Modal isOpen={isOpen} onClose={onClose}>
