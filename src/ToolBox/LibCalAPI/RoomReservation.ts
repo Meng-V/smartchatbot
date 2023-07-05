@@ -127,7 +127,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
         });
         resolve(
           `Room ${roomID} is booked successfully from ${startTime} to ${endTime} on ${startDate}. Confirmation email should be sent to customer's email. Please tell the customer that the reservation is successful and this booking number information: ${JSON.stringify(
-            response.data
+            response.data, ['booking_id']
           )}`
         );
       } catch (error: any) {

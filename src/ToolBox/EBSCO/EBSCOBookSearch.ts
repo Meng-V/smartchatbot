@@ -28,7 +28,7 @@ class EBSCOBookSearchTool implements Tool {
       const { query } = toolInput;
       const response = await EBSCOBookSearchTool.run(query);
       resolve(
-        `Please intepret this JSON result to the customer in a human-readable way: ${response}`
+        `Please intepret this JSON result to the customer in a human-readable way. If there is a link, write it out directly; do not include html tag. ${response}`
       );
     });
   }

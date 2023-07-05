@@ -11,6 +11,7 @@ import { SearchEngine } from "./ToolBox/SearchEngine";
 import * as readline from "readline";
 import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
 import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
+import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -32,18 +33,19 @@ async function main() {
   const searchTool = SearchEngine.getInstance();
   const reservationTool = RoomReservationTool.getInstance();
   const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
+  const cancelReservationTool = CancelReservationTool.getInstance();
   const ebscoBookSearchTool = EBSCOBookSearchTool.getInstance();
   const checkOpenHourTool = CheckOpenHourTool.getInstance();
 
   const agent = new Agent(
     llmModel,
-    [searchTool, reservationTool, checkRoomAvailabilityTool, ebscoBookSearchTool, checkOpenHourTool],
+    [searchTool, checkRoomAvailabilityTool, reservationTool, cancelReservationTool, ebscoBookSearchTool, checkOpenHourTool],
     memory,
   )
   let message = await getUserInput("User: ");
   while (message !== "stop") {
-    const response = await agent.agentRun(message);
-    console.log("AIAgent:", response);
+    const response = await agent.agentRun(message, '');
+    console.log("AIAgent:", JSON.stringify(response));
     message = await getUserInput("User: ");
   }
 }
