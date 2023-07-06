@@ -20,7 +20,7 @@ class OpenAIModel {
   
   async getModelResponseWithCache(prompt: PromptWithTools) {
     const key = prompt.toString();
-    console.log(key)
+    console.log(key[0])
     let result = await cacheService.get(key);
     
     if (result === null) {

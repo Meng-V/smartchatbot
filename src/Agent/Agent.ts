@@ -79,7 +79,7 @@ class Agent implements IAgent {
       this.memory?.addToConversation("Customer", userInput);
       this.basePrompt.updateConversationMemory(this.memory);
       this.basePrompt.emptyScratchpad();
-      let llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
+      let llmResponseObj = await this.llmModel.getModelResponseWithCache(this.basePrompt);
       let llmResponse = llmResponseObj.response;
       this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
       
@@ -104,7 +104,7 @@ class Agent implements IAgent {
         this.basePrompt.updateScratchpad(`Observation: ${toolResponse}`);
         console.log(this.basePrompt.getScratchpad());
 
-        llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
+        llmResponseObj = await this.llmModel.getModelResponseWithCache(this.basePrompt);
         llmResponse = llmResponseObj.response;
         this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
 
