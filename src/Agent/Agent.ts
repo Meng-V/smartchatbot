@@ -5,6 +5,7 @@ import { PromptWithTools } from "../Prompt/Prompts";
 
 import { Tool } from "../ToolBox/ToolTemplates";
 import {createObjectCsvWriter} from 'csv-writer';
+import cacheService from "../Service/cacheService";
 
 type AgentResponse = {
   action: string | null,
@@ -67,6 +68,7 @@ class Agent implements IAgent {
       this.toolsMap.set(tool.name, tool);
     });
   }
+
 
   async agentRun(userInput: string, cookie: string): Promise<AgentResponse> {
     return new Promise<AgentResponse>(async (resolve, reject) => {
@@ -151,7 +153,6 @@ class Agent implements IAgent {
       }
     });
   }
-
   parseLLMOutput(llmOutput: string): AgentOutput {
     const jsonString = llmOutput
       .replace(/'/g, "") // Remove single quotes
