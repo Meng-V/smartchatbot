@@ -3,15 +3,20 @@ type Role = "AIAgent" | "Customer";
 class ConversationMemory {
   private curRole: Role;
   private conversation: [Role, string][];
-  constructor() {
+  private maxContextWindow: number | null;
+
+  constructor(maxContextWindow: number | null = null) {
     this.curRole = "AIAgent";
     this.conversation = [];
-    
+
+    this.maxContextWindow = maxContextWindow;
   }
 
   addToConversation(role: Role, text: string) {
+    if (this.maxContextWindow && this.conversation.length >= this.maxContextWindow) {
+      this.conversation.shift();
+    }
     this.conversation.push([role, text]);
-    
     this.curRole = role;
   }
 

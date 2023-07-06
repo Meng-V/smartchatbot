@@ -8,18 +8,18 @@ import { ConversationMemory } from "./Memory/ConversationMemory";
 import { CheckRoomAvailabilityTool } from "./ToolBox/LibCalAPI/CheckRoomAvailability";
 import { RoomReservationTool } from "./ToolBox/LibCalAPI/RoomReservation";
 import { SearchEngine } from "./ToolBox/SearchEngine";
-import helmet from 'helmet';
+import helmet from "helmet";
 import session from "express-session";
 import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
 import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
 
-const PORT=3000
+const PORT = 3001;
 
 const sessionMiddleware = session({
   secret: "changeit",
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
 });
 const app = express();
 const httpServer = createServer(app);
@@ -33,7 +33,7 @@ const io = new Server(httpServer, {
 //   resave: false,
 //   saveUninitialized: true
 // }));
-app.use(express.static('public'));
+app.use(express.static("public"));
 app.use(express.static(__dirname));
 app.use(bodyParser.json());
 
@@ -54,7 +54,7 @@ app.use(
 
 // Initialize the AI agent
 const llmModel = new OpenAIModel();
-const memory = new ConversationMemory();
+const memory = new ConversationMemory(10);
 const searchTool = SearchEngine.getInstance();
 const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
 const reservationTool = RoomReservationTool.getInstance();
@@ -75,11 +75,10 @@ const agent = new Agent(
   memory
 );
 
-
 io.engine.use(sessionMiddleware);
 
-io.on('connection', (socket) => {
-  let cookie = socket.handshake.headers.cookie || '';
+io.on("connection", (socket) => {
+  let cookie = socket.handshake.headers.cookie || "";
   console.log("New user connected");
 
   socket.on("sendMessage", async (message, callback) => {
@@ -95,8 +94,8 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
   });
 });
 

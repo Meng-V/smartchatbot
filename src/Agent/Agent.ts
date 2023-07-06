@@ -1,7 +1,7 @@
 import { rejects } from "assert";
 import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
-import { PromptWithTools } from "../Prompt/Prompts";
+import { ModelPromptWithTools } from "../Prompt/Prompts";
 
 import { Tool } from "../ToolBox/ToolTemplates";
 import {createObjectCsvWriter} from 'csv-writer';
@@ -45,7 +45,7 @@ type AgentOutput =
 
 class Agent implements IAgent {
   llmModel: OpenAIModel;
-  basePrompt: PromptWithTools;
+  basePrompt: ModelPromptWithTools;
   memory: ConversationMemory | null;
 
   toolsMap: Map<string, Tool>;
@@ -61,7 +61,7 @@ class Agent implements IAgent {
   ) {
     this.llmModel = llmModel;
     this.memory = memory;
-    this.basePrompt = new PromptWithTools(tools, this.memory);
+    this.basePrompt = new ModelPromptWithTools(tools, this.llmModel, this.memory);
     this.toolsMap = new Map<string, Tool>();
     tools.forEach((tool) => {
       this.toolsMap.set(tool.name, tool);
@@ -93,14 +93,12 @@ class Agent implements IAgent {
         this.basePrompt.updateScratchpad(
           `Action Input: ${JSON.stringify(outputParsed.actionInput)}\n`
         );
-        // console.log(this.basePrompt.getScratchpad());
         const toolResponse = await this.accessToolBox(
           outputParsed.action,
           outputParsed.actionInput
         );
 
         this.basePrompt.updateScratchpad(`Observation: ${toolResponse}`);
-        console.log(this.basePrompt.getScratchpad());
 
         llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
         llmResponse = llmResponseObj.response;
