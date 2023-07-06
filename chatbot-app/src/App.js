@@ -83,10 +83,10 @@ const App = () => {
               <VStack align="start" spacing={4}>
                 {messages.map((message, index) => (
                   <Box key={index} maxW="md" p={5} rounded="md" bg={message.sender === 'user' ? 'blue.500' : 'gray.200'} alignSelf={message.sender === 'user' ? 'flex-end' : 'flex-start'}>
-                    <Text color={message.sender === 'user' ? 'white' : 'black'}>
-                      {message.text}
-                    </Text>
-                  </Box>
+                  <Text color={message.sender === 'user' ? 'white' : 'black'}>
+                    {typeof message.text === 'object' ? message.text.response.join(', ') : message.text}
+                  </Text>
+                </Box>
                 ))}
               </VStack>
             </Box>
