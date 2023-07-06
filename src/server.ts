@@ -2,6 +2,8 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import bodyParser from "body-parser";
+
+import prisma from "../prisma/prisma";
 import { Agent } from "./Agent/Agent";
 import { OpenAIModel } from "./LLM/LLMModels";
 import { ConversationMemory } from "./Memory/ConversationMemory";
@@ -77,16 +79,45 @@ const agent = new Agent(
 
 io.engine.use(sessionMiddleware);
 
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
   let cookie = socket.handshake.headers.cookie || "";
   console.log("New user connected");
+  const userAgent = socket.request.headers["user-agent"]
+    ? socket.request.headers["user-agent"]
+    : null;
+  let conversation = await prisma.conversation.create({
+    data: {
+      userAgent: userAgent,
+      toolUsed: [],
+    },
+  });
+
+  let toolsUsed: Set<string> = new Set();
 
   socket.on("sendMessage", async (message, callback) => {
     try {
-      console.log(message);
+      await prisma.message.create({
+        data: {
+          type: "customer",
+          content: message,
+          conversationId: conversation.id,
+        },
+      });
       const response = await agent.agentRun(message, cookie);
-      console.log(response);
+
+      await prisma.message.create({
+        data: {
+          type: "AIAgent",
+          content: response.response.join("\n"),
+          conversationId: conversation.id,
+        },
+      });
       socket.emit("message", response);
+
+      response.actions.forEach((action) => {
+        toolsUsed.add(action);
+      });
+
       callback("successful");
     } catch (error) {
       console.error(error);
@@ -94,7 +125,13 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: {
+        toolUsed: [...toolsUsed],
+      },
+    });
     console.log("User disconnected");
   });
 });

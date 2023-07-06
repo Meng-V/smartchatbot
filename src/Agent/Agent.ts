@@ -1,4 +1,4 @@
-import { rejects } from "assert";
+import prisma from '../../prisma/prisma'
 import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { ModelPromptWithTools } from "../Prompt/Prompts";
@@ -7,7 +7,7 @@ import { Tool } from "../ToolBox/ToolTemplates";
 import {createObjectCsvWriter} from 'csv-writer';
 
 type AgentResponse = {
-  action: string | null,
+  actions: string[],
   response: string[],
 }
 
@@ -52,7 +52,7 @@ class Agent implements IAgent {
   LLMCallLimit: number = 5;
   totalTokensUsed: number = 0;
 
-  mostRecentAction: string | null = null;
+  actions: Set<string> = new Set();
 
   constructor(
     llmModel: OpenAIModel,
@@ -123,7 +123,7 @@ class Agent implements IAgent {
       this.totalTokensUsed = 0;
       resolve(
         {
-          action: this.mostRecentAction,
+          actions: [...this.actions],
           response: outputParsed.finalAnswer.split('\n'),
         }
       );
@@ -176,16 +176,19 @@ class Agent implements IAgent {
       outputObj["Action"] !== "null" &&
       outputObj["Action Input"] !== "null"
     ) {
-      this.mostRecentAction = trim(outputObj["Action"])
+      this.actions.add(trim(outputObj["Action"]))
       return {
         outputType: "action",
         thought: trim(outputObj["Thought"]),
-        action: this.mostRecentAction,
+        action: trim(outputObj["Action"]),
         actionInput: outputObj["Action Input"],
       };
     } else {
-      console.log(outputObj)
-      throw new Error("Cannot parse LLM Output");
+      return {
+        outputType: "final",
+        thought: trim(outputObj["Thought"]),
+        finalAnswer: "Feel free to ask me if you have anymore questions."
+      }
     }
   }
 }
