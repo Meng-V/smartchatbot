@@ -2,24 +2,26 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import bodyParser from "body-parser";
+
+import prisma from "../prisma/prisma";
 import { Agent } from "./Agent/Agent";
 import { OpenAIModel } from "./LLM/LLMModels";
 import { ConversationMemory } from "./Memory/ConversationMemory";
 import { CheckRoomAvailabilityTool } from "./ToolBox/LibCalAPI/CheckRoomAvailability";
 import { RoomReservationTool } from "./ToolBox/LibCalAPI/RoomReservation";
 import { SearchEngine } from "./ToolBox/SearchEngine";
-import helmet from 'helmet';
+import helmet from "helmet";
 import session from "express-session";
 import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
 import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
 
-const PORT=3000
+const PORT = 3001;
 
 const sessionMiddleware = session({
   secret: "changeit",
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
 });
 const app = express();
 const httpServer = createServer(app);
@@ -33,7 +35,7 @@ const io = new Server(httpServer, {
 //   resave: false,
 //   saveUninitialized: true
 // }));
-app.use(express.static('public'));
+app.use(express.static("public"));
 app.use(express.static(__dirname));
 app.use(bodyParser.json());
 
@@ -54,7 +56,7 @@ app.use(
 
 // Initialize the AI agent
 const llmModel = new OpenAIModel();
-const memory = new ConversationMemory();
+const memory = new ConversationMemory(10);
 const searchTool = SearchEngine.getInstance();
 const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
 const reservationTool = RoomReservationTool.getInstance();
@@ -75,19 +77,47 @@ const agent = new Agent(
   memory
 );
 
-
 io.engine.use(sessionMiddleware);
 
-io.on('connection', (socket) => {
-  let cookie = socket.handshake.headers.cookie || '';
+io.on("connection", async (socket) => {
+  let cookie = socket.handshake.headers.cookie || "";
   console.log("New user connected");
+  const userAgent = socket.request.headers["user-agent"]
+    ? socket.request.headers["user-agent"]
+    : null;
+  let conversation = await prisma.conversation.create({
+    data: {
+      userAgent: userAgent,
+      toolUsed: [],
+    },
+  });
+
+  let toolsUsed: Set<string> = new Set();
 
   socket.on("sendMessage", async (message, callback) => {
     try {
-      console.log(message);
+      await prisma.message.create({
+        data: {
+          type: "customer",
+          content: message,
+          conversationId: conversation.id,
+        },
+      });
       const response = await agent.agentRun(message, cookie);
-      console.log(response);
+
+      await prisma.message.create({
+        data: {
+          type: "AIAgent",
+          content: response.response.join("\n"),
+          conversationId: conversation.id,
+        },
+      });
       socket.emit("message", response);
+
+      response.actions.forEach((action) => {
+        toolsUsed.add(action);
+      });
+
       callback("successful");
     } catch (error) {
       console.error(error);
@@ -95,8 +125,14 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
+  socket.on("disconnect", async () => {
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: {
+        toolUsed: [...toolsUsed],
+      },
+    });
+    console.log("User disconnected");
   });
 });
 

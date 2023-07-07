@@ -8,9 +8,11 @@ node_modules/
 
 # Ignore logs
 logs/
+log.csv
 
 # Ignore environment-specific files
 .env
+config.ini
 
 # Ignore built output
 dist/
