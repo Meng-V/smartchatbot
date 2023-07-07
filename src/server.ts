@@ -85,7 +85,7 @@ io.on('connection', (socket) => {
   let cookie = socket.handshake.headers.cookie || '';
   console.log("New user connected");
 
-  socket.on("sendMessage", async (message, callback) => {
+  socket.on("message", async (message, callback) => {
     try {
       console.log(message);
       const response = await agent.agentRun(message, cookie);

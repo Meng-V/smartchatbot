@@ -5,18 +5,18 @@ import { ChatIcon } from "@chakra-ui/icons";
 import './App.css';
 
 const App = () => {
-  const inputRef = useRef();
   const chatRef = useRef();
   const [socket, setSocket] = useState(null);
   const [messages, setMessages] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [inputMessage, setInputMessage] = useState('');
 
   useEffect(() => {
-    const socketIo = io(`http://localhost:${process.env.REACT_APP_PORT}`, { transports: ['websocket'], upgrade: false });
-
-    socketIo.on('connect', () => {
+    const url = `http://localhost:${process.env.REACT_APP_PORT}`;
+    const socketIo = io(url, { transports: ['websocket'], upgrade: false });
+    socketIo.on('connection', () => {
       console.log('Connected');
-      addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
+      // addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
     });
 
     setSocket(socketIo);
@@ -28,11 +28,13 @@ const App = () => {
 
   useEffect(() => {
     if (socket) {
+      
+    addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
       socket.on('message', function (message) {
         addMessage(message, 'chatbot');
       });
 
-      socket.on('disconnect', function () {
+      socket.on('disconnected', function () {
         addMessage('User disconnected....', 'chatbot');
       });
 
@@ -51,12 +53,14 @@ const App = () => {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    if (inputRef.current.value) {
-      addMessage(inputRef.current.value, 'user');
+    if (inputMessage) {
+      addMessage(inputMessage, 'user');
+      setInputMessage('');
       if (socket) {
-        socket.emit("sendMessage", inputRef.current.value, (message) => console.log(message));
+        socket.emit("message", inputMessage, (response) => {
+          console.log(response);
+        });
       }
-      inputRef.current.value = "";
     }
   }
 
@@ -92,7 +96,7 @@ const App = () => {
             </Box>
             <form onSubmit={handleFormSubmit}>
               <HStack spacing={3}>
-                <Input ref={inputRef} placeholder="Type your message..." />
+                <Input value={inputMessage} onChange={e => setInputMessage(e.target.value)} placeholder="Type your message..." />
                 <Button colorScheme="blue" type="submit">Send</Button>
               </HStack>
             </form>
