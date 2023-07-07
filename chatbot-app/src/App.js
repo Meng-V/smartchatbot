@@ -1,18 +1,39 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
-import { HStack, Input, Button, Box, Text, VStack, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, IconButton } from "@chakra-ui/react";
+import {
+  HStack,
+  Input,
+  Button,
+  Box,
+  Text,
+  VStack,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  IconButton,
+} from "@chakra-ui/react";
 import { ChatIcon } from "@chakra-ui/icons";
-import './App.css';
+import "./App.css";
 
 const App = () => {
-  const inputRef = useRef();
   const chatRef = useRef();
   const [socket, setSocket] = useState(null);
   const [messages, setMessages] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [inputMessage, setInputMessage] = useState('');
 
   useEffect(() => {
-    const socketIo = io('http://localhost:3000', { transports: ['websocket'], upgrade: false });
+    const url = `http://localhost:${process.env.REACT_APP_PORT}`;
+    const socketIo = io(url, { transports: ['websocket'], upgrade: false });
+    socketIo.on('connection', () => {
+      console.log('Connected');
+      // addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
+    });
+
     setSocket(socketIo);
   }, []);
 
@@ -22,23 +43,19 @@ const App = () => {
 
   useEffect(() => {
     if (socket) {
-      addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
-
+      
+    addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
       socket.on('message', function (message) {
         addMessage(message, 'chatbot');
       });
 
-      socket.on('disconnected', function (message) {
-        addMessage(message, 'chatbot');
+      socket.on('disconnected', function () {
+        addMessage('User disconnected....', 'chatbot');
       });
 
-      if (socket) {
-        socket.on('disconnect', () => {
-          addMessage('User disconnected....', 'chatbot');
-        });
-        return () => {
-          socket.off('disconnected');
-        }
+      return () => {
+        socket.off('message');
+        socket.off('disconnect');
       }
     }
   }, [socket]);
@@ -51,15 +68,16 @@ const App = () => {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    if (inputRef.current.value) {
-      addMessage(inputRef.current.value, 'user');
+    if (inputMessage) {
+      addMessage(inputMessage, 'user');
+      setInputMessage('');
       if (socket) {
-        socket.emit("sendMessage", inputRef.current.value, (message) => console.log(message));
+        socket.emit("message", inputMessage, (response) => {
+          console.log(response);
+        });
       }
-      inputRef.current.value = "";
     }
-  }
-
+  };
 
   return (
     <>
@@ -75,24 +93,38 @@ const App = () => {
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent maxW="350px" position="fixed" bottom="60px" right="10" borderRadius="md">
+        <ModalContent
+          maxW="350px"
+          position="fixed"
+          bottom="60px"
+          right="10"
+          borderRadius="md"
+        >
           <ModalHeader>LibChat Library Chatbot</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Box ref={chatRef} borderWidth={1} borderRadius="md" p={3} mb={3} overflowY="auto" height="60vh">
+            <Box
+              ref={chatRef}
+              borderWidth={1}
+              borderRadius="md"
+              p={3}
+              mb={3}
+              overflowY="auto"
+              height="60vh"
+            >
               <VStack align="start" spacing={4}>
                 {messages.map((message, index) => (
                   <Box key={index} maxW="md" p={5} rounded="md" bg={message.sender === 'user' ? 'blue.500' : 'gray.200'} alignSelf={message.sender === 'user' ? 'flex-end' : 'flex-start'}>
-                  <Text color={message.sender === 'user' ? 'white' : 'black'}>
-                    {typeof message.text === 'object' ? message.text.response.join(', ') : message.text}
-                  </Text>
-                </Box>
+                    <Text color={message.sender === 'user' ? 'white' : 'black'}>
+                      {typeof message.text === 'object' ? message.text.response.join(', ') : message.text}
+                    </Text>
+                  </Box>
                 ))}
               </VStack>
             </Box>
             <form onSubmit={handleFormSubmit}>
               <HStack spacing={3}>
-                <Input ref={inputRef} placeholder="Type your message..." />
+                <Input value={inputMessage} onChange={e => setInputMessage(e.target.value)} placeholder="Type your message..." />
                 <Button colorScheme="blue" type="submit">Send</Button>
               </HStack>
             </form>
@@ -101,6 +133,6 @@ const App = () => {
       </Modal>
     </>
   );
-}
+};
 
 export default App;

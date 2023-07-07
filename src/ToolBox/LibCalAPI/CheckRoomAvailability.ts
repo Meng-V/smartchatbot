@@ -187,6 +187,9 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
             availability: date,
           },
         });
+        if (response.data[0].error === "item belongs to category of incorrect type") {
+          resolve("Customer provide unexisted room ID.")
+        }
         const hours: { from: string; to: string }[] =
           response.data[0].availability;
         const hoursTimestamp: { from: Timestamp; to: Timestamp }[] = hours.map(

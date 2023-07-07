@@ -28,7 +28,7 @@ function getUserInput(prompt: string): Promise<string> {
 
 async function main() {
   const llmModel = new OpenAIModel();
-  const memory = new ConversationMemory()
+  const memory = new ConversationMemory(10);
 
   const searchTool = SearchEngine.getInstance();
   const reservationTool = RoomReservationTool.getInstance();
