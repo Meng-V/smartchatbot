@@ -26,7 +26,7 @@ class OpenAIModel {
       // const timeout = setTimeout(() => {
       //   reject("Request Time Out");
       // }, 5000);
-      const prompt = promptObject.getPrompt();
+      const prompt = await promptObject.getPrompt();
       const preRequestTokens = this.remainingTokens;
       const response = await this.model.createChatCompletion({
         model: this.modelName,

@@ -7,7 +7,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
 
   public readonly name: string = "StudyRoomReservationTool";
   public readonly description: string =
-    "This tool is for study room reservation. This tool has 8 parameters (firstName, lastName, email, startDate, startTime, endDate, endTime, roomID). None of the parameter can be null. Please use Final Answer instead if you don't have enough parameters yet. Don't include any single quotes in the paramter.";
+    "This tool is for study room reservation. This tool has 8 parameters (firstName, lastName, email, startDate, startTime, endDate, endTime, roomID). NONE of the parameter can be null. Please use Final Answer instead if you don't have enough parameters yet. Don't include any single quotes in the paramter.";
 
   public readonly parameters: { [parameterName: string]: string } = {
     firstName: "string",

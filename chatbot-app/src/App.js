@@ -1,8 +1,23 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
-import { HStack, Input, Button, Box, Text, VStack, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, IconButton } from "@chakra-ui/react";
+import {
+  HStack,
+  Input,
+  Button,
+  Box,
+  Text,
+  VStack,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  IconButton,
+} from "@chakra-ui/react";
 import { ChatIcon } from "@chakra-ui/icons";
-import './App.css';
+import "./App.css";
 
 const App = () => {
   const chatRef = useRef();
@@ -62,8 +77,7 @@ const App = () => {
         });
       }
     }
-  }
-
+  };
 
   return (
     <>
@@ -79,11 +93,25 @@ const App = () => {
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent maxW="350px" position="fixed" bottom="60px" right="10" borderRadius="md">
+        <ModalContent
+          maxW="350px"
+          position="fixed"
+          bottom="60px"
+          right="10"
+          borderRadius="md"
+        >
           <ModalHeader>LibChat Library Chatbot</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Box ref={chatRef} borderWidth={1} borderRadius="md" p={3} mb={3} overflowY="auto" height="60vh">
+            <Box
+              ref={chatRef}
+              borderWidth={1}
+              borderRadius="md"
+              p={3}
+              mb={3}
+              overflowY="auto"
+              height="60vh"
+            >
               <VStack align="start" spacing={4}>
                 {messages.map((message, index) => (
                   <Box key={index} maxW="md" p={5} rounded="md" bg={message.sender === 'user' ? 'blue.500' : 'gray.200'} alignSelf={message.sender === 'user' ? 'flex-end' : 'flex-start'}>
@@ -105,6 +133,6 @@ const App = () => {
       </Modal>
     </>
   );
-}
+};
 
 export default App;
