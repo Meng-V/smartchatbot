@@ -1,0 +1,50 @@
+version: '3.7'
+services:
+  frontend:
+    build:
+      context: ./chatbot-app
+      dockerfile: frontend.dockerfile
+    ports:
+      - '3001:3001'
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_BACKEND_URL=backend:3000
+      - REACT_APP_PORT=backend:3000
+
+  backend:
+    build: 
+      context: ./
+      dockerfile: backend.dockerfile
+    ports:
+      - '3000:3000'
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://prisma:prisma@db:5432/prisma
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+      # include other environment variables as necessary
+
+  db:
+    image: postgres:12
+    restart: always
+    environment:
+      POSTGRES_USER: prisma
+      POSTGRES_PASSWORD: prisma
+      POSTGRES_DB: prisma
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+  redis:
+    image: redis:6.2
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
