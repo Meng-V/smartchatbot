@@ -12,7 +12,13 @@ const App = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   useEffect(() => {
-    const socketIo = io('http://localhost:3000', { transports: ['websocket'], upgrade: false });
+    const socketIo = io(`http://localhost:${process.env.REACT_APP_PORT}`, { transports: ['websocket'], upgrade: false });
+
+    socketIo.on('connect', () => {
+      console.log('Connected');
+      addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
+    });
+
     setSocket(socketIo);
   }, []);
 
@@ -22,23 +28,17 @@ const App = () => {
 
   useEffect(() => {
     if (socket) {
-      addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
-
       socket.on('message', function (message) {
         addMessage(message, 'chatbot');
       });
 
-      socket.on('disconnected', function (message) {
-        addMessage(message, 'chatbot');
+      socket.on('disconnect', function () {
+        addMessage('User disconnected....', 'chatbot');
       });
 
-      if (socket) {
-        socket.on('disconnect', () => {
-          addMessage('User disconnected....', 'chatbot');
-        });
-        return () => {
-          socket.off('disconnected');
-        }
+      return () => {
+        socket.off('message');
+        socket.off('disconnect');
       }
     }
   }, [socket]);
@@ -83,10 +83,10 @@ const App = () => {
               <VStack align="start" spacing={4}>
                 {messages.map((message, index) => (
                   <Box key={index} maxW="md" p={5} rounded="md" bg={message.sender === 'user' ? 'blue.500' : 'gray.200'} alignSelf={message.sender === 'user' ? 'flex-end' : 'flex-start'}>
-                  <Text color={message.sender === 'user' ? 'white' : 'black'}>
-                    {typeof message.text === 'object' ? message.text.response.join(', ') : message.text}
-                  </Text>
-                </Box>
+                    <Text color={message.sender === 'user' ? 'white' : 'black'}>
+                      {typeof message.text === 'object' ? message.text.response.join(', ') : message.text}
+                    </Text>
+                  </Box>
                 ))}
               </VStack>
             </Box>

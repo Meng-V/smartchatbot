@@ -13,8 +13,11 @@ import session from "express-session";
 import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
 import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
+import * as dotenv from 'dotenv';
+dotenv.config();
 
-const PORT=3000
+const PORT=process.env.PORT
+const URL=`http://localhost:${PORT}`
 
 const sessionMiddleware = session({
   secret: "changeit",
@@ -42,11 +45,11 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        "default-src": ["'self'", "http://localhost:3000"],
+        "default-src": ["'self'", URL],
         "script-src": ["'self'", "'unsafe-inline'"],
         "style-src": ["'self'", "'unsafe-inline'"],
-        "img-src": ["'self'", "data:", "http://localhost:3000"],
-        "connect-src": ["'self'", "http://localhost:3000"],
+        "img-src": ["'self'", "data:", URL],
+        "connect-src": ["'self'", URL],
       },
     },
   })
