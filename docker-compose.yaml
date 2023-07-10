@@ -5,7 +5,7 @@ services:
       context: ./chatbot-app
       dockerfile: frontend.dockerfile
     ports:
-      - '3001:3001'
+      - '${FRONTEND_PORT}:${FRONTEND_PORT}'
     depends_on:
       - backend
     env_file:
@@ -16,7 +16,7 @@ services:
       dockerfile: backend.dockerfile
     command: /bin/sh -c "chmod +x ./wait-for-it.sh && ./wait-for-it.sh db:5432 -- npm run server"
     ports:
-      - '3000:3000'
+      - '${BACKEND_PORT}:${BACKEND_PORT}'
     depends_on:
       - db
       # - redis
