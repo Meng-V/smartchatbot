@@ -5,7 +5,7 @@ import { ModelPromptWithTools } from "../Prompt/Prompts";
 
 import { Tool } from "../ToolBox/ToolTemplates";
 import {createObjectCsvWriter} from 'csv-writer';
-import cacheService from "../Service/cacheService";
+// import cacheService from "../Service/cacheService";
 
 type AgentResponse = {
   actions: string[],
@@ -79,7 +79,7 @@ class Agent implements IAgent {
       this.memory?.addToConversation("Customer", userInput);
       this.basePrompt.updateConversationMemory(this.memory);
       this.basePrompt.emptyScratchpad();
-      let llmResponseObj = await this.llmModel.getModelResponseWithCache(this.basePrompt);
+      let llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
       let llmResponse = llmResponseObj.response;
       this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
       
@@ -102,7 +102,7 @@ class Agent implements IAgent {
 
         this.basePrompt.updateScratchpad(`Observation: ${toolResponse}`);
 
-        llmResponseObj = await this.llmModel.getModelResponseWithCache(this.basePrompt);
+        llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
         llmResponse = llmResponseObj.response;
         this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
 
