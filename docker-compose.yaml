@@ -25,7 +25,6 @@ services:
       - DATABASE_URL=postgresql://prisma:prisma@db:5432/prisma
       - REDIS_URL=redis://redis:6379
       - PORT=3000
-      # include other environment variables as necessary
 
   db:
     image: postgres:12

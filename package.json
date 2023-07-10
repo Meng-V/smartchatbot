@@ -7,7 +7,7 @@
     "build": "tsc",
     "test": "react-scripts test --env=node",
     "start": "nodemon",
-    "server": "concurrently \"npm start\" \"cd chatbot-app && npm start\"",
+    "server": "prisma migrate deploy && concurrently \"npm start\" \"cd chatbot-app && npm start\"",
     "lint": "eslint . --ext .ts"
   },
   "keywords": [],
