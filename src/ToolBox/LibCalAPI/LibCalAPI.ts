@@ -10,22 +10,21 @@ abstract class LibCalAPIBaseTool implements Tool {
   abstract readonly description: string;
   abstract readonly parameters: { [parameterName: string]: string; };
 
-  protected readonly oauth_url = process.env["OAUTH_URL"]!;
-  protected readonly client_id = process.env["CLIENT_ID"]!;
-  protected readonly client_secret = process.env["CLIENT_SECRET"]!;
-  protected readonly grant_type = process.env["GRANT_TYPE"]!;
-  protected readonly available_url = process.env["AVAILABLE_URL"]!;
-  protected readonly reservation_url = process.env["RESERVATION_URL"]!;
-  protected readonly cancel_url = process.env["CANCEL_URL"]!;
-  protected readonly hour_url = process.env["HOUR_URL"]!;
+  protected readonly oauth_url = process.env["LIBCAL_OAUTH_URL"]!;
+  protected readonly client_id = process.env["LIBCAL_CLIENT_ID"]!;
+  protected readonly client_secret = process.env["LIBCAL_CLIENT_SECRET"]!;
+  protected readonly grant_type = process.env["LIBCAL_GRANT_TYPE"]!;
+  protected readonly available_url = process.env["LIBCAL_AVAILABLE_URL"]!;
+  protected readonly reservation_url = process.env["LIBCAL_RESERVATION_URL"]!;
+  protected readonly cancel_url = process.env["LIBCAL_CANCEL_URL"]!;
+  protected readonly hour_url = process.env["LIBCAL_HOUR_URL"]!;
 
   protected static timezone = (() => {
     const diff = new Date().getTimezoneOffset() / 60;
     return diff < 0 ? `${diff}`.slice(1) : `${diff}`;
   })();
 
-  protected constructor() {
-  }
+  protected constructor() {}
 
   protected async getAccessToken(): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
