@@ -2,6 +2,7 @@ import prisma from '../../prisma/prisma'
 import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { ModelPromptWithTools } from "../Prompt/Prompts";
+import RedisCacheService from '../Service/redisCacheService';
 
 import { Tool } from "../ToolBox/ToolTemplates";
 import {createObjectCsvWriter} from 'csv-writer';
@@ -55,7 +56,7 @@ class Agent implements IAgent {
   totalTokensUsed: number = 0;
 
   actions: Set<string> = new Set();
-
+  cacheService: RedisCacheService;
   constructor(
     llmModel: OpenAIModel,
     tools: Tool[],
@@ -65,6 +66,7 @@ class Agent implements IAgent {
     this.memory = memory;
     this.basePrompt = new ModelPromptWithTools(tools, this.llmModel, this.memory);
     this.toolsMap = new Map<string, Tool>();
+    this.cacheService = new RedisCacheService();
     tools.forEach((tool) => {
       this.toolsMap.set(tool.name, tool);
     });
@@ -77,10 +79,19 @@ class Agent implements IAgent {
       this.basePrompt.updateConversationMemory(this.memory);
       this.basePrompt.emptyScratchpad();
 
-      let llmResponseObj = await this.llmModel.getModelResponseWithCache(this.basePrompt);
-      let llmResponse = llmResponseObj.response;
+      let llmResponseObj;
+      // let llmResponseObj = await this.llmModel.getModelResponseWithCache(this.basePrompt);
+      if(await this.cacheService.get(userInput)){
+        llmResponseObj = JSON.parse(await this.cacheService.get(userInput));
+      } else {
+        llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
+        let outputParsed = this.parseLLMOutput(llmResponseObj.response);
+        if(outputParsed.outputType === "final" && outputParsed.finalAnswer !== null){
+          this.cacheService.set(userInput, JSON.stringify(llmResponseObj));
+        }
+      }
       this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
-      
+      let llmResponse = llmResponseObj.response;
       // console.log(llmResponse)
       let outputParsed = this.parseLLMOutput(llmResponse);
       let llmCallNum = 1;
