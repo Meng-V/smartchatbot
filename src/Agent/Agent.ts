@@ -5,6 +5,7 @@ import { ModelPromptWithTools } from "../Prompt/Prompts";
 
 import { Tool } from "../ToolBox/ToolTemplates";
 import {createObjectCsvWriter} from 'csv-writer';
+// import {queryWeaviate} from '../Service/weaviateService';
 // import cacheService from "../Service/cacheService";
 
 type AgentResponse = {
@@ -72,14 +73,11 @@ class Agent implements IAgent {
 
   async agentRun(userInput: string, cookie: string): Promise<AgentResponse> {
     return new Promise<AgentResponse>(async (resolve, reject) => {
-      // const timeout = setTimeout(() => {
-      //   reject(`Request Time Out. Prompt so far: ${this.basePrompt.getPrompt()}`);
-      // }, 5000);
-
       this.memory?.addToConversation("Customer", userInput);
       this.basePrompt.updateConversationMemory(this.memory);
       this.basePrompt.emptyScratchpad();
-      let llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
+
+      let llmResponseObj = await this.llmModel.getModelResponseWithCache(this.basePrompt);
       let llmResponse = llmResponseObj.response;
       this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
       
