@@ -111,16 +111,16 @@ class Agent implements IAgent {
 
         this.basePrompt.updateScratchpad(`Observation: ${toolResponse}`);
 
-        if(await this.cacheService.get(userInput)){
-          llmResponseObj = JSON.parse(await this.cacheService.get(userInput));
-          outputParsed = this.parseLLMOutput(llmResponseObj.response);
-        } else {
+        // if(await this.cacheService.get(userInput)){
+        //   llmResponseObj = JSON.parse(await this.cacheService.get(userInput));
+        //   outputParsed = this.parseLLMOutput(llmResponseObj.response);
+        // } else {
           llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
           outputParsed = this.parseLLMOutput(llmResponseObj.response);
           if(outputParsed.outputType === "final" && outputParsed.finalAnswer !== null){
             this.cacheService.set(userInput, JSON.stringify(llmResponseObj));
           }
-        }
+        // }
         this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
 
         outputParsed = this.parseLLMOutput(llmResponse);
