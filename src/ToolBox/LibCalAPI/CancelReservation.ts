@@ -67,7 +67,7 @@ class CancelReservationTool extends LibCalAPIBaseTool {
         let response = await axios({
           method: "post",
           headers: header,
-          url: `${instance.cancel_url}/${bookingID}`,
+          url: `${instance.CANCEL_URL}/${bookingID}`,
         });
         if (response.data[0].cancelled) {
           resolve(`Room reservation with ID: ${bookingID} is cancelled successfully\n`);

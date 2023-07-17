@@ -10,14 +10,16 @@ abstract class LibCalAPIBaseTool implements Tool {
   abstract readonly description: string;
   abstract readonly parameters: { [parameterName: string]: string; };
 
-  protected readonly oauth_url = process.env["LIBCAL_OAUTH_URL"]!;
-  protected readonly client_id = process.env["LIBCAL_CLIENT_ID"]!;
-  protected readonly client_secret = process.env["LIBCAL_CLIENT_SECRET"]!;
-  protected readonly grant_type = process.env["LIBCAL_GRANT_TYPE"]!;
-  protected readonly available_url = process.env["LIBCAL_AVAILABLE_URL"]!;
-  protected readonly reservation_url = process.env["LIBCAL_RESERVATION_URL"]!;
-  protected readonly cancel_url = process.env["LIBCAL_CANCEL_URL"]!;
-  protected readonly hour_url = process.env["LIBCAL_HOUR_URL"]!;
+  protected readonly OAUTH_URL = process.env["LIBCAL_OAUTH_URL"]!;
+  protected readonly CLIENT_ID = process.env["LIBCAL_CLIENT_ID"]!;
+  protected readonly CLIENT_SECRET = process.env["LIBCAL_CLIENT_SECRET"]!;
+  protected readonly GRANT_TYPE = process.env["LIBCAL_GRANT_TYPE"]!;
+  protected readonly ROOM_INFO_URL = process.env["LIBCAL_ROOM_INFO_URL"];
+  protected readonly AVAILABLE_URL = process.env["LIBCAL_AVAILABLE_URL"]!;
+  protected readonly RESERVATION_URL = process.env["LIBCAL_RESERVATION_URL"]!;
+  protected readonly CANCEL_URL = process.env["LIBCAL_CANCEL_URL"]!;
+  protected readonly HOUR_URL = process.env["LIBCAL_HOUR_URL"]!;
+  protected readonly BUILDING_ID = process.env["TEST_BUILDING"]
 
   protected static timezone = (() => {
     const diff = new Date().getTimezoneOffset() / 60;
@@ -33,21 +35,21 @@ abstract class LibCalAPIBaseTool implements Tool {
       //      }, 5000);
       const response = await axios({
         method: "post",
-        url: this.oauth_url,
-        data: { grant_type: this.grant_type },
+        url: this.OAUTH_URL,
+        data: { GRANT_TYPE: this.GRANT_TYPE },
         auth: {
-          username: this.client_id,
-          password: this.client_secret,
+          username: this.CLIENT_ID,
+          password: this.CLIENT_SECRET,
         },
       });
 
       resolve(response.data.access_token!);
-      // console.log(this.oauth_url);
+      // console.log(this.OAUTH_URL);
       // resolve("yay")
     });
   }
 
-  abstract run(input: ToolInput): Promise<string>;
+  abstract toolRun(input: ToolInput): Promise<string>;
 }
 
 export { LibCalAPIBaseTool };

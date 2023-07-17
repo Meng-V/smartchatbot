@@ -6,6 +6,10 @@ import prisma from "../../prisma/prisma";
 import { exists } from "fp-ts/lib/Option";
 import { Prisma } from "@prisma/client";
 
+type SubjectLibrarianMap = {
+  [subject: string]: { name: string; email: string }[];
+};
+
 class LibrarianSubjectSearchTool implements Tool {
   private static instance: LibrarianSubjectSearchTool;
 
@@ -17,10 +21,10 @@ class LibrarianSubjectSearchTool implements Tool {
     subjectName: "string",
   };
 
-  protected readonly oauth_url = process.env["LIBAPPS_OAUTH_URL"]!;
-  protected readonly client_id = process.env["LIBAPPS_CLIENT_ID"]!;
-  protected readonly client_secret = process.env["LIBAPPS_CLIENT_SECRET"]!;
-  protected readonly grant_type = process.env["LIBAPPS_GRANT_TYPE"]!;
+  protected readonly OAUTH_URL = process.env["LIBAPPS_OAUTH_URL"]!;
+  protected readonly CLIENT_ID = process.env["LIBAPPS_CLIENT_ID"]!;
+  protected readonly CLIENT_SECRET = process.env["LIBAPPS_CLIENT_SECRET"]!;
+  protected readonly GRANT_TYPE = process.env["LIBAPPS_GRANT_TYPE"]!;
 
   protected constructor() {}
 
@@ -31,16 +35,16 @@ class LibrarianSubjectSearchTool implements Tool {
       //      }, 5000);
       const response = await axios({
         method: "post",
-        url: this.oauth_url,
+        url: this.OAUTH_URL,
         data: {
-          client_id: this.client_id,
-          client_secret: this.client_secret,
-          grant_type: this.grant_type,
+          client_id: this.CLIENT_ID,
+          client_secret: this.CLIENT_SECRET,
+          grant_type: this.GRANT_TYPE,
         },
       });
 
       resolve(response.data.access_token!);
-      // console.log(this.oauth_url);
+      // console.log(this.OAUTH_URL);
       // resolve("yay")
     });
   }
@@ -172,26 +176,28 @@ class LibrarianSubjectSearchTool implements Tool {
         didUpdate = true;
         const librarians = await this.fetchLibrarianSubjectData();
         for (let librarian of librarians) {
-          const upsertSubjectData = {
-            upsert: !librarian.subjects
-              ? []
-              : librarian.subjects.map(
-                  (subject: { id: string; name: string; slug_id: number }) => ({
-                    where: {
-                      id: subject.id,
-                    },
-                    update: {},
-                    create: { id: subject.id, name: subject.name },
-                  })
-                ),
-          };
-
           await prisma.librarian.upsert({
             where: {
               uuid: librarian.uuid,
             },
             update: {
-              subjects: upsertSubjectData,
+              subjects: {
+                upsert: !librarian.subjects
+                  ? []
+                  : librarian.subjects.map(
+                      (subject: {
+                        id: string;
+                        name: string;
+                        slug_id: number;
+                      }) => ({
+                        where: {
+                          id: subject.id,
+                        },
+                        update: {},
+                        create: { id: subject.id, name: subject.name },
+                      })
+                    ),
+              },
             },
             create: {
               id: librarian.id,
@@ -226,64 +232,80 @@ class LibrarianSubjectSearchTool implements Tool {
     });
   }
 
-  async run(toolInput: ToolInput): Promise<string> {
+  async toolRun(toolInput: ToolInput): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       const { subjectName } = toolInput;
-      resolve(await LibrarianSubjectSearchTool.run(subjectName));
-    });
-  }
-
-  static async run(querySubjectName: string): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
-      const instance = LibrarianSubjectSearchTool.instance;
-
-      await instance.updateLibrarianSubjectDatabase(30);
-
-      const subjects = await prisma.subject.findMany();
-      const subjectNames = subjects.map((subject) => subject.name);
-      const bestMatchSubject = instance.fuzzybestMatch(
-        querySubjectName,
-        subjectNames,
-        2
+      const response = await LibrarianSubjectSearchTool.run(
+        subjectName as string
       );
 
-      const subjectsWithLibrarian = await prisma.subject.findMany({
-        where: {
-          name: { in: bestMatchSubject },
-        },
-        include: { assignedLibrarians: true },
-      });
-
-      const resultObject = subjectsWithLibrarian.reduce(
-        (prevObject, curSubject) => {
-          return {
-            ...prevObject,
-            [curSubject.name]: {
-              librarianName: curSubject.assignedLibrarians.map((librarian) => {
-                return {
-                  name: `${librarian.firstName} ${librarian.lastName}`,
-                  email: librarian.email,
-                };
-              }),
-            },
-          };
-        },
-        {}
-      );
-      console.log(JSON.stringify(resultObject));
-      if (Object.keys(resultObject).length === 0) {
-        resolve(
-          "Sorry, the requested subject has no match with our subject database. Please try another subject."
-        );
+      if ("error" in response) {
+        resolve(`Error: ${response.error}`);
         return;
       }
 
       resolve(
-        `These are the librarians that can help you: ${JSON.stringify(
-          resultObject
+        `These are the librarians that can help you: ${await LibrarianSubjectSearchTool.run(
+          subjectName as string
         )}`
       );
     });
+  }
+
+  static async run(
+    querySubjectName: string
+  ): Promise<SubjectLibrarianMap | { error: string }> {
+    return new Promise<SubjectLibrarianMap | { error: string }>(
+      async (resolve, reject) => {
+        const instance = LibrarianSubjectSearchTool.instance;
+
+        await instance.updateLibrarianSubjectDatabase(30);
+
+        const subjects = await prisma.subject.findMany();
+        const subjectNames = subjects.map((subject) => subject.name);
+        const bestMatchSubject = instance.fuzzybestMatch(
+          querySubjectName,
+          subjectNames,
+          2
+        );
+
+        const subjectsWithLibrarian = await prisma.subject.findMany({
+          where: {
+            name: { in: bestMatchSubject },
+          },
+          include: { assignedLibrarians: true },
+        });
+
+        const resultObject = subjectsWithLibrarian.reduce(
+          (prevObject, curSubject) => {
+            return {
+              ...prevObject,
+              [curSubject.name]: {
+                librarianName: curSubject.assignedLibrarians.map(
+                  (librarian) => {
+                    return {
+                      name: `${librarian.firstName} ${librarian.lastName}`,
+                      email: librarian.email,
+                    };
+                  }
+                ),
+              },
+            };
+          },
+          {}
+        );
+        console.log(JSON.stringify(resultObject));
+        if (Object.keys(resultObject).length === 0) {
+          resolve({
+            error:
+              "Sorry, the requested subject has no match with our subject database. Please try another subject.",
+          });
+          return;
+        }
+
+        resolve(resultObject);
+      }
+    );
   }
 }
 

@@ -1,3 +1,4 @@
+import { string } from "io-ts";
 import { ToolInput } from "../ToolTemplates";
 import { LibCalAPIBaseTool } from "./LibCalAPI";
 import axios, { AxiosError, AxiosResponse } from "axios";
@@ -17,7 +18,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
 
   public readonly name: string = "CheckRoomAvailabilityTool";
   public readonly description: string =
-    "This tool is for checking the available hours of a specific study room on one specific date. This tool has 2 parameters. Please use Final Answer instead if you don't have enough parameters (roomID and date) yet. Don't include any single quotes in the paramter. The year is implicitly 2023";
+    "This tool is for checking the available hours of a specific study room on one specific date. This tool has 2 parameters. Please use Final Answer instead if you don't have enough parameters (roomID and date) yet. Don't include any single quotes in the paramter. The year is implicitly the current year";
 
   public readonly parameters: { [parameterName: string]: string } = {
     date: "string [format YYYY-MM-DD]",
@@ -154,69 +155,80 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
     return mergeTimestamp;
   }
 
-  async run(toolInput: ToolInput): Promise<string> {
+  async toolRun(toolInput: ToolInput): Promise<string> {
     const { roomID, date } = toolInput;
 
     return new Promise<string>(async (resolve, reject) => {
-      const response = await CheckRoomAvailabilityTool.run(roomID, date);
-
+      const response = await CheckRoomAvailabilityTool.run(
+        roomID as string,
+        date as string
+      );
+      if ('error' in response[0]) {
+        resolve(response[0]!.error);
+        return;
+      }
       resolve(`Here is the room ${roomID} available time ${response}`);
     });
   }
 
   /**
-   * This function runs the tool as the description
+   * This async function runs the tool as the description
    * @param roomID string
    * @param date Has to follow YYYY-MM-DD format
    * @returns
    */
-  static async run(roomID: string, date: string): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
-      const instance = CheckRoomAvailabilityTool.getInstance();
-      const accessToken: string = await instance.getAccessToken();
-      const header = {
-        Authorization: `Bearer ${accessToken}`,
-      };
+  static async run(
+    roomID: string,
+    date: string
+  ): Promise<{ from: string; to: string }[] | {error: string}[]> {
+    return new Promise<{ from: string; to: string }[] | {error: string}[]>(
+      async (resolve, reject) => {
+        const instance = CheckRoomAvailabilityTool.getInstance();
+        const accessToken: string = await instance.getAccessToken();
+        const header = {
+          Authorization: `Bearer ${accessToken}`,
+        };
 
-      try {
-        let response = await axios({
-          method: "get",
-          headers: header,
-          url: `${instance.available_url}/${roomID}`,
-          params: {
-            availability: date,
-          },
-        });
-        if (response.data[0].error === "item belongs to category of incorrect type") {
-          resolve("Customer provide unexisted room ID.")
-        }
-        const hours: { from: string; to: string }[] =
-          response.data[0].availability;
-        const hoursTimestamp: { from: Timestamp; to: Timestamp }[] = hours.map(
-          (timeBlock) => {
-            return {
-              from: instance.parseTimestamp(timeBlock.from),
-              to: instance.parseTimestamp(timeBlock.to),
-            };
+        try {
+          let response = await axios({
+            method: "get",
+            headers: header,
+            url: `${instance.AVAILABLE_URL}/${roomID}`,
+            params: {
+              availability: date,
+            },
+          });
+          if (
+            response.data[0].error ===
+            "item belongs to category of incorrect type"
+          ) {
+            resolve([{error: "Unexisted room ID"}]);
           }
-        );
-        const mergedTimeBlock: { from: Timestamp; to: Timestamp }[] =
-          instance.mergeHours(hoursTimestamp);
+          const hours: { from: string; to: string }[] =
+            response.data[0].availability;
+          const hoursTimestamp: { from: Timestamp; to: Timestamp }[] =
+            hours.map((timeBlock) => {
+              return {
+                from: instance.parseTimestamp(timeBlock.from),
+                to: instance.parseTimestamp(timeBlock.to),
+              };
+            });
+          const mergedTimeBlock: { from: Timestamp; to: Timestamp }[] =
+            instance.mergeHours(hoursTimestamp);
 
-        resolve(
-          JSON.stringify(
+          resolve(
             mergedTimeBlock.map((timeBlock) => {
               return {
                 from: instance.timestampStringtify(timeBlock.from, true),
                 to: instance.timestampStringtify(timeBlock.to, true),
               };
             })
-          )
-        );
-      } catch (error: any) {
-        console.log(error);
+          );
+        } catch (error: any) {
+          console.log(error);
+        }
       }
-    });
+    );
   }
 }
 
