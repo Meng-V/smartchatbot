@@ -2,12 +2,9 @@ import prisma from '../../prisma/prisma'
 import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { ModelPromptWithTools } from "../Prompt/Prompts";
-import RedisCacheService from '../Service/redisCacheService';
 
 import { Tool } from "../ToolBox/ToolTemplates";
 import {createObjectCsvWriter} from 'csv-writer';
-// import {queryWeaviate} from '../Service/weaviateService';
-// import cacheService from "../Service/cacheService";
 
 type AgentResponse = {
   actions: string[],
@@ -56,7 +53,7 @@ class Agent implements IAgent {
   totalTokensUsed: number = 0;
 
   actions: Set<string> = new Set();
-  cacheService: RedisCacheService;
+
   constructor(
     llmModel: OpenAIModel,
     tools: Tool[],
@@ -66,32 +63,30 @@ class Agent implements IAgent {
     this.memory = memory;
     this.basePrompt = new ModelPromptWithTools(tools, this.llmModel, this.memory);
     this.toolsMap = new Map<string, Tool>();
-    this.cacheService = new RedisCacheService();
     tools.forEach((tool) => {
       this.toolsMap.set(tool.name, tool);
     });
   }
-
+  /**
+   * This function takes in message from user to feed to the LLM Agent. Return the message from the Agent
+   * @param userInput 
+   * @param cookie 
+   * @returns message from the LLM Agent
+   */
 
   async agentRun(userInput: string, cookie: string): Promise<AgentResponse> {
     return new Promise<AgentResponse>(async (resolve, reject) => {
+      // const timeout = setTimeout(() => {
+      //   reject(`Request Time Out. Prompt so far: ${this.basePrompt.getPrompt()}`);
+      // }, 5000);
+
       this.memory?.addToConversation("Customer", userInput);
       this.basePrompt.updateConversationMemory(this.memory);
       this.basePrompt.emptyScratchpad();
-
-      let llmResponseObj;
-      // let llmResponseObj = await this.llmModel.getModelResponseWithCache(this.basePrompt);
-      if(await this.cacheService.get(userInput)){
-        llmResponseObj = JSON.parse(await this.cacheService.get(userInput));
-      } else {
-        llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
-        let outputParsed = this.parseLLMOutput(llmResponseObj.response);
-        if(outputParsed.outputType === "final" && outputParsed.finalAnswer !== null){
-          this.cacheService.set(userInput, JSON.stringify(llmResponseObj));
-        }
-      }
-      this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
+      let llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
       let llmResponse = llmResponseObj.response;
+      this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
+      
       // console.log(llmResponse)
       let outputParsed = this.parseLLMOutput(llmResponse);
       let llmCallNum = 1;
@@ -108,19 +103,11 @@ class Agent implements IAgent {
           outputParsed.action,
           outputParsed.actionInput
         );
-
+        
         this.basePrompt.updateScratchpad(`Observation: ${toolResponse}`);
 
-        // if(await this.cacheService.get(userInput)){
-        //   llmResponseObj = JSON.parse(await this.cacheService.get(userInput));
-        //   outputParsed = this.parseLLMOutput(llmResponseObj.response);
-        // } else {
-          llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
-          outputParsed = this.parseLLMOutput(llmResponseObj.response);
-          if(outputParsed.outputType === "final" && outputParsed.finalAnswer !== null){
-            this.cacheService.set(userInput, JSON.stringify(llmResponseObj));
-          }
-        // }
+        llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
+        llmResponse = llmResponseObj.response;
         this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
 
         outputParsed = this.parseLLMOutput(llmResponse);
@@ -168,6 +155,7 @@ class Agent implements IAgent {
       }
     });
   }
+
   parseLLMOutput(llmOutput: string): AgentOutput {
     const jsonString = llmOutput
       .replace(/'/g, "") // Remove single quotes

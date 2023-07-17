@@ -1,81 +1,84 @@
-// import * as dotenv from 'dotenv';
-// dotenv.config();
+import * as dotenv from 'dotenv';
+import weaviate, { WeaviateClient } from 'weaviate-ts-client';
 
-// import weaviate, { WeaviateClient, ObjectsBatcher, ApiKey } from 'weaviate-ts-client';
-// import fetch from 'node-fetch';
+dotenv.config();
 
-// const client: WeaviateClient = weaviate.client({
-//     scheme: 'https',
-//     host: process.env.CLUSTER_URL || '',
-//     apiKey: new ApiKey(process.env.WEAVIATE_API_KEY || ''),
-//     headers: { 'X-HuggingFace-Api-Key': process.env.HUGGINGFACE_API_KEY || '' },
-// });
-// // Define the schema
-// let classObj = {
-//     'class': 'Conversation',
-//     'vectorizer': 'text2vec-huggingface',
-//     'properties': [
-//         {
-//             'name': 'userInput',
-//             'dataType': ['text'],
-//         },
-//         {
-//             'name': 'agentResponse',
-//             'dataType': ['text'],
-//         },
-//     ],
-//     'moduleConfig': {
-//         'text2vec-huggingface': {
-//             'model': 'sentence-transformers/all-MiniLM-L6-v2',
-//             'options': {
-//                 'waitForModel': true
-//             }
-//         }
-//     }
-// }
+class WeaviateService {
+    private static instance: WeaviateService;
+    private client: WeaviateClient;
+    private classObj = {
+        'class': 'Conversation',
+        'vectorizer': 'text2vec-openai',
+        'properties': [
+            {
+                'name': 'userInput',
+                'dataType': ['text'],
+            },
+            {
+                'name': 'agentResponse',
+                'dataType': ['text'],
+            },
+        ]
+    };
 
-// async function addSchema() {
-//     const res = await client.schema.classCreator().withClass(classObj).do();
-//     console.log(res);
-// }
+    private constructor() {
+        this.client = weaviate.client({
+            scheme: 'http',
+            host: `${process.env.WEAVIATE_HOST || 'localhost'}:${process.env.WEAVIATE_PORT || 8080}`,
+        });
+        this.addSchema().catch(console.error);
+    }
 
+    public static getInstance(): WeaviateService {
+        if (!WeaviateService.instance) {
+            WeaviateService.instance = new WeaviateService();
+        }
 
+        return WeaviateService.instance;
+    }
 
-// export async function queryWeaviate(question: string) {
-//     const query = {
-//         "query": {
-//             "path": [{
-//                 "value": question,
-//                 "searchLimit": 1
-//             }],
-//             "properties": ["question", "answer", "certainty"]
-//         }
-//     };
+    private async addSchema() {
+        const res = await this.client.schema.classCreator().withClass(this.classObj).do();
+        console.log(res);
+    }
 
-//     // Execute the query
-//     const result = await client.graphql
-//         .get()
-//         .withClassName('Question')
-//         .withFields('question answer certainty')
-//         .withNearText({ concepts: ['library'] })
-//         .withLimit(1)
-//         .do();
+    public async queryWeaviate(question: string) {
+        const query = {
+            "query": {
+                "path": [{
+                    "value": question,
+                    "searchLimit": 1
+                }],
+                "properties": ["userInput", "agentResponse", "certainty"]
+            }
+        };
 
-//     const satisfactory = result.data[0]?.certainty > (process.env.THRESHOLD || 0.9);
-//     const answer = satisfactory ? result.data[0].answer : '';
+        const result = await this.client.graphql
+            .get()
+            .withClassName('Conversation')
+            .withFields('userInput agentResponse certainty')
+            .withNearText({ concepts: [question] })
+            .withLimit(1)
+            .do();
 
-//     return { satisfactory, answer };
-// }
+        const satisfactory = result.data[0]?.certainty > (process.env.THRESHOLD || 0.9);
+        const answer = satisfactory ? result.data[0].agentResponse : '';
 
-// export async function saveToWeaviate(userInput: string, agentResponse: string) {
-//     const result = await client.data
-//         .creator()
-//         .withClassName('Conversation')
-//         .withProperties({
-//             userInput: userInput,
-//             agentResponse: agentResponse,
-//         })
-//         .do();
+        return { satisfactory, answer };
+    }
 
-//     console.log(result);
-// }
+    public async saveToWeaviate(userInput: string, agentResponse: string) {
+        const result = await this.client.data
+            .creator()
+            .withClassName('Conversation')
+            .withProperties({
+                userInput: userInput,
+                agentResponse: agentResponse,
+            })
+            .do();
+
+        console.log(result);
+    }
+}
+
+export default WeaviateService;
