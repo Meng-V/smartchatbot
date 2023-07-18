@@ -27,8 +27,8 @@ model Conversation {
 }
 
 model Subject {
-  id                Int       @id @unique
-  name              String    @unique
+  id                 Int         @id @unique
+  name               String      @unique
   assignedLibrarians Librarian[]
 }
 
@@ -40,4 +40,13 @@ model Librarian {
   email       String    @unique
   subjects    Subject[]
   lastUpdated DateTime  @updatedAt
+}
+
+model Room {
+  id           String   @id
+  codeName     String   @unique @db.VarChar(10)
+  capacity     Int
+  type         String
+  isAccessible Boolean
+  lastUpdated  DateTime @updatedAt
 }

@@ -25,7 +25,7 @@ class CancelReservationTool extends LibCalAPIBaseTool {
     return CancelReservationTool.instance;
   }
 
-  async run(toolInput: {
+  async toolRun(toolInput: {
     [key: string]: string;
     bookingID: string;
   }): Promise<string> {
@@ -46,12 +46,18 @@ class CancelReservationTool extends LibCalAPIBaseTool {
       const { bookingID } = toolInput;
 
       const response = await CancelReservationTool.run(bookingID);
-      resolve(response);
+      if (response.success) {
+        resolve(`Room reservation with ID: ${bookingID} is cancelled successfully\n`);
+      } else {
+        resolve(
+          `Room reservation with ID: ${bookingID} is cancelled unsuccessfully. Error message: ${response.error}\n`
+        );
+      }
     });
   }
 
-  static async run(bookingID: string): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
+  static async run(bookingID: string): Promise<{success: boolean, error: string | null}> {
+    return new Promise<{success: boolean, error: string | null}>(async (resolve, reject) => {
       // const timeout = setTimeout(() => {
       //   reject("Request Time Out");
       // }, 5000);
@@ -70,11 +76,17 @@ class CancelReservationTool extends LibCalAPIBaseTool {
           url: `${instance.CANCEL_URL}/${bookingID}`,
         });
         if (response.data[0].cancelled) {
-          resolve(`Room reservation with ID: ${bookingID} is cancelled successfully\n`);
+          resolve({
+            success: true,
+            error: null,
+          });
+          
         } else {
-          resolve(
-            `Room reservation with ID: ${bookingID} is cancelled unsuccessfully. Error message: ${response.data[0].error}\n`
-          );
+          resolve({
+            success: false,
+            error: response.data[0].error
+          })
+          
         }
       } catch (error: any) {
         console.log(error.message);

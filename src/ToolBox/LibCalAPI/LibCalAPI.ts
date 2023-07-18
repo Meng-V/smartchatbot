@@ -36,7 +36,7 @@ abstract class LibCalAPIBaseTool implements Tool {
       const response = await axios({
         method: "post",
         url: this.OAUTH_URL,
-        data: { GRANT_TYPE: this.GRANT_TYPE },
+        data: { grant_type: this.GRANT_TYPE },
         auth: {
           username: this.CLIENT_ID,
           password: this.CLIENT_SECRET,

@@ -9,7 +9,7 @@ interface Tool {
   parameters: {
     [parameterName: string]: string; //paramter_name: type as string
   };
-  toolRun(input: ToolInput): Promise<string>;
+  toolRun(input: ToolInput): Promise<string>; //Interface for agent to use
 }
 
 export {Tool, ToolInput}  

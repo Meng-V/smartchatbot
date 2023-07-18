@@ -2,6 +2,7 @@ import { string } from "io-ts";
 import { ToolInput } from "../ToolTemplates";
 import { LibCalAPIBaseTool } from "./LibCalAPI";
 import axios, { AxiosError, AxiosResponse } from "axios";
+import { match } from "assert";
 
 type Timestamp = {
   year: number;
@@ -155,6 +156,71 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
     return mergeTimestamp;
   }
 
+  /**
+   * Determine if a room is available for the input time. This tool assume startDate is the same as endDate
+   * @param roomID
+   * @param startDate
+   * @param startTime
+   * @param endDate
+   * @param endTime
+   * @returns boolean: True if available, False if not
+   */
+  async isAvailable(
+    roomID: string,
+    startDate: string,
+    startTime: string,
+    endDate: string,
+    endTime: string
+  ): Promise<boolean> {
+    return new Promise<boolean>(async (resolve, reject) => {
+      //Parse the start and endTime
+      const timeRegex = /^(\d{2}):(\d{2}):(\d{2})$/;
+      const startMatch = startTime.match(timeRegex);
+      const endMatch = endTime.match(timeRegex);
+
+      if (!startMatch || !endMatch) {
+        reject("Invalid time format. Expected format: HH:MM:SS");
+      }
+
+      const requestStartTime = {
+        hour: parseInt(startMatch![1], 10),
+        minute: parseInt(startMatch![2], 10),
+        second: parseInt(startMatch![3], 10),
+      };
+      const requestEndTime = {
+        hour: parseInt(endMatch![1], 10),
+        minute: parseInt(endMatch![2], 10),
+        second: parseInt(endMatch![3], 10),
+      };
+
+      const response = await CheckRoomAvailabilityTool.run(roomID, startDate);
+      if ("error" in response[0]) {
+        reject(response[0]!.error);
+      }
+
+      const availableTimeBlocks = (
+        response as { from: string; to: string }[]
+      ).map((timeblock) => {
+        const from = this.parseTimestamp(timeblock.from);
+        const to = this.parseTimestamp(timeblock.to);
+
+        if (
+          requestStartTime.hour >= from.hour &&
+          requestStartTime.minute >= from.minute &&
+          requestStartTime.second >= from.second &&
+          requestEndTime.hour <= to.hour &&
+          requestEndTime.minute <= to.minute &&
+          requestEndTime.second <= to.second
+        ) {
+          resolve(true);
+          return;
+        }
+      });
+
+      resolve(false);
+    });
+  }
+
   async toolRun(toolInput: ToolInput): Promise<string> {
     const { roomID, date } = toolInput;
 
@@ -163,7 +229,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         roomID as string,
         date as string
       );
-      if ('error' in response[0]) {
+      if ("error" in response[0]) {
         resolve(response[0]!.error);
         return;
       }
@@ -180,8 +246,8 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
   static async run(
     roomID: string,
     date: string
-  ): Promise<{ from: string; to: string }[] | {error: string}[]> {
-    return new Promise<{ from: string; to: string }[] | {error: string}[]>(
+  ): Promise<{ from: string; to: string }[] | { error: string }[]> {
+    return new Promise<{ from: string; to: string }[] | { error: string }[]>(
       async (resolve, reject) => {
         const instance = CheckRoomAvailabilityTool.getInstance();
         const accessToken: string = await instance.getAccessToken();
@@ -202,7 +268,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
             response.data[0].error ===
             "item belongs to category of incorrect type"
           ) {
-            resolve([{error: "Unexisted room ID"}]);
+            resolve([{ error: "Unexisted room ID" }]);
           }
           const hours: { from: string; to: string }[] =
             response.data[0].availability;
