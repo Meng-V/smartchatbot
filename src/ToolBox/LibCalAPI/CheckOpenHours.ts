@@ -20,7 +20,7 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
     "This tool is for searching for King Library's opening hours in the week of one input date.";
 
   public readonly parameters: { [parameterName: string]: string } = {
-    date: "string [format YYYY-MM-DD]",
+    date: "string [REQUIRED] [format YYYY-MM-DD]",
   };
 
   constructor() {

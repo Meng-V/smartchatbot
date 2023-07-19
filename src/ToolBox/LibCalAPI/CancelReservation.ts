@@ -7,10 +7,10 @@ class CancelReservationTool extends LibCalAPIBaseTool {
 
   public readonly name: string = "CancelReservationTool";
   public readonly description: string =
-    "This tool is for cancelling study room reservation. This tool has 1 parameters (bookingID). None of the parameter can be null. Please use Final Answer instead if you don't have enough parameters yet. Don't include any single quotes in the paramter.";
+    "This tool is for cancelling study room reservation. Use Final Answer instead if you don't have enough required parameters yet. Don't include any single quotes in the paramter.";
 
   public readonly parameters: { [parameterName: string]: string } = {
-    bookingID: "string",
+    bookingID: "string [REQUIRED]",
   };
 
   constructor() {

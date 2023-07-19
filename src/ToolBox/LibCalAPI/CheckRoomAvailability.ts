@@ -3,6 +3,7 @@ import { ToolInput } from "../ToolTemplates";
 import { LibCalAPIBaseTool } from "./LibCalAPI";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { match } from "assert";
+import { time } from "console";
 
 type Timestamp = {
   year: number;
@@ -13,17 +14,22 @@ type Timestamp = {
   second: number;
   timezone: string;
 };
+type SimpleTimestamp = {
+  hour: number;
+  minute: number;
+  second: number;
+};
 
 class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
   private static instance: CheckRoomAvailabilityTool;
 
   public readonly name: string = "CheckRoomAvailabilityTool";
   public readonly description: string =
-    "This tool is for checking the available hours of a specific study room on one specific date. This tool has 2 parameters. Please use Final Answer instead if you don't have enough parameters (roomID and date) yet. Don't include any single quotes in the paramter. The year is implicitly the current year";
+    "This tool is for checking the available hours of a specific study room on one specific date. Use Final Answer instead if you don't have enough required parameters (roomID and date) yet. Don't include any single quotes in the paramter. The year is implicitly the current year";
 
   public readonly parameters: { [parameterName: string]: string } = {
-    date: "string [format YYYY-MM-DD]",
-    roomID: "string",
+    date: "string [REQUIRED] [format YYYY-MM-DD]",
+    roomID: "string [REQUIRED]",
   };
 
   constructor() {
@@ -64,9 +70,11 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
 
   private timestampStringtify(
     timestamp: Timestamp,
-    verbose: boolean = false
+    verbose: boolean = false,
+    timezone: boolean = false
   ): string {
     if (verbose) {
+      const timezoneStr = timezone ? `with timezone ${timestamp.timezone}` : "";
       return `Date ${timestamp.year
         .toString()
         .padStart(2, "0")}-${timestamp.month
@@ -77,7 +85,9 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         .toString()
         .padStart(2, "0")}:${timestamp.minute
         .toString()
-        .padStart(2, "0")}:${timestamp.second.toString().padStart(2, "0")}`;
+        .padStart(2, "0")}:${timestamp.second
+        .toString()
+        .padStart(2, "0")} ${timezoneStr}`;
     } else {
       return `${timestamp.year.toString().padStart(2, "0")}-${timestamp.month
         .toString()
@@ -88,7 +98,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         .padStart(2, "0")}:${timestamp.minute
         .toString()
         .padStart(2, "0")}:${timestamp.second.toString().padStart(2, "0")}${
-        timestamp.timezone
+        timezone ? timestamp.timezone : ""
       }`;
     }
   }
@@ -182,12 +192,12 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         reject("Invalid time format. Expected format: HH:MM:SS");
       }
 
-      const requestStartTime = {
+      const requestStartTime: SimpleTimestamp = {
         hour: parseInt(startMatch![1], 10),
         minute: parseInt(startMatch![2], 10),
         second: parseInt(startMatch![3], 10),
       };
-      const requestEndTime = {
+      const requestEndTime: SimpleTimestamp = {
         hour: parseInt(endMatch![1], 10),
         minute: parseInt(endMatch![2], 10),
         second: parseInt(endMatch![3], 10),
@@ -198,25 +208,38 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         reject(response[0]!.error);
       }
 
-      const availableTimeBlocks = (
-        response as { from: string; to: string }[]
-      ).map((timeblock) => {
-        const from = this.parseTimestamp(timeblock.from);
-        const to = this.parseTimestamp(timeblock.to);
+      /**
+       * Compare 2 timestamp
+       * @param time1
+       * @param time2
+       * @returns 1 if time1 > time2, -1 if time1 < time2, 0 if time1 = time2
+       */
+      const compareTime = (
+        time1: Timestamp | SimpleTimestamp,
+        time2: Timestamp | SimpleTimestamp
+      ) => {
+        if (time1.hour !== time2.hour) {
+          return time1.hour > time2.hour ? 1 : -1;
+        }
+        if (time1.minute !== time2.minute) {
+          return time1.minute > time2.minute ? 1 : -1;
+        }
+        if (time1.second !== time2.second) {
+          return time1.second > time2.second ? 1 : -1;
+        }
+        return 0;
+      };
 
+      for (let timeblock of response as { from: Timestamp; to: Timestamp }[]) {
         if (
-          requestStartTime.hour >= from.hour &&
-          requestStartTime.minute >= from.minute &&
-          requestStartTime.second >= from.second &&
-          requestEndTime.hour <= to.hour &&
-          requestEndTime.minute <= to.minute &&
-          requestEndTime.second <= to.second
+          compareTime(timeblock.from, requestStartTime) <= 0 &&
+          compareTime(timeblock.to, requestEndTime) >= 0
         ) {
           resolve(true);
           return;
         }
-      });
-
+      }
+      
       resolve(false);
     });
   }
@@ -233,7 +256,17 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         resolve(response[0]!.error);
         return;
       }
-      resolve(`Here is the room ${roomID} available time ${response}`);
+
+      const responseAsString: string = JSON.stringify(
+        response.map((timeBlock) => {
+          timeBlock = timeBlock as { from: Timestamp; to: Timestamp };
+          return {
+            from: this.timestampStringtify(timeBlock.from, true, false),
+            to: this.timestampStringtify(timeBlock.to, true, false),
+          };
+        })
+      );
+      resolve(`Here is the room ${roomID} available time ${responseAsString}`);
     });
   }
 
@@ -246,55 +279,56 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
   static async run(
     roomID: string,
     date: string
-  ): Promise<{ from: string; to: string }[] | { error: string }[]> {
-    return new Promise<{ from: string; to: string }[] | { error: string }[]>(
-      async (resolve, reject) => {
-        const instance = CheckRoomAvailabilityTool.getInstance();
-        const accessToken: string = await instance.getAccessToken();
-        const header = {
-          Authorization: `Bearer ${accessToken}`,
-        };
+  ): Promise<{ from: Timestamp; to: Timestamp }[] | { error: string }[]> {
+    return new Promise<
+      { from: Timestamp; to: Timestamp }[] | { error: string }[]
+    >(async (resolve, reject) => {
+      const instance = CheckRoomAvailabilityTool.getInstance();
+      const accessToken: string = await instance.getAccessToken();
+      const header = {
+        Authorization: `Bearer ${accessToken}`,
+      };
 
-        try {
-          let response = await axios({
-            method: "get",
-            headers: header,
-            url: `${instance.AVAILABLE_URL}/${roomID}`,
-            params: {
-              availability: date,
-            },
-          });
-          if (
-            response.data[0].error ===
-            "item belongs to category of incorrect type"
-          ) {
-            resolve([{ error: "Unexisted room ID" }]);
-          }
-          const hours: { from: string; to: string }[] =
-            response.data[0].availability;
-          const hoursTimestamp: { from: Timestamp; to: Timestamp }[] =
-            hours.map((timeBlock) => {
-              return {
-                from: instance.parseTimestamp(timeBlock.from),
-                to: instance.parseTimestamp(timeBlock.to),
-              };
-            });
-          const mergedTimeBlock: { from: Timestamp; to: Timestamp }[] =
-            instance.mergeHours(hoursTimestamp);
-
-          resolve(
-            mergedTimeBlock.map((timeBlock) => {
-              return {
-                from: instance.timestampStringtify(timeBlock.from, true),
-                to: instance.timestampStringtify(timeBlock.to, true),
-              };
-            })
-          );
-        } catch (error: any) {
-          console.log(error);
+      try {
+        let response = await axios({
+          method: "get",
+          headers: header,
+          url: `${instance.AVAILABLE_URL}/${roomID}`,
+          params: {
+            availability: date,
+          },
+        });
+        if (
+          response.data[0].error ===
+          "item belongs to category of incorrect type"
+        ) {
+          resolve([{ error: "Unexisted room ID" }]);
         }
+        const hours: { from: string; to: string }[] =
+          response.data[0].availability;
+        const hoursTimestamp: { from: Timestamp; to: Timestamp }[] = hours.map(
+          (timeBlock) => {
+            return {
+              from: instance.parseTimestamp(timeBlock.from),
+              to: instance.parseTimestamp(timeBlock.to),
+            };
+          }
+        );
+        const mergedTimeBlock: { from: Timestamp; to: Timestamp }[] =
+          instance.mergeHours(hoursTimestamp);
+
+        resolve(
+          mergedTimeBlock.map((timeBlock) => {
+            return {
+              from: timeBlock.from,
+              to: timeBlock.to,
+            };
+          })
+        );
+      } catch (error: any) {
+        console.log(error);
       }
-    );
+    });
   }
 }
 

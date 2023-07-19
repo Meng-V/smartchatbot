@@ -6,10 +6,10 @@ class EBSCOBookSearchTool implements Tool {
 
   public name: string = "EBSCOBookSearchTool";
   public description: string =
-    "This tool is for searching for list of books/articles suiting the input keywords, useful for suggesting books/article to customers. Keywords should be academic-related such as economics, pattern matching, DNA, Evolution, or compiler design, etc. This tool has ONE parameter.";
+    "This tool is for searching for list of books/articles suiting the input keywords, useful for suggesting books/article to customers. Keywords should be academic-related such as economics, pattern matching, DNA, Evolution, or compiler design, etc.";
   public parameters: { [parameterName: string]: string } = {
     query:
-      "string [only includes keywords in this string, don't include any commas, double quotes or quotes]",
+      "string [REQUIRED] [only includes keywords in this string, don't include any commas, double quotes or quotes]",
   };
 
   private constructor() {

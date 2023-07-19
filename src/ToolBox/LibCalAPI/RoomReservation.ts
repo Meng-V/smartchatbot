@@ -12,19 +12,22 @@ class RoomReservationTool extends LibCalAPIBaseTool {
 
   public readonly name: string = "StudyRoomReservationTool";
   public readonly description: string =
-    "This tool is for study room reservation. This tool has 8 parameters (firstName, lastName, email, startDate, startTime, endDate, endTime, roomID). NONE of the parameter can be null. No need to use tool CheckRoomAvailabilityTool before using this tool. Use Final Answer instead if you don't have enough parameters yet. Don't include any single quotes in the paramter. Disclaimer: This tool assumes startDate is as same as endDate";
+    "This tool is for study room reservation. No need to use tool CheckRoomAvailabilityTool before using this tool. Use Final Answer instead if you don't have enough required parameters yet. Don't include any single quotes in the paramter. Disclaimer: This tool assumes startDate is as same as endDate";
 
   public readonly parameters: { [parameterName: string]: string } = {
-    firstName: "string",
-    lastName: "string",
-    email: "string",
-    startDate: "string [format YYYY-MM-DD]",
-    startTime: "string [format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
-    endDate: "string [format YYYY-MM-DD]",
-    endTime: "string [format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
+    firstName: "string [REQUIRED]",
+    lastName: "string [REQUIRED]",
+    email: "string [REQUIRED]",
+    startDate: "string [REQUIRED] [format YYYY-MM-DD]",
+    startTime:
+      "string [REQUIRED] [format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
+    endDate: "string [REQUIRED] [format YYYY-MM-DD]",
+    endTime:
+      "string [REQUIRED] [format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
     roomCapacity:
-      "string | null [capacity (number of people) of the room you wish to reserve]",
-    roomCodeName: "string | null [such as: 145, 211, 297A, 108C, etc]",
+      "string | null [OPTIONAL] [capacity (number of people) of the room you wish to reserve.]",
+    roomCodeName:
+      "string | null [OPTIONAL] [such as: 145, 211, 297A, 108C, etc.]",
   };
 
   constructor() {
@@ -149,8 +152,9 @@ class RoomReservationTool extends LibCalAPIBaseTool {
 
   private async getRoomByCodeName(roomCodeName: string): Promise<Room> {
     return new Promise<Room>(async (resolve, reject) => {
+      console.log(roomCodeName)
       const rooms: { id: string; codeName: string; capacity: number }[] =
-        await prisma.$queryRaw`SELECT id, codeName, capacity FROM 'Room' WHERE codeName LIKE '%${roomCodeName}%'`;
+        await prisma.$queryRaw`SELECT id, "codeName", capacity FROM "Room" WHERE "codeName" LIKE ${`%${roomCodeName}%`}`;
       if (!rooms) {
         reject("Cannot find any room with input name");
         return;
@@ -160,7 +164,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
         roomName: rooms[0].codeName,
         capacity: rooms[0].capacity,
       };
-      return returnedRoom;
+      resolve(returnedRoom);
     });
   }
 
@@ -181,7 +185,6 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     endTime: string
   ): Promise<Room> {
     return new Promise<Room>(async (resolve, reject) => {
-      let availableRooms = [];
       const checkRoomAvailabilityInstance =
         CheckRoomAvailabilityTool.getInstance();
       for (let room of rooms) {
@@ -217,7 +220,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     return new Promise<string>(async (resolve, reject) => {
       for (const param of Object.keys(toolInput)) {
         if (param === "roomCapacity" || param === "roomCodeName") continue;
-        if (toolInput[param] === null || toolInput[param] === "null") {
+        if (toolInput[param] === null || toolInput[param] === "null" || toolInput[param] === undefined || toolInput[param] === "undefined") {
           console.log(
             `Cannot perform booking because missing parameter ${param}. Please ask the customer to provide ${param} to perform booking`
           );
@@ -284,7 +287,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       ) {
         reject({
           error:
-            "Room capacity and room code name are both empty. Please ask customer to specify one of them",
+            "Room capacity and room code name are both empty. Please ask customer to specify one of them.",
         });
         return;
       } else if (!roomCapacity || roomCapacity === "null") {
@@ -296,6 +299,11 @@ class RoomReservationTool extends LibCalAPIBaseTool {
           await instance.matchNumberOfPeopleToPotentialCapacity(
             parseInt(roomCapacity, 10)
           );
+        if (potentialCapacityList.length === 0) {
+          reject({
+            error: `We do not have any room that fit ${roomCapacity}.`
+          })
+        }
 
         for (let capacity of potentialCapacityList) {
           const rooms = await instance.getRoomByCapacity(capacity);
@@ -347,8 +355,8 @@ class RoomReservationTool extends LibCalAPIBaseTool {
           data: payload,
         });
         resolve(
-          `Room ${
-            availableRoom.roomID
+          `Room ${availableRoom.roomName} with capacity ${
+            availableRoom.capacity
           } is booked successfully from ${startTime} to ${endTime} on ${startDate}. Confirmation email should be sent to customer's email. Please tell the customer that the reservation is successful and this booking number information: ${JSON.stringify(
             response.data,
             ["booking_id"]

@@ -15,10 +15,10 @@ class LibrarianSubjectSearchTool implements Tool {
 
   name: string = "LibrarianSearchWithSubjectTool";
   description: string =
-    "This tool is useful for searching which librarians are responsible for a specific subject (such as Computer Science, Finance, Environmental Studies, Biology, etc). This tool has 1 parameters (subjectName)";
+    "This tool is useful for searching which librarians are responsible for a specific subject (such as Computer Science, Finance, Environmental Studies, Biology, etc).";
 
   parameters: { [parameterName: string]: string } = {
-    subjectName: "string",
+    subjectName: "string [REQUIRED]",
   };
 
   protected readonly OAUTH_URL = process.env["LIBAPPS_OAUTH_URL"]!;
