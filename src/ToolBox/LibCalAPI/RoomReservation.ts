@@ -17,7 +17,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
   public readonly parameters: { [parameterName: string]: string } = {
     firstName: "string [REQUIRED]",
     lastName: "string [REQUIRED]",
-    email: "string [REQUIRED]",
+    email: "string [REQUIRED] [school email with @miamioh.edu domain]",
     startDate: "string [REQUIRED] [format YYYY-MM-DD]",
     startTime:
       "string [REQUIRED] [format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
@@ -152,7 +152,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
 
   private async getRoomByCodeName(roomCodeName: string): Promise<Room> {
     return new Promise<Room>(async (resolve, reject) => {
-      console.log(roomCodeName)
+      console.log(roomCodeName);
       const rooms: { id: string; codeName: string; capacity: number }[] =
         await prisma.$queryRaw`SELECT id, "codeName", capacity FROM "Room" WHERE "codeName" LIKE ${`%${roomCodeName}%`}`;
       if (!rooms) {
@@ -205,6 +205,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     });
   }
 
+
   async toolRun(toolInput: {
     [key: string]: string | null;
     firstName: string;
@@ -221,19 +222,33 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       let nullFields = [];
       for (const param of Object.keys(toolInput)) {
         if (param === "roomCapacity" || param === "roomCodeName") continue;
-        if (toolInput[param] === null || toolInput[param] === "null" || toolInput[param] === undefined || toolInput[param] === "undefined") {
+        if (
+          toolInput[param] === null ||
+          toolInput[param] === "null" ||
+          toolInput[param] === undefined ||
+          toolInput[param] === "undefined"
+        ) {
           nullFields.push(param);
         }
       }
       if (nullFields.length > 0) {
         console.log(
-          `Cannot perform booking because missing parameter ${JSON.stringify(nullFields)}. Ask the customer to provide ${JSON.stringify(nullFields)} to perform booking.`
+          `Cannot perform booking because missing parameter ${JSON.stringify(
+            nullFields
+          )}. Ask the customer to provide ${JSON.stringify(
+            nullFields
+          )} to perform booking.`
         );
         resolve(
-          `Cannot perform booking because missing parameter ${JSON.stringify(nullFields)}. Ask the customer to provide ${JSON.stringify(nullFields)} to perform booking.`
+          `Cannot perform booking because missing parameter ${JSON.stringify(
+            nullFields
+          )}. Ask the customer to provide ${JSON.stringify(
+            nullFields
+          )} to perform booking.`
         );
         return;
       }
+
       const {
         firstName,
         lastName,
@@ -245,6 +260,13 @@ class RoomReservationTool extends LibCalAPIBaseTool {
         roomCapacity,
         roomCodeName,
       } = toolInput;
+
+      //Validate miamioh.edu email
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@miamioh\.edu$/;
+      if (!emailRegex.test(email)) {
+        resolve("Email has to have @miamioh.edu domain");
+        return;
+      }
 
       try {
         const response = await RoomReservationTool.run(
@@ -303,8 +325,8 @@ class RoomReservationTool extends LibCalAPIBaseTool {
           );
         if (potentialCapacityList.length === 0) {
           reject({
-            error: `We do not have any room that fit ${roomCapacity}.`
-          })
+            error: `We do not have any room that fit ${roomCapacity}.`,
+          });
         }
 
         for (let capacity of potentialCapacityList) {
