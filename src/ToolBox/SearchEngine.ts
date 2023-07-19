@@ -42,12 +42,19 @@ class SearchEngine implements Tool {
   async toolRun(toolInput: ToolInput): Promise<string> {
     const { query } = toolInput;
     return new Promise<string>(async (resolve, reject) => {
-      if (query === null || query === "null") {
+      if (
+        query === null ||
+        query === "null" ||
+        query === undefined ||
+        query === "undefined"
+      ) {
         resolve("Input query not found. Please use a query");
         return;
       }
       const response = await SearchEngine.run(query);
-      resolve(`Please also include the appropriate reference link. If there is a link, write it out directly; do not include html tag. Result: ${response}`);
+      resolve(
+        `Please also include the appropriate reference link. If there is a link, write it out directly; do not include html tag. Result: ${response}`
+      );
     });
   }
 

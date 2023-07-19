@@ -239,7 +239,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
           return;
         }
       }
-      
+
       resolve(false);
     });
   }
@@ -248,6 +248,35 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
     const { roomID, date } = toolInput;
 
     return new Promise<string>(async (resolve, reject) => {
+      let nullFields = [];
+      for (const param of Object.keys(toolInput)) {
+        if (
+          toolInput[param] === null ||
+          toolInput[param] === "null" ||
+          toolInput[param] === undefined ||
+          toolInput[param] === "undefined"
+        ) {
+          nullFields.push(param);
+        }
+      }
+      if (nullFields.length > 0) {
+        console.log(
+          `Cannot check room availability because missing parameter ${JSON.stringify(
+            nullFields
+          )}. Ask the customer to provide ${JSON.stringify(
+            nullFields
+          )} to check room availability.`
+        );
+        resolve(
+          `Cannot check room availability because missing parameter ${JSON.stringify(
+            nullFields
+          )}. Ask the customer to provide ${JSON.stringify(
+            nullFields
+          )} to check room availability.`
+        );
+        return;
+      }
+
       const response = await CheckRoomAvailabilityTool.run(
         roomID as string,
         date as string

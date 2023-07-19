@@ -218,20 +218,22 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     roomCodeName: string | null;
   }): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
+      let nullFields = [];
       for (const param of Object.keys(toolInput)) {
         if (param === "roomCapacity" || param === "roomCodeName") continue;
         if (toolInput[param] === null || toolInput[param] === "null" || toolInput[param] === undefined || toolInput[param] === "undefined") {
-          console.log(
-            `Cannot perform booking because missing parameter ${param}. Please ask the customer to provide ${param} to perform booking`
-          );
-          resolve(
-            `Cannot perform booking because missing parameter ${param}. Please ask the customer to provide ${param} to perform booking`
-          );
-
-          return;
+          nullFields.push(param);
         }
       }
-
+      if (nullFields.length > 0) {
+        console.log(
+          `Cannot perform booking because missing parameter ${JSON.stringify(nullFields)}. Ask the customer to provide ${JSON.stringify(nullFields)} to perform booking.`
+        );
+        resolve(
+          `Cannot perform booking because missing parameter ${JSON.stringify(nullFields)}. Ask the customer to provide ${JSON.stringify(nullFields)} to perform booking.`
+        );
+        return;
+      }
       const {
         firstName,
         lastName,

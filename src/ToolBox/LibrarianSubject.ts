@@ -234,6 +234,37 @@ class LibrarianSubjectSearchTool implements Tool {
 
   async toolRun(toolInput: ToolInput): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
+      let nullFields = [];
+      for (const param of Object.keys(toolInput)) {
+        if (
+          toolInput[param] === null ||
+          toolInput[param] === "null" ||
+          toolInput[param] === undefined ||
+          toolInput[param] === "undefined"
+        ) {
+          nullFields.push(param);
+        }
+      }
+      if (nullFields.length > 0) {
+        console.log(
+          `Cannot search for librarian because missing parameter ${JSON.stringify(
+            nullFields
+          )}. Ask the customer to provide ${JSON.stringify(
+            nullFields
+          )} to search for librarian.`
+        );
+        resolve(
+          `Cannot search for librarian because missing parameter ${JSON.stringify(
+            nullFields
+          )}. Ask the customer to provide ${JSON.stringify(
+            nullFields
+          )} to search for librarian.`
+        );
+        return;
+      }
+
+
+
       const { subjectName } = toolInput;
       const response = await LibrarianSubjectSearchTool.run(
         subjectName as string

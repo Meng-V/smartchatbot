@@ -25,29 +25,31 @@ class CancelReservationTool extends LibCalAPIBaseTool {
     return CancelReservationTool.instance;
   }
 
-  async toolRun(toolInput: {
-    [key: string]: string;
-    bookingID: string;
-  }): Promise<string> {
+  async toolRun(toolInput: { bookingID: string }): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
-      for (const param of Object.keys(toolInput)) {
-        if (toolInput[param] === null || toolInput[param] === "null") {
-          console.log(
-            `Cannot perform booking because missing parameter ${param}. Please ask the customer to provide ${param} to perform booking\n`
-          );
-          resolve(
-            `Cannot perform booking because missing parameter ${param}. Please ask the customer to provide ${param} to perform booking\n`
-          );
+      if (
+        toolInput.bookingID === null ||
+        toolInput.bookingID === "null" ||
+        toolInput.bookingID === undefined ||
+        toolInput.bookingID === "undefined"
+      ) {
+        console.log(
+          `Cannot perform booking because missing parameter bookingID. Please ask the customer to provide bookingID to perform booking\n`
+        );
+        resolve(
+          `Cannot perform booking because missing parameter bookingID. Please ask the customer to provide bookingID to perform booking\n`
+        );
 
-          return;
-        }
+        return;
       }
 
       const { bookingID } = toolInput;
 
       const response = await CancelReservationTool.run(bookingID);
       if (response.success) {
-        resolve(`Room reservation with ID: ${bookingID} is cancelled successfully\n`);
+        resolve(
+          `Room reservation with ID: ${bookingID} is cancelled successfully\n`
+        );
       } else {
         resolve(
           `Room reservation with ID: ${bookingID} is cancelled unsuccessfully. Error message: ${response.error}\n`
@@ -56,42 +58,44 @@ class CancelReservationTool extends LibCalAPIBaseTool {
     });
   }
 
-  static async run(bookingID: string): Promise<{success: boolean, error: string | null}> {
-    return new Promise<{success: boolean, error: string | null}>(async (resolve, reject) => {
-      // const timeout = setTimeout(() => {
-      //   reject("Request Time Out");
-      // }, 5000);
+  static async run(
+    bookingID: string
+  ): Promise<{ success: boolean; error: string | null }> {
+    return new Promise<{ success: boolean; error: string | null }>(
+      async (resolve, reject) => {
+        // const timeout = setTimeout(() => {
+        //   reject("Request Time Out");
+        // }, 5000);
 
-      const instance = CancelReservationTool.getInstance();
-      const accessToken: string = await instance.getAccessToken();
-      const header = {
-        Authorization: `Bearer ${accessToken}`,
-      };
+        const instance = CancelReservationTool.getInstance();
+        const accessToken: string = await instance.getAccessToken();
+        const header = {
+          Authorization: `Bearer ${accessToken}`,
+        };
 
-      // console.log("Payload", payload);
-      try {
-        let response = await axios({
-          method: "post",
-          headers: header,
-          url: `${instance.CANCEL_URL}/${bookingID}`,
-        });
-        if (response.data[0].cancelled) {
-          resolve({
-            success: true,
-            error: null,
+        // console.log("Payload", payload);
+        try {
+          let response = await axios({
+            method: "post",
+            headers: header,
+            url: `${instance.CANCEL_URL}/${bookingID}`,
           });
-          
-        } else {
-          resolve({
-            success: false,
-            error: response.data[0].error
-          })
-          
+          if (response.data[0].cancelled) {
+            resolve({
+              success: true,
+              error: null,
+            });
+          } else {
+            resolve({
+              success: false,
+              error: response.data[0].error,
+            });
+          }
+        } catch (error: any) {
+          console.log(error.message);
         }
-      } catch (error: any) {
-        console.log(error.message);
       }
-    });
+    );
   }
 }
 

@@ -26,6 +26,16 @@ class EBSCOBookSearchTool implements Tool {
   async toolRun(toolInput: { query: string }): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       const { query } = toolInput;
+
+      if (
+        query === null ||
+        query === "null" ||
+        query === undefined ||
+        query === "undefined"
+      ) {
+        resolve("Input query not found. Please use a query");
+        return;
+      }
       const response = await EBSCOBookSearchTool.run(query);
       resolve(
         `Please intepret this JSON result to the customer in a human-readable way. If there is a link, write it out directly; do not include html tag. ${JSON.stringify(

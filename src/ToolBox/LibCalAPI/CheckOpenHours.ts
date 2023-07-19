@@ -78,6 +78,18 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
 
   async toolRun(toolInput: { date: string }): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
+      if (
+        toolInput.date === null ||
+        toolInput.date === "null" ||
+        toolInput.date === undefined ||
+        toolInput.date === "undefined"
+      ) {
+        resolve(
+          "Cannot check the building hour without a date. Ask the customer to provide the date before checking."
+        );
+        return;
+      }
+
       resolve(
         `Open Hour of the requested week: ${JSON.stringify(
           await CheckOpenHourTool.run(toolInput.date)
