@@ -1,7 +1,6 @@
 import { Configuration, OpenAIApi } from "openai";
 import { PromptTemplate } from "../Prompt/PromptTemplate";
 import { ModelPromptWithTools } from "../Prompt/Prompts";
-import cacheService from "../Service/cacheService";
 
 class OpenAIModel {
   private modelConfiguration: Configuration;
@@ -18,18 +17,6 @@ class OpenAIModel {
     this.temperature = temperature;
   }
   
-  async getModelResponseWithCache(prompt: ModelPromptWithTools) {
-    const key = prompt.toString();
-    console.log(key[0])
-    let result = await cacheService.get(key);
-    
-    if (result === null) {
-      result = await this.getModelResponse(prompt);
-      await cacheService.set(key, result);
-    }
-
-    return result;
-  }
   /**
    * This function takes in user input and async return the AIAgent answer
    * @param inputPrompt

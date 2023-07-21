@@ -129,7 +129,7 @@ class ModelPromptWithTools implements PromptTemplate {
           )
         ).response;
 
-        console.log(`Conversation SUmmary: ${conversationSummary}`);
+        console.log(`Conversation Summary: ${conversationSummary}`);
         resolve(conversationSummary);
         return;
       }

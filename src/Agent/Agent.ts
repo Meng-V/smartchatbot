@@ -5,7 +5,6 @@ import { ModelPromptWithTools } from "../Prompt/Prompts";
 
 import { Tool } from "../ToolBox/ToolTemplates";
 import {createObjectCsvWriter} from 'csv-writer';
-// import cacheService from "../Service/cacheService";
 
 type AgentResponse = {
   actions: string[],
@@ -68,7 +67,12 @@ class Agent implements IAgent {
       this.toolsMap.set(tool.name, tool);
     });
   }
-
+  /**
+   * This function takes in message from user to feed to the LLM Agent. Return the message from the Agent
+   * @param userInput 
+   * @param cookie 
+   * @returns message from the LLM Agent
+   */
 
   async agentRun(userInput: string, cookie: string): Promise<AgentResponse> {
     return new Promise<AgentResponse>(async (resolve, reject) => {
@@ -99,7 +103,7 @@ class Agent implements IAgent {
           outputParsed.action,
           outputParsed.actionInput
         );
-
+        
         this.basePrompt.updateScratchpad(`Observation: ${toolResponse}`);
 
         llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
@@ -151,6 +155,7 @@ class Agent implements IAgent {
       }
     });
   }
+
   parseLLMOutput(llmOutput: string): AgentOutput {
     const jsonString = llmOutput
       .replace(/'/g, "") // Remove single quotes
