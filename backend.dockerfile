@@ -9,10 +9,6 @@ RUN apk add --no-cache bash
 # Copy package.json and package-lock.json first
 COPY package*.json ./
 
-# Copy wait-for-it script and give it the necessary permissions
-# COPY wait-for-it.sh wait-for-it.sh
-# RUN chmod +x wait-for-it.sh
-
 # Install dependencies
 RUN npm install
 RUN npm install -g prisma
@@ -27,5 +23,4 @@ RUN npx prisma generate
 EXPOSE 3602
 
 # Use the wait-for-it script before starting the application
-# CMD ./wait-for-it.sh db:5432 -- npm start
 CMD npm start
