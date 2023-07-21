@@ -41,14 +41,4 @@ async function searchBooks(query: string, numOfBooks: number): Promise<DisplayRe
     return bookInfo;
 }
 
-// async function main() {
-//     const query = "machine learning";
-//     const books = await searchBooks(query, 1);
-  
-//     console.log(books);
-//   }
-  
-//   main();
-  
-
 export { searchBooks, getEnvironmentVariables };

@@ -35,11 +35,7 @@ const io = new Server(httpServer, {
     origin: "*", // Configure as per your needs
   },
 });
-// app.use(session({
-//   secret: '34SDgsdgspsadfasfgddfsG', // just a long random string
-//   resave: false,
-//   saveUninitialized: true
-// }));
+
 app.use(express.static("public"));
 app.use(express.static(__dirname));
 app.use(bodyParser.json());
