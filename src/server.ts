@@ -16,13 +16,8 @@ import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
 import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
 import { LibrarianSubjectSearchTool } from "./ToolBox/LibrarianSubject";
-import * as dotenv from 'dotenv';
-import axios from "axios";
-import qs from "qs";
-dotenv.config();
 
-const PORT=process.env.BACKEND_PORT
-const URL=`http://localhost:${PORT}`
+const PORT = 3001;
 
 const sessionMiddleware = session({
   secret: "changeit",
@@ -50,11 +45,11 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        "default-src": ["'self'", URL],
+        "default-src": ["'self'", "http://localhost:3000"],
         "script-src": ["'self'", "'unsafe-inline'"],
         "style-src": ["'self'", "'unsafe-inline'"],
-        "img-src": ["'self'", "data:", URL],
-        "connect-src": ["'self'", URL],
+        "img-src": ["'self'", "data:", "http://localhost:3000"],
+        "connect-src": ["'self'", "http://localhost:3000"],
       },
     },
   })
@@ -90,7 +85,6 @@ io.engine.use(sessionMiddleware);
 io.on("connection", async (socket) => {
   let cookie = socket.handshake.headers.cookie || "";
   console.log("New user connected");
-  socket.emit("connected", "User connected");
   const userAgent = socket.request.headers["user-agent"]
     ? socket.request.headers["user-agent"]
     : null;
@@ -103,8 +97,6 @@ io.on("connection", async (socket) => {
 
   let toolsUsed: Set<string> = new Set();
 
-  
-
   socket.on("message", async (message, callback) => {
     try {
       await prisma.message.create({
@@ -114,6 +106,7 @@ io.on("connection", async (socket) => {
           conversationId: conversation.id,
         },
       });
+      console.log(message)
       const response = await agent.agentRun(message, cookie);
 
       await prisma.message.create({
@@ -144,47 +137,6 @@ io.on("connection", async (socket) => {
       },
     });
     console.log("User disconnected");
-  });
-
-
-  socket.on("createTicket", async (ticketData, callback) => {
-    try {
-      const { question, email, details, name, ip } = ticketData;
-  
-      const authResponse = await axios.post("https://libanswers.lib.miamioh.edu/api/1.1/oauth/token", {
-        client_id: process.env.LIB_ANS_CLIENT_ID, // use your actual client_id and client_secret
-        client_secret: process.env.LIB_ANS_CLIENT_SECRET,
-        grant_type: "client_credentials",
-      });
-      const { access_token } = authResponse.data;
-  
-      // Use the access token to authenticate the 'createTicket' request
-      const data = qs.stringify({
-        quid: process.env.QUEUE_ID, // use the actual queue id
-        pquestion: question,
-        pdetails: details,
-        pname: name,
-        pemail: email,
-        ip,
-        confirm_email: "true",
-        // Add other fields as needed, e.g., custom1, custom2 etc.
-      });
-  
-      const ticketResponse = await axios.post("https://libanswers.lib.miamioh.edu/api/1.1/ticket/create", data, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
-  
-      console.log(ticketResponse);
-  
-      callback("Ticket created successfully");
-  
-    } catch (error) {
-      console.error(error);
-      callback("Error: Unable to create ticket");
-    }
   });
 });
 

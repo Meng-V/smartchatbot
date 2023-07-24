@@ -284,7 +284,7 @@ class LibrarianSubjectSearchTool implements Tool {
       }
 
       resolve(
-        `These are the librarians that can help you: ${JSON.stringify(await LibrarianSubjectSearchTool.run(
+        `These are the librarians that can help you with the requested subject: ${JSON.stringify(await LibrarianSubjectSearchTool.run(
           subjectName as string
         ))}`
       );

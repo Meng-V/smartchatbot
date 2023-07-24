@@ -31,6 +31,7 @@ class OpenAIModel {
       // }, 5000);
       const prompt = await promptObject.getPrompt();
       const preRequestTokens = this.remainingTokens;
+      console.log(prompt);
       const response = await this.model.createChatCompletion({
         model: this.modelName,
         temperature: this.temperature,
