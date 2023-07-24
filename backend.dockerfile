@@ -16,11 +16,13 @@ RUN npm install -g prisma
 # Copy the rest of the files
 COPY . .
 
+# Copy the wait-for script into the Docker image
+COPY ./wait-for /app/wait-for
+
+# Make the wait-for script executable
+RUN chmod +x /app/wait-for
+
 # Generate Prisma client
 RUN npx prisma generate
 
-# # Expose the port
-# EXPOSE 3602
-
-CMD ["npm", "start"]
-
+CMD /app/wait-for db:5432 -t 30 -- npx prisma migrate dev --preview-feature && npm start

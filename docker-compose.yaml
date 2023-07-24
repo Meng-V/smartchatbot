@@ -14,7 +14,6 @@ services:
     build: 
       context: ./
       dockerfile: backend.dockerfile
-    command: /bin/sh -c "npm start"
     ports:
       - '${BACKEND_PORT}:${BACKEND_PORT}'
     depends_on:
@@ -22,6 +21,7 @@ services:
       # - redis
     env_file:
       - .env
+
   db:
     image: postgres:12
     restart: always

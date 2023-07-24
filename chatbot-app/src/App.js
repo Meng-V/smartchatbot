@@ -54,7 +54,7 @@ const App = () => {
 
     socketIo.on('disconnect', function () {
       setIsConnected(false);
-      addMessage('User disconnected....', 'chatbot');
+      // addMessage('User disconnected....', 'chatbot');
     });
 
     socketRef.current = socketIo;
@@ -195,8 +195,8 @@ const App = () => {
                 </Box>
                 <form onSubmit={handleFormSubmit}>
                   <HStack spacing={3}>
-                    <Input value={inputMessage} onChange={e => setInputMessage(e.target.value)} placeholder="Type your message..." />
-                    <Button colorScheme="blue" type="submit">Send</Button>
+                    <Input value={inputMessage} onChange={e => setInputMessage(e.target.value)} placeholder="Type your message..." {...!isConnected? 'disabled':'' }/>
+                    <Button colorScheme="blue" type="submit" {...!isConnected? 'disabled':'' }>Send</Button>
                   </HStack>
                 </form>
               </>
