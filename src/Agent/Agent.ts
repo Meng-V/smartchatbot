@@ -1,32 +1,32 @@
-import prisma from '../../prisma/prisma'
+import prisma from "../../prisma/prisma";
 import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { ModelPromptWithTools } from "../Prompt/Prompts";
 
 import { Tool } from "../ToolBox/ToolTemplates";
-import {createObjectCsvWriter} from 'csv-writer';
+import { createObjectCsvWriter } from "csv-writer";
 
 type AgentResponse = {
-  actions: string[],
-  response: string[],
-}
+  actions: string[];
+  response: string[];
+};
 
 const csvWriter = createObjectCsvWriter({
-  path: 'log.csv',
+  path: "log.csv",
   header: [
-    {id: 'cookie', title:'COOKIES'},
-    {id: 'timestamp', title: 'TIMESTAMP'},
-    {id: 'tokensUsed', title: 'TOKENS_USED'},
+    { id: "cookie", title: "COOKIES" },
+    { id: "timestamp", title: "TIMESTAMP" },
+    { id: "tokensUsed", title: "TOKENS_USED" },
     // any other fields
   ],
-  append: true
+  append: true,
 });
 
 interface IAgent {
   llmModel: OpenAIModel;
   memory: ConversationMemory | null;
   toolsMap: Map<string, Tool>;
-  
+
   agentRun(userInput: string, cookie: string): Promise<AgentResponse>;
 }
 
@@ -41,6 +41,9 @@ type AgentOutput =
       thought: string;
       action: string;
       actionInput: { [key: string]: string };
+    }
+  | {
+      outputType: undefined;
     };
 
 class Agent implements IAgent {
@@ -61,7 +64,11 @@ class Agent implements IAgent {
   ) {
     this.llmModel = llmModel;
     this.memory = memory;
-    this.basePrompt = new ModelPromptWithTools(tools, this.llmModel, this.memory);
+    this.basePrompt = new ModelPromptWithTools(
+      tools,
+      this.llmModel,
+      this.memory
+    );
     this.toolsMap = new Map<string, Tool>();
     tools.forEach((tool) => {
       this.toolsMap.set(tool.name, tool);
@@ -83,29 +90,37 @@ class Agent implements IAgent {
       this.memory?.addToConversation("Customer", userInput);
       this.basePrompt.updateConversationMemory(this.memory);
       this.basePrompt.emptyScratchpad();
-      let llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
+      let llmResponseObj = await this.llmModel.getModelResponse(
+        this.basePrompt
+      );
       let llmResponse = llmResponseObj.response;
       this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
-      
+
       // console.log(llmResponse)
       let outputParsed = this.parseLLMOutput(llmResponse);
       let llmCallNum = 1;
+
+      //Handle cases when model doesn't output either actions and final answer
       while (outputParsed.outputType !== "final") {
-        if (llmCallNum > this.LLMCallLimit)
+        if (llmCallNum > this.LLMCallLimit) {
           reject("Too many LMM Call. Possible inifinity loop");
+          return;
+        }
+        if (outputParsed.outputType === "action") {
+          this.basePrompt.updateScratchpad(
+            `Thought: ${outputParsed.thought}\n`
+          );
+          this.basePrompt.updateScratchpad(`Action: ${outputParsed.action}\n`);
+          this.basePrompt.updateScratchpad(
+            `Action Input: ${JSON.stringify(outputParsed.actionInput)}\n`
+          );
+          const toolResponse = await this.accessToolBox(
+            outputParsed.action,
+            outputParsed.actionInput
+          );
 
-        this.basePrompt.updateScratchpad(`Thought: ${outputParsed.thought}\n`);
-        this.basePrompt.updateScratchpad(`Action: ${outputParsed.action}\n`);
-        this.basePrompt.updateScratchpad(
-          `Action Input: ${JSON.stringify(outputParsed.actionInput)}\n`
-        );
-        const toolResponse = await this.accessToolBox(
-          outputParsed.action,
-          outputParsed.actionInput
-        );
-        
-        this.basePrompt.updateScratchpad(`Observation: ${toolResponse}`);
-
+          this.basePrompt.updateScratchpad(`Observation: ${toolResponse}`);
+        }
         llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
         llmResponse = llmResponseObj.response;
         this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
@@ -113,6 +128,8 @@ class Agent implements IAgent {
         outputParsed = this.parseLLMOutput(llmResponse);
         llmCallNum++;
       }
+
+      //What if outputParsed.outputType == undefined
       this.memory?.addToConversation("AIAgent", outputParsed.finalAnswer);
       this.basePrompt.updateConversationMemory(this.memory);
 
@@ -123,16 +140,14 @@ class Agent implements IAgent {
         tokensUsed: this.totalTokensUsed,
         // any other fields
       };
-      csvWriter.writeRecords([record]);       // returns a promise
-        // .then(() => console.log('Data logged successfully.'));
+      csvWriter.writeRecords([record]); // returns a promise
+      // .then(() => console.log('Data logged successfully.'));
 
       this.totalTokensUsed = 0;
-      resolve(
-        {
-          actions: [...this.actions],
-          response: outputParsed.finalAnswer.split('\n'),
-        }
-      );
+      resolve({
+        actions: [...this.actions],
+        response: outputParsed.finalAnswer.split("\n"),
+      });
     });
   }
 
@@ -148,7 +163,7 @@ class Agent implements IAgent {
       if (this.toolsMap.has(toolName)) {
         const tool = this.toolsMap.get(toolName);
 
-        resolve(await tool!.run(toolInput));
+        resolve(await tool!.toolRun(toolInput));
       } else {
         throw new Error("Tool does not exist");
         reject("Tool does not exist");
@@ -166,8 +181,7 @@ class Agent implements IAgent {
 
     function trim(text: string) {
       //Trim leading space and new line character
-      return text
-        .replace(/^\s+|\s+$/g, "")
+      return text.replace(/^\s+|\s+$/g, "");
     }
 
     if (outputObj["Final Answer"] && outputObj["Final Answer"] !== "null") {
@@ -182,7 +196,7 @@ class Agent implements IAgent {
       outputObj["Action"] !== "null" &&
       outputObj["Action Input"] !== "null"
     ) {
-      this.actions.add(trim(outputObj["Action"]))
+      this.actions.add(trim(outputObj["Action"]));
       return {
         outputType: "action",
         thought: trim(outputObj["Thought"]),
@@ -191,10 +205,8 @@ class Agent implements IAgent {
       };
     } else {
       return {
-        outputType: "final",
-        thought: trim(outputObj["Thought"]),
-        finalAnswer: "Feel free to ask me if you have anymore questions."
-      }
+        outputType: undefined,
+      };
     }
   }
 }

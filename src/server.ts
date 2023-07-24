@@ -15,6 +15,7 @@ import session from "express-session";
 import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
 import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
+import { LibrarianSubjectSearchTool } from "./ToolBox/LibrarianSubject";
 import * as dotenv from 'dotenv';
 import axios from "axios";
 import qs from "qs";
@@ -68,16 +69,18 @@ const reservationTool = RoomReservationTool.getInstance();
 const cancelReservationTool = CancelReservationTool.getInstance();
 const ebscoBookSearchTool = EBSCOBookSearchTool.getInstance();
 const checkOpenHourTool = CheckOpenHourTool.getInstance();
+const searchLibrarianWithSubjectTool = LibrarianSubjectSearchTool.getInstance();
 
 const agent = new Agent(
   llmModel,
   [
-    searchTool,
+    checkOpenHourTool,
     reservationTool,
     cancelReservationTool,
     checkRoomAvailabilityTool,
     ebscoBookSearchTool,
-    checkOpenHourTool,
+    searchLibrarianWithSubjectTool,
+    searchTool,
   ],
   memory
 );

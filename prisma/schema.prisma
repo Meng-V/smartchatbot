@@ -12,17 +12,42 @@ datasource db {
 }
 
 model Message {
-  id String @id @default(uuid())
-  type String @db.VarChar(10)
-  content String
-  timestamp DateTime @default(now())
-  conversation Conversation @relation(fields: [conversationId], references: [id])
+  id             String       @id @default(uuid())
+  type           String       @db.VarChar(10)
+  content        String
+  timestamp      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
   conversationId String
 }
 
 model Conversation {
-  id  String @id @default(uuid())
-  userAgent String?
-  toolUsed String[]
+  id          String    @id @default(uuid())
+  userAgent   String?
+  toolUsed    String[]
   messageList Message[]
+}
+
+model Subject {
+  id                 Int         @id @unique
+  name               String      @unique
+  assignedLibrarians Librarian[]
+}
+
+model Librarian {
+  id          Int       @id
+  uuid        String    @unique
+  firstName   String
+  lastName    String
+  email       String    @unique
+  subjects    Subject[]
+  lastUpdated DateTime  @updatedAt
+}
+
+model Room {
+  id           String   @id
+  codeName     String   @unique @db.VarChar(10)
+  capacity     Int
+  type         String
+  isAccessible Boolean
+  lastUpdated  DateTime @updatedAt
 }

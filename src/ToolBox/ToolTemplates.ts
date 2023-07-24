@@ -1,4 +1,4 @@
-type ToolInput = Record<string, string>;
+type ToolInput = Record<string, string | null>;
 
 /**
  * Any class implement this interface has to follow Singleton design pattern
@@ -9,7 +9,7 @@ interface Tool {
   parameters: {
     [parameterName: string]: string; //paramter_name: type as string
   };
-  run(input: ToolInput): Promise<string>;
+  toolRun(input: ToolInput): Promise<string>; //Interface for agent to use
 }
 
 export {Tool, ToolInput}  

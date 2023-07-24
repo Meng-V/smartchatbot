@@ -1,6 +1,17 @@
 import axios from "axios";
 import { LibCalAPIBaseTool } from "./LibCalAPI";
 
+type WeekDay =
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday"
+  | "sunday";
+
+type WeekAvailability = { [day in WeekDay]: { from: string; to: string } };
+
 class CheckOpenHourTool extends LibCalAPIBaseTool {
   private static instance: CheckOpenHourTool;
 
@@ -9,7 +20,7 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
     "This tool is for searching for King Library's opening hours in the week of one input date.";
 
   public readonly parameters: { [parameterName: string]: string } = {
-    date: "string [format YYYY-MM-DD]",
+    date: "string [REQUIRED] [format YYYY-MM-DD]",
   };
 
   constructor() {
@@ -65,14 +76,30 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
     return datesOfWeek;
   }
 
-  async run(toolInput: { date: string }): Promise<string> {
+  async toolRun(toolInput: { date: string }): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
-      resolve(`Open Hour of the requested week: ${await CheckOpenHourTool.run(toolInput.date)}. If any day does not exist in the array, the library does not open that day. Always answer with both open hour and close hour to the customer.`);
+      if (
+        toolInput.date === null ||
+        toolInput.date === "null" ||
+        toolInput.date === undefined ||
+        toolInput.date === "undefined"
+      ) {
+        resolve(
+          "Cannot check the building hour without a date. Ask the customer to provide the date before checking."
+        );
+        return;
+      }
+
+      resolve(
+        `Open Hour of the requested week: ${JSON.stringify(
+          await CheckOpenHourTool.run(toolInput.date)
+        )}. If any day does not exist in the array, the library does not open that day. Always answer with both open hour and close hour to the customer.`
+      );
     });
   }
 
-  static async run(date: string): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
+  static async run(date: string): Promise<WeekAvailability> {
+    return new Promise<WeekAvailability>(async (resolve, reject) => {
       const instance = CheckOpenHourTool.instance;
       const accessToken: string = await instance.getAccessToken();
       const header = {
@@ -81,7 +108,7 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
       const weekdays = instance.getMondayAndSundayOfWeek(date);
 
       try {
-        const dayNames: string[] = [
+        const dayNames: WeekDay[] = [
           "monday",
           "tuesday",
           "wednesday",
@@ -93,20 +120,20 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
         const response = await axios({
           method: "get",
           headers: header,
-          url: `${instance.hour_url}/8113`,
+          url: `${instance.HOUR_URL}/8113`,
           params: {
             from: weekdays[0],
             to: weekdays[weekdays.length - 1],
           },
         });
 
-        const filteredData = weekdays.reduce((prevObj, day, index) => {
+        let filteredData = weekdays.reduce((prevObj, day, index) => {
           return {
             ...prevObj,
             [dayNames[index]]: response.data[0].dates[day].hours,
           };
         }, {});
-        resolve(JSON.stringify(filteredData));
+        resolve(filteredData as WeekAvailability);
       } catch (error: any) {
         console.log(error);
       }
