@@ -19,8 +19,8 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Expose the port
-EXPOSE 3602
+# # Expose the port
+# EXPOSE 3602
 
-# Use the wait-for-it script before starting the application
-CMD npm start
+CMD ["npm", "start"]
+

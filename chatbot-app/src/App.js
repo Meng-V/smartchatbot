@@ -32,13 +32,17 @@ const App = () => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [details, setDetails] = useState("");
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const url = `http://localhost:${process.env.REACT_APP_PORT}`;
+    const url = `http://localhost:${process.env.REACT_APP_BACKEND_PORT}`;
+    console.log(url)
     const socketIo = io(url, { transports: ['websocket'], upgrade: false });
     socketIo.on('connection', () => {
       console.log('Connected');
-      // addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
+      setIsConnected(true);
+      addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
+ 
     });
 
     setSocket(socketIo);
@@ -51,12 +55,13 @@ const App = () => {
   useEffect(() => {
     if (socket) {
       
-    addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
+      // addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
       socket.on('message', function (message) {
         addMessage(message, 'chatbot');
       });
 
       socket.on('disconnected', function () {
+        setIsConnected(false);
         addMessage('User disconnected....', 'chatbot');
       });
 
@@ -78,7 +83,9 @@ const App = () => {
     if (inputMessage) {
       addMessage(inputMessage, 'user');
       setInputMessage('');
+      console.log(socket)
       if (socket) {
+        console.log(socket)
         socket.emit("message", inputMessage, (response) => {
           console.log(response);
         });
@@ -149,12 +156,12 @@ const App = () => {
           right="10"
           borderRadius="md"
         >
-          <ModalHeader>LibChat Library Chatbot</ModalHeader>
+          <ModalHeader>LibChat Chatbox</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             {step === "initial" && (
               <VStack>
-                <Button onClick={handleServicesClick}>Services I provide</Button>
+                <Button onClick={handleServicesClick}>Library Chatbot</Button>
                 <Button onClick={handleLibrarianClick}>Talk to a human librarian</Button>
                 <Button onClick={handleTicketClick}>Create a ticket for offline help</Button>
               </VStack>
@@ -172,6 +179,9 @@ const App = () => {
                   height="60vh"
                 >
                   <VStack align="start" spacing={4}>
+                    {!isConnected &&  (<Box maxW="md" p={5} rounded="md" bg={'gray.200'} alignSelf={'flex-start'}>
+                        <Text color={'black'}>Connecting to the chatbot</Text>
+                      </Box>)}
                     {messages.map((message, index) => (
                       <Box key={index} maxW="md" p={5} rounded="md" bg={message.sender === 'user' ? 'blue.500' : 'gray.200'} alignSelf={message.sender === 'user' ? 'flex-end' : 'flex-start'}>
                         <Text color={message.sender === 'user' ? 'white' : 'black'}>

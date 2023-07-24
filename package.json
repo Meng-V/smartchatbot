@@ -62,5 +62,5 @@
     "ts-node": "^10.9.1",
     "weaviate-ts-client": "^1.4.0"
   },
-  "proxy": "http://localhost:3000"
+  "proxy": "http://localhost:3602"
 }
