@@ -87,6 +87,7 @@ io.engine.use(sessionMiddleware);
 io.on("connection", async (socket) => {
   let cookie = socket.handshake.headers.cookie || "";
   console.log("New user connected");
+  socket.emit("connected", "User connected");
   const userAgent = socket.request.headers["user-agent"]
     ? socket.request.headers["user-agent"]
     : null;
