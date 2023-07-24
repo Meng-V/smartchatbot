@@ -105,7 +105,7 @@ class ModelPromptWithTools implements PromptTemplate {
   async getPrompt(): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       const wholePrompt: string =
-        `\nThis is the conversation so far (delimited by the triple dashes):\n---\n${await this.conversationMemory?.getConversationAsString()}\n---\n` +
+        `\nThis is the conversation so far (delimited by the triple dashes):\n---\n${await this.conversationMemory?.getConversationAsString(0,0, true)}\n---\n` +
         `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;
       // console.log(wholePrompt);
       resolve(wholePrompt);
