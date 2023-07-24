@@ -31,3 +31,5 @@ run.ts
 src/index-chatbox-popup.html
 
 libcal.ipynb
+src/index.ts
+**/chatbox-test.html
