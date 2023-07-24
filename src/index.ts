@@ -1,3 +1,30 @@
+import { Agent } from "./Agent/Agent";
+import { OpenAIModel } from "./LLM/LLMModels";
+import { ConversationMemory } from "./Memory/ConversationMemory";
+import { CheckRoomAvailabilityTool } from "./ToolBox/LibCalAPI/CheckRoomAvailability";
+import { RoomReservationTool } from "./ToolBox/LibCalAPI/RoomReservation";
+
+import { searchBooks } from "./ToolBox/EBSCO/utils/ebscoService";
+
+import { SearchEngine } from "./ToolBox/SearchEngine";
+
+import * as readline from "readline";
+import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
+import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
+import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+function getUserInput(prompt: string): Promise<string> {
+  return new Promise((resolve) => {
+    rl.question(prompt, (answer) => {
+      resolve(answer);
+    });
+  });
+}
 // import { Agent } from "./Agent/Agent";
 // import { OpenAIModel } from "./LLM/LLMModels";
 // import { ConversationMemory } from "./Memory/ConversationMemory";

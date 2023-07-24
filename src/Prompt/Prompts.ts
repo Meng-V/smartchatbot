@@ -14,10 +14,6 @@ class ModelPromptWithTools implements PromptTemplate {
   private reActModelDescription: string;
   private modelScratchpad: string;
 
-  private promptTokenLimit: number;
-  private llmModel: OpenAIModel;
-  private conversattionSummarizePrompt: ConversationSummarizePrompt;
-
   /**
    * Initialize new Prompt object
    * @param tools
@@ -27,9 +23,7 @@ class ModelPromptWithTools implements PromptTemplate {
    */
   constructor(
     tools: Tool[],
-    llmModel: OpenAIModel,
     conversationMemory: ConversationMemory | null = null,
-    promptTokenLimit: number = 300
   ) {
     this.modelDescription =
       "You are a helpful assistant. You should try your best to answer the question. Unfortunately, you don't know anything about the library, books, and articles so you have to always rely on the tool or the given context for  library-related, book-related, or article-related questions.\n";
@@ -42,11 +36,6 @@ class ModelPromptWithTools implements PromptTemplate {
     this.reActModelDescription = this.constructReActModelDescription(tools);
     this.modelScratchpad = "";
 
-    this.conversattionSummarizePrompt = new ConversationSummarizePrompt(
-      this.conversationMemory
-    );
-    this.promptTokenLimit = promptTokenLimit;
-    this.llmModel = llmModel;
   }
 
   private constructReActModelDescription(tools: Tool[]): string {
@@ -102,42 +91,6 @@ class ModelPromptWithTools implements PromptTemplate {
     return this.modelScratchpad;
   }
 
-  async getConversationAsString(): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
-      let conversationString: string = this.conversationMemory
-        ? this.conversationMemory.getConversationAsString()
-        : "";
-      if (conversationString.length === 0) {
-        resolve("");
-        return;
-      }
-      
-      const wholePrompt: string =
-        `\nThis is the conversation so far (delimited by the triple dashes):\n---\n${conversationString}\n---\n` +
-        `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;
-
-      //This is just a rough token estimation: 1 token = 4 char
-      console.log(`Estimate length: ${wholePrompt.length}`)
-      console.log(`Estimate token: ${wholePrompt.length / 4}`)
-      if (wholePrompt.length / 4.0 >= this.promptTokenLimit) {
-        this.conversattionSummarizePrompt.setConversationMemory(
-          this.conversationMemory
-        );
-        let conversationSummary = (
-          await this.llmModel.getModelResponse(
-            this.conversattionSummarizePrompt
-          )
-        ).response;
-
-        console.log(`Conversation Summary: ${conversationSummary}`);
-        resolve(conversationSummary);
-        return;
-      }
-      // console.log(`Conversation: ${conversationString}`)
-      resolve(conversationString);
-    });
-  }
-
   getSystemDescription(): string {
     const date = new Date();
     return (
@@ -152,7 +105,7 @@ class ModelPromptWithTools implements PromptTemplate {
   async getPrompt(): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       const wholePrompt: string =
-        `\nThis is the conversation so far (delimited by the triple dashes):\n---\n${await this.getConversationAsString()}\n---\n` +
+        `\nThis is the conversation so far (delimited by the triple dashes):\n---\n${await this.conversationMemory?.getConversationAsString()}\n---\n` +
         `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;
       // console.log(wholePrompt);
       resolve(wholePrompt);

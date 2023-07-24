@@ -62,7 +62,7 @@ app.use(
 
 // Initialize the AI agent
 const llmModel = new OpenAIModel();
-const memory = new ConversationMemory(10);
+const memory = new ConversationMemory(8, llmModel, 2, 50, 3);
 const searchTool = SearchEngine.getInstance();
 const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
 const reservationTool = RoomReservationTool.getInstance();
