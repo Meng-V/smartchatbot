@@ -1,5 +1,6 @@
 import { Configuration, OpenAIApi } from "openai";
 import { PromptTemplate } from "../Prompt/PromptTemplate";
+import { ModelPromptWithTools } from "../Prompt/Prompts";
 
 class OpenAIModel {
   private modelConfiguration: Configuration;
@@ -17,7 +18,7 @@ class OpenAIModel {
     this.temperature = temperature;
     this.top_p = top_p;
   }
-
+  
   /**
    * This function takes in user input and async return the AIAgent answer
    * @param inputPrompt
