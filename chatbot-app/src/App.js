@@ -37,7 +37,7 @@ const App = () => {
   const socketRef = useRef();
 
   useEffect(() => {
-    const url = `http://localhost:${process.env.REACT_APP_BACKEND_PORT}`;
+    const url = `http://localhost:3001`;
     console.log(url)
     const socketIo = io(url, { transports: ['websocket'], upgrade: false });
 
