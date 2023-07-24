@@ -8,7 +8,6 @@ class OpenAIModel {
   public readonly modelName: string = "gpt-4-0613";
   private temperature: number;
   private remainingTokens: number = 40000;
-
   constructor(temperature = 0) {
     this.modelConfiguration = new Configuration({
       organization: "org-4LbKZFYAeYBUivA5qxcat7n6",

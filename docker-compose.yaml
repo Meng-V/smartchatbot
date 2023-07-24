@@ -14,7 +14,6 @@ services:
     build: 
       context: ./
       dockerfile: backend.dockerfile
-    command: /bin/sh -c "chmod +x ./wait-for-it.sh && ./wait-for-it.sh db:5432 -- npm run server"
     ports:
       - '${BACKEND_PORT}:${BACKEND_PORT}'
     depends_on:
@@ -22,6 +21,7 @@ services:
       # - redis
     env_file:
       - .env
+
   db:
     image: postgres:12
     restart: always

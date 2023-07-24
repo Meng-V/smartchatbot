@@ -14,7 +14,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@testing-library/react": "^14.0.0",
     "@types/express-session": "^1.17.7",
     "@types/ioredis": "^5.0.0",
     "@types/jsdom": "^21.1.1",
@@ -63,5 +62,5 @@
     "ts-node": "^10.9.1",
     "weaviate-ts-client": "^1.4.0"
   },
-  "proxy": "http://localhost:3000"
+  "proxy": "http://localhost:3602"
 }
