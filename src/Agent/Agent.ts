@@ -66,8 +66,7 @@ class Agent implements IAgent {
     this.memory = memory;
     this.basePrompt = new ModelPromptWithTools(
       tools,
-      this.llmModel,
-      this.memory
+      this.memory,
     );
     this.toolsMap = new Map<string, Tool>();
     tools.forEach((tool) => {

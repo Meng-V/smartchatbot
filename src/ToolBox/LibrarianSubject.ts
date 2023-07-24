@@ -77,6 +77,14 @@ class LibrarianSubjectSearchTool implements Tool {
           continue;
         }
         dp[i][j] = Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]) + 1;
+        if (
+          i > 1 &&
+          j > 1 &&
+          text1[i - 1] === text2[j - 2] &&
+          text1[i - 2] === text2[j - 1]
+        ) {
+          dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1);
+        }
       }
     }
 
@@ -88,8 +96,8 @@ class LibrarianSubjectSearchTool implements Tool {
     choices: string[],
     numberOfResult: number = 2,
     threshold: number = 0.45
-  ): string[] {
-    let result: string[] = [];
+  ): [number, string][] {
+    let result: [number, string][] = [];
     const synonyms: Map<string, string> = new Map([
       ["IT", "Information Technology"],
       ["Information Technology", "CS"],
@@ -116,7 +124,7 @@ class LibrarianSubjectSearchTool implements Tool {
 
       if (matchScore < threshold) continue;
       if (result.length >= numberOfResult) result.shift();
-      result.push(choice);
+      result.push([matchScore, choice]);
     }
 
     return result;
@@ -276,9 +284,9 @@ class LibrarianSubjectSearchTool implements Tool {
       }
 
       resolve(
-        `These are the librarians that can help you: ${await LibrarianSubjectSearchTool.run(
+        `These are the librarians that can help you: ${JSON.stringify(await LibrarianSubjectSearchTool.run(
           subjectName as string
-        )}`
+        ))}`
       );
     });
   }
@@ -298,11 +306,13 @@ class LibrarianSubjectSearchTool implements Tool {
           querySubjectName,
           subjectNames,
           2
-        );
+        )
+        bestMatchSubject.sort((a, b) => b[0]-a[0]);
+        console.log(bestMatchSubject)
 
         const subjectsWithLibrarian = await prisma.subject.findMany({
           where: {
-            name: { in: bestMatchSubject },
+            name: { in: bestMatchSubject.map((subjectData) => subjectData[1]) },
           },
           include: { assignedLibrarians: true },
         });
@@ -311,8 +321,7 @@ class LibrarianSubjectSearchTool implements Tool {
           (prevObject, curSubject) => {
             return {
               ...prevObject,
-              [curSubject.name]: {
-                librarianName: curSubject.assignedLibrarians.map(
+              [curSubject.name]: curSubject.assignedLibrarians.map(
                   (librarian) => {
                     return {
                       name: `${librarian.firstName} ${librarian.lastName}`,
@@ -320,7 +329,6 @@ class LibrarianSubjectSearchTool implements Tool {
                     };
                   }
                 ),
-              },
             };
           },
           {}
