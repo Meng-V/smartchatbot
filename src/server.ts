@@ -55,34 +55,37 @@ app.use(
   })
 );
 
-// Initialize the AI agent
-const llmModel = new OpenAIModel();
-const memory = new ConversationMemory(8, llmModel, 2, 50, 3);
-const searchTool = SearchEngine.getInstance();
-const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
-const reservationTool = RoomReservationTool.getInstance();
-const cancelReservationTool = CancelReservationTool.getInstance();
-const ebscoBookSearchTool = EBSCOBookSearchTool.getInstance();
-const checkOpenHourTool = CheckOpenHourTool.getInstance();
-const searchLibrarianWithSubjectTool = LibrarianSubjectSearchTool.getInstance();
 
-const agent = new Agent(
-  llmModel,
-  [
-    checkOpenHourTool,
-    reservationTool,
-    cancelReservationTool,
-    checkRoomAvailabilityTool,
-    ebscoBookSearchTool,
-    searchLibrarianWithSubjectTool,
-    searchTool,
-  ],
-  memory
-);
 
 io.engine.use(sessionMiddleware);
 
 io.on("connection", async (socket) => {
+  // Initialize the AI agent
+  const gpt3_5Model = OpenAIModel.getInstance('gpt-3.5-turbo');
+  const gpt4Model = OpenAIModel.getInstance('gpt-4-0613');
+  const memory = new ConversationMemory(8, gpt3_5Model, 2, 50, 3);
+  const searchTool = SearchEngine.getInstance();
+  const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
+  const reservationTool = RoomReservationTool.getInstance();
+  const cancelReservationTool = CancelReservationTool.getInstance();
+  const ebscoBookSearchTool = EBSCOBookSearchTool.getInstance();
+  const checkOpenHourTool = CheckOpenHourTool.getInstance();
+  const searchLibrarianWithSubjectTool = LibrarianSubjectSearchTool.getInstance();
+
+  const agent = new Agent(
+    gpt4Model,
+    [
+      checkOpenHourTool,
+      reservationTool,
+      cancelReservationTool,
+      checkRoomAvailabilityTool,
+      ebscoBookSearchTool,
+      searchLibrarianWithSubjectTool,
+      searchTool,
+    ],
+    memory
+  );
+
   let cookie = socket.handshake.headers.cookie || "";
   console.log("New user connected");
   const userAgent = socket.request.headers["user-agent"]
