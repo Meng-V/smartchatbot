@@ -66,7 +66,7 @@ class ConversationMemory {
     if (this.maxContextWindow && this.oldestMessageIndex > 0) {
       this.oldestMessageIndex -= 1;
     }
-    this.curBufferOffset+=1;
+    this.curBufferOffset += 1;
   }
 
   /**
@@ -104,22 +104,24 @@ class ConversationMemory {
         return;
       }
 
-      console.log(`Estimate length: ${conversationString.length}`);
-      console.log(`Estimate token: ${conversationString.length / 4}`);
+      const conversationToBeSummarized = await this.getConversationAsString(
+        0,
+        -this.conversationBufferSize,
+        false
+      );
+      console.log(`Estimate length: ${conversationToBeSummarized.length}`);
+      console.log(`Estimate token: ${conversationToBeSummarized.length / 4}`);
       if (
         this.conversationTokenLimit &&
-        conversationString.length / 4.0 >= this.conversationTokenLimit &&
+        conversationToBeSummarized.length / 4.0 >= this.conversationTokenLimit &&
         this.conversationSummarizePrompt &&
         this.llmModel
       ) {
         if (this.curBufferOffset >= this.minimumTimeBetweenSummarizations) {
           this.curBufferOffset = 0;
+          
           this.conversationSummarizePrompt.setConversationMemory(
-            await this.getConversationAsString(
-              0,
-              -this.conversationBufferSize,
-              false
-            )
+            conversationToBeSummarized
           );
           this.curConversationSummary = (
             await this.llmModel.getModelResponse(
@@ -127,7 +129,7 @@ class ConversationMemory {
             )
           ).response;
           let conversationBuffer = await this.getConversationAsString(
-            this.conversation.length - this.conversationBufferSize,
+            this.conversation.length - this.oldestMessageIndex - this.conversationBufferSize,
             0,
             false
           );
@@ -138,10 +140,12 @@ class ConversationMemory {
 
         //Use the past summarization
         let conversationBuffer = await this.getConversationAsString(
-          this.conversation.length - this.conversationBufferSize - this.curBufferOffset,
-          0,
+          this.conversation.length -
+            this.conversationBufferSize -
+            this.curBufferOffset - this.oldestMessageIndex,
+          0
         );
-        
+
         resolve(`${this.curConversationSummary}\n${conversationBuffer}`);
       }
       resolve(conversationString);
