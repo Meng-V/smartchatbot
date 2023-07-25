@@ -46,3 +46,19 @@
 .typing-box{
   width: 65%;
 }
+
+.styled-link {
+  background-color: #007bff;
+  color: white;
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  border-radius: 4px;
+  margin: 5px 0;
+  transition: background-color 0.3s ease;
+}
+
+.styled-link:hover {
+  background-color: #0056b3;
+}

@@ -59,35 +59,38 @@ app.use(
   })
 );
 
-// Initialize the AI agent
-const llmModel = new OpenAIModel();
-const memory = new ConversationMemory(10);
-const searchTool = SearchEngine.getInstance();
-const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
-const reservationTool = RoomReservationTool.getInstance();
-const cancelReservationTool = CancelReservationTool.getInstance();
-const ebscoBookSearchTool = EBSCOBookSearchTool.getInstance();
-const checkOpenHourTool = CheckOpenHourTool.getInstance();
-
-const agent = new Agent(
-  llmModel,
-  [
-    searchTool,
-    reservationTool,
-    cancelReservationTool,
-    checkRoomAvailabilityTool,
-    ebscoBookSearchTool,
-    checkOpenHourTool,
-  ],
-  memory
-);
-
 io.engine.use(sessionMiddleware);
 
 io.on("connection", async (socket) => {
+
+  // Initialize the AI agent
+  const llmModel = new OpenAIModel();
+  const memory = new ConversationMemory(10);
+  const searchTool = SearchEngine.getInstance();
+  const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
+  const reservationTool = RoomReservationTool.getInstance();
+  const cancelReservationTool = CancelReservationTool.getInstance();
+  const ebscoBookSearchTool = EBSCOBookSearchTool.getInstance();
+  const checkOpenHourTool = CheckOpenHourTool.getInstance();
+
+  const agent = new Agent(
+    llmModel,
+    [
+      searchTool,
+      reservationTool,
+      cancelReservationTool,
+      checkRoomAvailabilityTool,
+      ebscoBookSearchTool,
+      checkOpenHourTool,
+    ],
+    memory
+  );
+
+
   let cookie = socket.handshake.headers.cookie || "";
   console.log("New user connected");
   socket.emit("connected", "User connected");
+
   const userAgent = socket.request.headers["user-agent"]
     ? socket.request.headers["user-agent"]
     : null;
