@@ -329,9 +329,12 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         });
         if (
           response.data[0].error ===
-          "item belongs to category of incorrect type"
+            "item belongs to category of incorrect type" ||
+          !response.data[0] ||
+          !response.data[0].availability
         ) {
           resolve([{ error: "Unexisted room ID" }]);
+          return;
         }
         const hours: { from: string; to: string }[] =
           response.data[0].availability;
@@ -354,6 +357,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
             };
           })
         );
+        return;
       } catch (error: any) {
         console.log(error);
       }
