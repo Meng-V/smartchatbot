@@ -6,10 +6,10 @@ class EBSCOBookSearchTool implements Tool {
 
   public name: string = "EBSCOBookSearchTool";
   public description: string =
-    "This tool is for searching for list of books/articles suiting the input keywords, useful for suggesting books/article to customers. Keywords should be academic-related such as economics, pattern matching, DNA, Evolution, or compiler design, etc. This tool has ONE parameter, but it will look like a EBSCO query like '{SU:hiking} and {TI:guide}.";
+    "This tool is for searching for list of books/articles suiting the input keywords, useful for suggesting books/article to customers. Keywords should be academic-related such as economics, pattern matching, DNA, Evolution, or compiler design, etc.";
   public parameters: { [parameterName: string]: string } = {
     query:
-      "string [only includes either keywords in this string or an EBSCO query]",
+      "string [REQUIRED] [only includes keywords in this string, don't include any commas, double quotes or quotes]",
   };
 
   private constructor() {
@@ -23,29 +23,48 @@ class EBSCOBookSearchTool implements Tool {
     return EBSCOBookSearchTool.instance;
   }
 
-  async run(toolInput: { query: string }): Promise<string> {
+  async toolRun(toolInput: { query: string }): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       const { query } = toolInput;
-      console.log(query.toString());
-      const response = await EBSCOBookSearchTool.run(query.toString());
+
+      if (
+        query === null ||
+        query === "null" ||
+        query === undefined ||
+        query === "undefined"
+      ) {
+        resolve("Input query not found. Please use a query");
+        return;
+      }
+      const response = await EBSCOBookSearchTool.run(query);
       resolve(
-        `Please intepret this JSON result to the customer in a human-readable way. If there is a link, write it out directly; do not include html tag. ${response}`
+        `Please intepret this JSON result to the customer in a human-readable way. If there is a link, write it out directly; do not include html tag. ${JSON.stringify(
+          response
+        )}`
       );
     });
   }
 
-  static async run(query: string) {
-    const searchResults = await searchBooks(query, 2);
-    //Get neccessary field
-    const filteredSearchResult = searchResults.map((record) => {
-      return {
-        title: record.title,
-        author: record.author,
-        publicationYear: record.publicationYear,
-        url: record.url,
-      };
+  static async run(
+    query: string
+  ): Promise<
+    { title: string; author: string; publicationYear: number; url: string }[]
+  > {
+    return new Promise<
+      { title: string; author: string; publicationYear: number; url: string }[]
+    >(async (resolve, reject) => {
+      const searchResults = await searchBooks(query, 2);
+      //Get neccessary field
+      const filteredSearchResult = searchResults.map((record) => {
+        return {
+          title: record.title,
+          author: record.author,
+          publicationYear: record.publicationYear,
+          url: record.url,
+        };
+      });
+      resolve(filteredSearchResult);
     });
-    return JSON.stringify(filteredSearchResult);
   }
 }
 
