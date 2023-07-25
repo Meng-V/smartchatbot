@@ -1,6 +1,9 @@
+import { string } from "io-ts";
 import { ToolInput } from "../ToolTemplates";
 import { LibCalAPIBaseTool } from "./LibCalAPI";
 import axios, { AxiosError, AxiosResponse } from "axios";
+import { match } from "assert";
+import { time } from "console";
 
 type Timestamp = {
   year: number;
@@ -11,17 +14,22 @@ type Timestamp = {
   second: number;
   timezone: string;
 };
+type SimpleTimestamp = {
+  hour: number;
+  minute: number;
+  second: number;
+};
 
 class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
   private static instance: CheckRoomAvailabilityTool;
 
   public readonly name: string = "CheckRoomAvailabilityTool";
   public readonly description: string =
-    "This tool is for checking the available hours of a specific study room on one specific date. This tool has 2 parameters. Please use Final Answer instead if you don't have enough parameters (roomID and date) yet. Don't include any single quotes in the paramter. The year is implicitly 2023";
+    "This tool is for checking the available hours of a specific study room on one specific date. Use Final Answer instead if you don't have enough required parameters (roomID and date) yet. Don't include any single quotes in the paramter. The year is implicitly the current year";
 
   public readonly parameters: { [parameterName: string]: string } = {
-    date: "string [format YYYY-MM-DD]",
-    roomID: "string",
+    date: "string [REQUIRED] [format YYYY-MM-DD]",
+    roomID: "string [REQUIRED]",
   };
 
   constructor() {
@@ -62,9 +70,11 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
 
   private timestampStringtify(
     timestamp: Timestamp,
-    verbose: boolean = false
+    verbose: boolean = false,
+    timezone: boolean = false,
   ): string {
     if (verbose) {
+      const timezoneStr = timezone ? `with timezone ${timestamp.timezone}` : "";
       return `Date ${timestamp.year
         .toString()
         .padStart(2, "0")}-${timestamp.month
@@ -75,7 +85,9 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         .toString()
         .padStart(2, "0")}:${timestamp.minute
         .toString()
-        .padStart(2, "0")}:${timestamp.second.toString().padStart(2, "0")}`;
+        .padStart(2, "0")}:${timestamp.second
+        .toString()
+        .padStart(2, "0")} ${timezoneStr}`;
     } else {
       return `${timestamp.year.toString().padStart(2, "0")}-${timestamp.month
         .toString()
@@ -86,7 +98,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         .padStart(2, "0")}:${timestamp.minute
         .toString()
         .padStart(2, "0")}:${timestamp.second.toString().padStart(2, "0")}${
-        timestamp.timezone
+        timezone ? timestamp.timezone : ""
       }`;
     }
   }
@@ -96,7 +108,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
    * @param hours
    */
   private mergeHours(
-    hours: { from: Timestamp; to: Timestamp }[]
+    hours: { from: Timestamp; to: Timestamp }[],
   ): { from: Timestamp; to: Timestamp }[] {
     const intervals: [number, number][] = hours.map((time_block, idx) => {
       return [
@@ -116,7 +128,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
       else
         mergeIntervals[mergeIntervals.length - 1][1] = Math.max(
           end,
-          mergeIntervals[mergeIntervals.length - 1][1]
+          mergeIntervals[mergeIntervals.length - 1][1],
         );
     }
     const [year, month, date, timezone] =
@@ -154,24 +166,152 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
     return mergeTimestamp;
   }
 
-  async run(toolInput: ToolInput): Promise<string> {
+  /**
+   * Determine if a room is available for the input time. This tool assume startDate is the same as endDate
+   * @param roomID
+   * @param startDate
+   * @param startTime
+   * @param endDate
+   * @param endTime
+   * @returns boolean: True if available, False if not
+   */
+  async isAvailable(
+    roomID: string,
+    startDate: string,
+    startTime: string,
+    endDate: string,
+    endTime: string,
+  ): Promise<boolean> {
+    return new Promise<boolean>(async (resolve, reject) => {
+      //Parse the start and endTime
+      const timeRegex = /^(\d{2}):(\d{2}):(\d{2})$/;
+      const startMatch = startTime.match(timeRegex);
+      const endMatch = endTime.match(timeRegex);
+
+      if (!startMatch || !endMatch) {
+        reject("Invalid time format. Expected format: HH:MM:SS");
+      }
+
+      const requestStartTime: SimpleTimestamp = {
+        hour: parseInt(startMatch![1], 10),
+        minute: parseInt(startMatch![2], 10),
+        second: parseInt(startMatch![3], 10),
+      };
+      const requestEndTime: SimpleTimestamp = {
+        hour: parseInt(endMatch![1], 10),
+        minute: parseInt(endMatch![2], 10),
+        second: parseInt(endMatch![3], 10),
+      };
+
+      const response = await CheckRoomAvailabilityTool.run(roomID, startDate);
+      if ("error" in response[0]) {
+        reject(response[0]!.error);
+      }
+
+      /**
+       * Compare 2 timestamp
+       * @param time1
+       * @param time2
+       * @returns 1 if time1 > time2, -1 if time1 < time2, 0 if time1 = time2
+       */
+      const compareTime = (
+        time1: Timestamp | SimpleTimestamp,
+        time2: Timestamp | SimpleTimestamp,
+      ) => {
+        if (time1.hour !== time2.hour) {
+          return time1.hour > time2.hour ? 1 : -1;
+        }
+        if (time1.minute !== time2.minute) {
+          return time1.minute > time2.minute ? 1 : -1;
+        }
+        if (time1.second !== time2.second) {
+          return time1.second > time2.second ? 1 : -1;
+        }
+        return 0;
+      };
+
+      for (let timeblock of response as { from: Timestamp; to: Timestamp }[]) {
+        if (
+          compareTime(timeblock.from, requestStartTime) <= 0 &&
+          compareTime(timeblock.to, requestEndTime) >= 0
+        ) {
+          resolve(true);
+          return;
+        }
+      }
+
+      resolve(false);
+    });
+  }
+
+  async toolRun(toolInput: ToolInput): Promise<string> {
     const { roomID, date } = toolInput;
 
     return new Promise<string>(async (resolve, reject) => {
-      const response = await CheckRoomAvailabilityTool.run(roomID, date);
+      let nullFields = [];
+      for (const param of Object.keys(toolInput)) {
+        if (
+          toolInput[param] === null ||
+          toolInput[param] === "null" ||
+          toolInput[param] === undefined ||
+          toolInput[param] === "undefined"
+        ) {
+          nullFields.push(param);
+        }
+      }
+      if (nullFields.length > 0) {
+        console.log(
+          `Cannot check room availability because missing parameter ${JSON.stringify(
+            nullFields,
+          )}. Ask the customer to provide ${JSON.stringify(
+            nullFields,
+          )} to check room availability.`,
+        );
+        resolve(
+          `Cannot check room availability because missing parameter ${JSON.stringify(
+            nullFields,
+          )}. Ask the customer to provide ${JSON.stringify(
+            nullFields,
+          )} to check room availability.`,
+        );
+        return;
+      }
 
-      resolve(`Here is the room ${roomID} available time ${response}`);
+      const response = await CheckRoomAvailabilityTool.run(
+        roomID as string,
+        date as string,
+      );
+      if ("error" in response[0]) {
+        resolve(response[0]!.error);
+        return;
+      }
+
+      const responseAsString: string = JSON.stringify(
+        response.map((timeBlock) => {
+          timeBlock = timeBlock as { from: Timestamp; to: Timestamp };
+          return {
+            from: this.timestampStringtify(timeBlock.from, true, false),
+            to: this.timestampStringtify(timeBlock.to, true, false),
+          };
+        }),
+      );
+      resolve(`Here is the room ${roomID} available time ${responseAsString}`);
     });
   }
 
   /**
-   * This function runs the tool as the description
+   * This async function runs the tool as the description
    * @param roomID string
    * @param date Has to follow YYYY-MM-DD format
    * @returns
    */
-  static async run(roomID: string, date: string): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
+  static async run(
+    roomID: string,
+    date: string,
+  ): Promise<{ from: Timestamp; to: Timestamp }[] | { error: string }[]> {
+    return new Promise<
+      { from: Timestamp; to: Timestamp }[] | { error: string }[]
+    >(async (resolve, reject) => {
       const instance = CheckRoomAvailabilityTool.getInstance();
       const accessToken: string = await instance.getAccessToken();
       const header = {
@@ -182,13 +322,16 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         let response = await axios({
           method: "get",
           headers: header,
-          url: `${instance.available_url}/${roomID}`,
+          url: `${instance.AVAILABLE_URL}/${roomID}`,
           params: {
             availability: date,
           },
         });
-        if (response.data[0].error === "item belongs to category of incorrect type") {
-          resolve("Customer provide unexisted room ID.")
+        if (
+          response.data[0].error ===
+          "item belongs to category of incorrect type"
+        ) {
+          resolve([{ error: "Unexisted room ID" }]);
         }
         const hours: { from: string; to: string }[] =
           response.data[0].availability;
@@ -198,20 +341,18 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
               from: instance.parseTimestamp(timeBlock.from),
               to: instance.parseTimestamp(timeBlock.to),
             };
-          }
+          },
         );
         const mergedTimeBlock: { from: Timestamp; to: Timestamp }[] =
           instance.mergeHours(hoursTimestamp);
 
         resolve(
-          JSON.stringify(
-            mergedTimeBlock.map((timeBlock) => {
-              return {
-                from: instance.timestampStringtify(timeBlock.from, true),
-                to: instance.timestampStringtify(timeBlock.to, true),
-              };
-            })
-          )
+          mergedTimeBlock.map((timeBlock) => {
+            return {
+              from: timeBlock.from,
+              to: timeBlock.to,
+            };
+          }),
         );
       } catch (error: any) {
         console.log(error);

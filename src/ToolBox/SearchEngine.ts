@@ -1,17 +1,21 @@
 import { customsearch, customsearch_v1 } from "@googleapis/customsearch";
 import { Tool, ToolInput } from "./ToolTemplates";
 
-type searchResult = {
-    index: number,
-    link: string | null;
-    content: string | null;
-}
+type SearchResult = {
+  index: number;
+  link: string | null;
+  content: string | null;
+};
 
-class SearchEngine implements Tool{
+class SearchEngine implements Tool {
   private static instance: SearchEngine;
-  public name: string = "GoogleCustomSearchEngine"
-  public description: string = "This tool is for searching relevant general documents about King Library. This tool has ONE parameter. This tool is always the last solution you should consider if other tools don't work out."
-  public parameters: { [parameterName: string]: string; } = {query: "string [only includes keywords in this string, don't include any commas, double quotes or quotes, don't inlcude the word 'King Library' inside the parameter]"}
+  public name: string = "GoogleCustomSearchEngine";
+  public description: string =
+    "This tool is for searching relevant general documents about King Library. This tool should be always the last solution you should consider if other tools are not appropriate for the task.";
+  public parameters: { [parameterName: string]: string } = {
+    query:
+      "string [REQUIRED] [only includes keywords in this string, don't include any commas, double quotes or quotes, don't inlcude the word 'King Library' inside the parameter]",
+  };
 
   private GOOGLE_API_KEY: string;
   private GOOGLE_CSE_ID: string;
@@ -25,8 +29,7 @@ class SearchEngine implements Tool{
       throw new Error("Input key name does not exist in the PATH");
     }
     this.searchEngine = customsearch("v1");
-    SearchEngine.instance = this
-
+    SearchEngine.instance = this;
   }
 
   public static getInstance(): SearchEngine {
@@ -36,41 +39,52 @@ class SearchEngine implements Tool{
     return SearchEngine.instance;
   }
 
-  async run(toolInput: ToolInput): Promise<string> {
-    const {query} = toolInput;
-    return new Promise<string>(async(resolve, reject) => {
-      const response = await SearchEngine.run(query);
-      resolve(response);
-    })
-  }
-
-  static async run(query: string): Promise<string> {
+  async toolRun(toolInput: ToolInput): Promise<string> {
+    const { query } = toolInput;
     return new Promise<string>(async (resolve, reject) => {
-        const timeout = setTimeout(() => {
-            reject("Request Time Out");
-          }, 5000);
-        
-        const instance = SearchEngine.getInstance();
-        const response = await instance.searchEngine.cse.list({
-            auth: instance.GOOGLE_API_KEY,
-            cx: instance.GOOGLE_CSE_ID,
-            q: query,
-            num: 1,
-        });
-        let searchResults: searchResult[] = [];
-        response.data.items?.forEach((item, idx) => {
-            searchResults.push({
-                index: idx,
-                link: item.link!,
-                content: item.pagemap ? item.pagemap.metatags[0]['og:description'] : item.snippet 
-            })
-        })
-
-        resolve(`Please also include the appropriate reference link. If there is a link, write it out directly; do not include html tag. Result: ${JSON.stringify(searchResults)}`);
-    })
+      if (
+        query === null ||
+        query === "null" ||
+        query === undefined ||
+        query === "undefined"
+      ) {
+        resolve("Input query not found. Please use a query");
+        return;
+      }
+      const response = await SearchEngine.run(query);
+      resolve(
+        `Please also include the appropriate reference link. If there is a link, write it out directly; do not include html tag. Result: ${response}`,
+      );
+    });
   }
 
+  static async run(query: string): Promise<SearchResult[]> {
+    return new Promise<SearchResult[]>(async (resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject("Request Time Out");
+      }, 5000);
 
+      const instance = SearchEngine.getInstance();
+      const response = await instance.searchEngine.cse.list({
+        auth: instance.GOOGLE_API_KEY,
+        cx: instance.GOOGLE_CSE_ID,
+        q: query,
+        num: 1,
+      });
+      let searchResults: SearchResult[] = [];
+      response.data.items?.forEach((item, idx) => {
+        searchResults.push({
+          index: idx,
+          link: item.link!,
+          content: item.pagemap
+            ? item.pagemap.metatags[0]["og:description"]
+            : item.snippet,
+        });
+      });
+
+      resolve(searchResults);
+    });
+  }
 }
 
-export {SearchEngine}
+export { SearchEngine };

@@ -20,8 +20,7 @@ import {
 } from "@chakra-ui/react";
 import { ChatIcon } from "@chakra-ui/icons";
 import "./App.css";
-import MessageWithLinks from './components/ParseLinks';
-
+import MessageComponents from './components/ParseLinks';
 const App = () => {
   const chatRef = useRef();
   const [messages, setMessages] = useState([]);
@@ -210,11 +209,11 @@ const App = () => {
                           color={message.sender === "user" ? "white" : "black"}
                         >
                           {typeof message.text === "object" ? (
-                            <MessageWithLinks
+                            <MessageComponents
                               message={message.text.response.join(", ")}
                             />
                           ) : (
-                            <MessageWithLinks message={message.text} />
+                            <MessageComponents message={message.text} />
                           )}
                         </Text>
                       </Box>

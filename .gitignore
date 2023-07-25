@@ -29,4 +29,6 @@ yarn.lock
 run.ts
 # **/openai.ts
 src/index-chatbox-popup.html
+
+libcal.ipynb
 **/chatbox-test.html
