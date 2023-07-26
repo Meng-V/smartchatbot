@@ -41,7 +41,7 @@ const App = () => {
   useEffect(() => {
     if (socket) {
       addMessage(
-        "Hi this is the Library chatbot, how may I help you?",
+        "Hi this is the Library Smart Chatbot. How may I help you?",
         "chatbot"
       );
 
@@ -107,7 +107,7 @@ const App = () => {
           right="10"
           borderRadius="md"
         >
-          <ModalHeader>LibChat Library Chatbot</ModalHeader>
+          <ModalHeader>Smart Chatbot</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Box
@@ -124,14 +124,17 @@ const App = () => {
                   <Box
                     key={index}
                     maxW="350px"
-                    p={5}
+                    px={5}
+                    py={3}
                     rounded="md"
-                    bg={message.sender === "user" ? "blue.500" : "gray.200"}
+                    bg={message.sender === "user" ? "white" : "gray.200"}
+                    border = {message.sender === "user" ? "1px" : "0px"}
+                    borderColor= {message.sender === "user" ? "red.400" : " "}
                     alignSelf={
                       message.sender === "user" ? "flex-end" : "flex-start"
                     }
                   >
-                    <Text color={message.sender === "user" ? "white" : "black"} wordBreak="break-word">
+                    <Text color={message.sender === "user" ? "red.500" : "black"} wordBreak="break-word">
                       {message.text}
                     </Text>
                   </Box>
@@ -141,7 +144,7 @@ const App = () => {
             <form onSubmit={handleFormSubmit}>
               <HStack spacing={3}>
                 <Input ref={inputRef} placeholder="Type your message..." />
-                <Button colorScheme="blue" type="submit">
+                <Button colorScheme="red" type="submit">
                   Send
                 </Button>
               </HStack>
