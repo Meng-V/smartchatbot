@@ -233,12 +233,12 @@ const App = () => {
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
                       placeholder="Type your message..."
-                      {...(!isConnected ? "disabled" : "")}
+                       disabled={!isConnected}
                     />
                     <Button
                       colorScheme="blue"
                       type="submit"
-                      {...(!isConnected ? "disabled" : "")}
+                       disabled={!isConnected}
                     >
                       Send
                     </Button>
