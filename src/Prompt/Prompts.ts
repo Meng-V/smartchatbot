@@ -3,6 +3,7 @@ import { PromptTemplate } from "./PromptTemplate";
 import { Tool } from "../ToolBox/ToolTemplates";
 import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationSummarizePrompt } from "./ConversationSummarizePrompt";
+import { TokenUsage } from "../Agent/Agent";
 
 class ModelPromptWithTools implements PromptTemplate {
   public modelDescription: string;
@@ -23,7 +24,7 @@ class ModelPromptWithTools implements PromptTemplate {
    */
   constructor(
     tools: Tool[],
-    conversationMemory: ConversationMemory | null = null,
+    conversationMemory: ConversationMemory | null = null
   ) {
     this.modelDescription =
       "You are a helpful assistant. You should try your best to answer the question. Unfortunately, you don't know anything about the library, books, and articles so you have to always rely on the tool or the given context for  library-related, book-related, or article-related questions.\n";
@@ -35,7 +36,6 @@ class ModelPromptWithTools implements PromptTemplate {
 
     this.reActModelDescription = this.constructReActModelDescription(tools);
     this.modelScratchpad = "";
-
   }
 
   private constructReActModelDescription(tools: Tool[]): string {
@@ -102,15 +102,23 @@ class ModelPromptWithTools implements PromptTemplate {
       })}\n`
     );
   }
-  async getPrompt(): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
-      const wholePrompt: string =
-        `\nThis is the conversation so far (delimited by the triple dashes):\n---\n${await this.conversationMemory?.getConversationAsString(0,0, true)}\n---\n` +
-        `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;
-      // console.log(wholePrompt);
-      resolve(wholePrompt);
-    })
-      
+  async getPrompt(): Promise<{ prompt: string; tokenUsage: TokenUsage }> {
+    return new Promise<{ prompt: string; tokenUsage: TokenUsage }>(
+      async (resolve, reject) => {
+        const conversationStringObject =
+          await this.conversationMemory?.getConversationAsString(0, 0, true);
+        const wholePrompt: string =
+          `\nThis is the conversation so far (delimited by the triple dashes):\n---\n${conversationStringObject?.conversationString}\n---\n` +
+          `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;
+        // console.log(wholePrompt);
+        resolve({
+          prompt: wholePrompt,
+          tokenUsage: conversationStringObject
+            ? conversationStringObject.tokenUsage
+            : { totalTokens: 0, completionTokens: 0, promptTokens: 0 },
+        });
+      }
+    );
   }
 }
 
