@@ -22,7 +22,7 @@ import qs from "qs";
 dotenv.config();
 
 const PORT = process.env.BACKEND_PORT;
-const URL = `http://localhost:${PORT}`;
+const URL = `http://frontend:${PORT}`;
 
 const sessionMiddleware = session({
   secret: "changeit",
