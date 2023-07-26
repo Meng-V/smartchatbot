@@ -162,7 +162,7 @@ class ConversationMemory {
           );
 
           resolve({
-            conversationString: `${this.curConversationSummary}\n${conversationBuffer}`,
+            conversationString: `${this.curConversationSummary}\n${conversationBuffer.conversationString}`,
             tokenUsage: tokenUsage,
           });
           return;
@@ -178,7 +178,7 @@ class ConversationMemory {
         );
 
         resolve({
-          conversationString: `${this.curConversationSummary}\n${conversationBuffer}`,
+          conversationString: `${this.curConversationSummary}\n${conversationBuffer.conversationString}`,
           tokenUsage: tokenUsage,
         });
       }

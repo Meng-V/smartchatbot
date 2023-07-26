@@ -72,6 +72,9 @@ class OpenAIModel {
         //   reject("Request Time Out");
         // }, 5000);
         const promptObjectResponse = await promptObject.getPrompt();
+        // console.log('----------------')
+        // console.log(promptObjectResponse.prompt);
+        // console.log('----------------')
 
         const usageInfo: TokenUsage = {
           totalTokens: 0,
@@ -85,6 +88,7 @@ class OpenAIModel {
           usageInfo.promptTokens +=
             promptObjectResponse.tokenUsage.promptTokens;
         }
+        console.log('Using LLM!');
         const response = await this.model.createChatCompletion({
           model: this.modelName,
           temperature: this.temperature,
