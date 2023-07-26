@@ -86,6 +86,7 @@ io.on("connection", async (socket) => {
     memory
   );
 
+  //For logging conversation data
   let cookie = socket.handshake.headers.cookie || "";
   console.log("New user connected");
   const userAgent = socket.request.headers["user-agent"]
@@ -95,10 +96,11 @@ io.on("connection", async (socket) => {
     data: {
       userAgent: userAgent,
       toolUsed: [],
+      completionTokens: 0,
+      promptTokens: 0,
+      totalTokens: 0,
     },
   });
-
-  let toolsUsed: Set<string> = new Set();
 
   socket.on("message", async (message, callback) => {
     try {
@@ -110,19 +112,49 @@ io.on("connection", async (socket) => {
         },
       });
       console.log(message)
-      const response = await agent.agentRun(message, cookie);
+      const agentResponse = await agent.agentRun(message);
 
       await prisma.message.create({
         data: {
           type: "AIAgent",
-          content: response.response.join("\n"),
+          content: agentResponse.response.join("\n"),
           conversationId: conversation.id,
         },
       });
-      socket.emit("message", response);
+      await prisma.conversation.update({
+        where: {id: conversation.id},
+        data: {
+          completionTokens: {
+            increment: agentResponse.tokenUsage.completionTokens,
+          },
+          promptTokens: {
+            increment: agentResponse.tokenUsage.promptTokens,
+          },
+          totalTokens: {
+            increment: agentResponse.tokenUsage.totalTokens,
+          }
 
-      response.actions.forEach((action) => {
-        toolsUsed.add(action);
+        }
+      })
+      socket.emit("message", agentResponse);
+
+      agentResponse.actions.forEach( async (action) => {
+        const existingTool = await prisma.conversation.findUnique({
+          where: {id: conversation.id},
+          select: {toolUsed: true},
+        });
+
+        if (!existingTool) {
+          throw new Error('Entry not found');
+        }
+        const {toolUsed} = existingTool;
+        if (!toolUsed.some((value) => value === action)) {
+          // If not, add the new value to the toolUsed array
+          await prisma.conversation.update({
+            where: { id: conversation.id },
+            data: { toolUsed: [...toolUsed, action] },
+          });
+        }
       });
 
       callback("successful");
@@ -133,12 +165,6 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("disconnect", async () => {
-    await prisma.conversation.update({
-      where: { id: conversation.id },
-      data: {
-        toolUsed: [...toolsUsed],
-      },
-    });
     console.log("User disconnected");
   });
 });
