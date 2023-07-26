@@ -10,7 +10,7 @@ class EBSCOBookSearchTool implements Tool {
 
   public parameters: { [parameterName: string]: string } = {
     query:
-      "string [REQUIRED] [only includes keywords in this string or EBSCO query as a string, don't include any commas, double quotes or quotes]",
+      "string [REQUIRED] [only includes EBSCO query as one parameter string \"{SU:Accounting}and{TI:math}\" or the like, don't include any commas, double quotes or quotes]",
   };
 
   private constructor() {
