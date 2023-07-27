@@ -45,8 +45,8 @@ const App = () => {
       console.log("Connected");
       setIsConnected(true);
       addMessage(
-        "Hi this is the Library chatbot, how may I help you?",
-        "chatbot",
+        "Hi this is the Library Smart Chatbot. How may I help you?",
+        "chatbot"
       );
     });
 
@@ -138,6 +138,7 @@ const App = () => {
   return (
     <>
       <IconButton
+        boxSize={6}
         onClick={onOpen}
         icon={<ChatIcon />}
         position="fixed"
@@ -156,9 +157,11 @@ const App = () => {
           right="10"
           borderRadius="md"
         >
-          <ModalHeader>LibChat Chatbox</ModalHeader>
+          <ModalHeader display="flex" alignItems="center" justifyContent={"space-evenly"} ps={0}>
+          <img src="https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png" heigh={50} width={120} alt="library logo"/>Smart Chatbot
+          </ModalHeader>
           <ModalCloseButton />
-          <ModalBody>
+          <ModalBody py={5}>
             {step === "initial" && (
               <VStack>
                 <Button onClick={handleServicesClick}>Library Chatbot</Button>
@@ -200,21 +203,19 @@ const App = () => {
                     {messages.map((message, index) => (
                       <Box
                         key={index}
-                        maxW="350px"
+                        maxW="md"
                         px={5}
                         py={3}
                         rounded="md"
-                        bg={message.sender === "user" ? "silver" : "gray.200"}
-                        border={message.sender === "user" ? "1px" : "0px"}
-                        borderColor={
-                          message.sender === "user" ? "red.500" : " "
-                        }
+                        bg={message.sender === "user" ? "white" : "gray.200"}
+                        border = {message.sender === "user" ? "1px" : "0px"}
+                        borderColor= {message.sender === "user" ? "red.400" : " "}
                         alignSelf={
                           message.sender === "user" ? "flex-end" : "flex-start"
                         }
                       >
                         <Text
-                          color={message.sender === "user" ? "red" : "black"}
+                          color={message.sender === "user" ? "red.600" : "black"}
                         >
                           {typeof message.text === "object" ? (
                             <MessageComponents
@@ -254,7 +255,7 @@ const App = () => {
                       disabled={!isConnected}
                     />
                     <Button
-                      colorScheme="blue"
+                      colorScheme="red"
                       type="submit"
                       disabled={!isConnected}
                     >

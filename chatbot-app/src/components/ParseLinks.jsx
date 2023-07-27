@@ -18,7 +18,6 @@ const MessageComponents = ({ message }) => {
         <Text color={"black"}>
           {line}</Text>
       </ReactMarkdown>
-      <br />
     </React.Fragment>
   );
 
