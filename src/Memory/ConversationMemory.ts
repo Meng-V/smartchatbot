@@ -1,7 +1,7 @@
 import { max } from "fp-ts/lib/ReadonlyNonEmptyArray";
 import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationSummarizePrompt } from "../Prompt/ConversationSummarizePrompt";
-import { TokenUsage } from "../Agent/Agent";
+import { TokenUsage } from "../Agent/IAgent";
 
 type Role = "AIAgent" | "Customer";
 

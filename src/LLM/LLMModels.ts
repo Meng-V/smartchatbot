@@ -5,7 +5,7 @@ import {
 } from "openai";
 import { PromptTemplate } from "../Prompt/PromptTemplate";
 import { ModelPromptWithTools } from "../Prompt/Prompts";
-import { TokenUsage } from "../Agent/Agent";
+import { TokenUsage } from "../Agent/IAgent";
 
 type LLMModelSetting = {
   modelName: string;

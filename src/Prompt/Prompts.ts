@@ -3,7 +3,7 @@ import { PromptTemplate } from "./PromptTemplate";
 import { Tool } from "../ToolBox/ToolTemplates";
 import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationSummarizePrompt } from "./ConversationSummarizePrompt";
-import { TokenUsage } from "../Agent/Agent";
+import { TokenUsage } from "../Agent/IAgent";
 
 class ModelPromptWithTools implements PromptTemplate {
   public modelDescription: string;
