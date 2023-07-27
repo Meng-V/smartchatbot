@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import gfm from 'remark-gfm'
 
 const MessageComponents = ({ message }) => {
-  const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/ig;
+  // const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/ig;
 
   const formattedMessage = message.split('\n').map((line, index) => 
     <React.Fragment key={index}>
