@@ -107,7 +107,9 @@ const App = () => {
           right="10"
           borderRadius="md"
         >
-          <ModalHeader>Smart Chatbot</ModalHeader>
+          <ModalHeader display="flex" alignItems="center" justifyContent={"space-evenly"} ps={0}>
+          <img src="https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png" heigh={50} width={120} alt="library logo"/>Smart Chatbot
+          </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Box
@@ -129,12 +131,12 @@ const App = () => {
                     rounded="md"
                     bg={message.sender === "user" ? "white" : "gray.200"}
                     border = {message.sender === "user" ? "1px" : "0px"}
-                    borderColor= {message.sender === "user" ? "red.400" : " "}
+                    borderColor= {message.sender === "user" ? "red.500" : " "}
                     alignSelf={
                       message.sender === "user" ? "flex-end" : "flex-start"
                     }
                   >
-                    <Text color={message.sender === "user" ? "red.500" : "black"} wordBreak="break-word">
+                    <Text color={message.sender === "user" ? "red.600" : "black"} wordBreak="break-word">
                       {message.text}
                     </Text>
                   </Box>
