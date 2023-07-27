@@ -1,45 +1,9 @@
 import prisma from "../../prisma/prisma";
-import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { ModelPromptWithTools } from "../Prompt/Prompts";
-
+import { OpenAIModel } from "../LLM/LLMModels";
 import { Tool } from "../ToolBox/ToolTemplates";
-
-type TokenUsage = {
-  totalTokens: number;
-  promptTokens: number;
-  completionTokens: number;
-};
-
-type AgentResponse = {
-  actions: string[];
-  response: string[];
-  tokenUsage: TokenUsage;
-};
-
-interface IAgent {
-  llmModel: OpenAIModel;
-  memory: ConversationMemory | null;
-  toolsMap: Map<string, Tool>;
-
-  agentRun(userInput: string): Promise<AgentResponse>;
-}
-
-type AgentOutput =
-  | {
-      outputType: "final";
-      thought: string;
-      finalAnswer: string;
-    }
-  | {
-      outputType: "action";
-      thought: string;
-      action: string;
-      actionInput: { [key: string]: string };
-    }
-  | {
-      outputType: undefined;
-    };
+import { IAgent, AgentResponse, AgentOutput, TokenUsage } from "./IAgent";
 
 class Agent implements IAgent {
   llmModel: OpenAIModel;
@@ -200,4 +164,4 @@ class Agent implements IAgent {
   }
 }
 
-export { Agent, TokenUsage };
+export { Agent };
