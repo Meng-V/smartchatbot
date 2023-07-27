@@ -20,7 +20,7 @@ import {
 } from "@chakra-ui/react";
 import { ChatIcon } from "@chakra-ui/icons";
 import "./App.css";
-import MessageComponents from './components/ParseLinks';
+import MessageComponents from "./components/ParseLinks";
 const App = () => {
   const chatRef = useRef();
   const [messages, setMessages] = useState([]);
@@ -46,7 +46,7 @@ const App = () => {
       setIsConnected(true);
       addMessage(
         "Hi this is the Library chatbot, how may I help you?",
-        "chatbot"
+        "chatbot",
       );
     });
 
@@ -105,7 +105,7 @@ const App = () => {
   const handleLibrarianClick = () => {
     window.open(
       " https://www.lib.miamioh.edu/research/research-support/ask/",
-      "_blank"
+      "_blank",
     );
   };
 
@@ -130,7 +130,7 @@ const App = () => {
         (responseMessage) => {
           console.log(responseMessage);
           setStep("initial");
-        }
+        },
       );
     }
   };
@@ -185,10 +185,13 @@ const App = () => {
                   <VStack align="start" spacing={4}>
                     {!isConnected && (
                       <Box
-                        maxW="md"
-                        p={5}
+                        maxW="350px"
+                        px={5}
+                        py={3}
                         rounded="md"
                         bg={"gray.200"}
+                        border={"0px"}
+                        borderColor={" "}
                         alignSelf={"flex-start"}
                       >
                         <Text color={"black"}>Connecting to the chatbot</Text>
@@ -197,16 +200,21 @@ const App = () => {
                     {messages.map((message, index) => (
                       <Box
                         key={index}
-                        maxW="md"
-                        p={5}
+                        maxW="350px"
+                        px={5}
+                        py={3}
                         rounded="md"
-                        bg={message.sender === "user" ? "blue.500" : "gray.200"}
+                        bg={message.sender === "user" ? "silver" : "gray.200"}
+                        border={message.sender === "user" ? "1px" : "0px"}
+                        borderColor={
+                          message.sender === "user" ? "red.500" : " "
+                        }
                         alignSelf={
                           message.sender === "user" ? "flex-end" : "flex-start"
                         }
                       >
                         <Text
-                          color={message.sender === "user" ? "white" : "black"}
+                          color={message.sender === "user" ? "red" : "black"}
                         >
                           {typeof message.text === "object" ? (
                             <MessageComponents
@@ -219,7 +227,17 @@ const App = () => {
                       </Box>
                     ))}
                     {isTyping && (
-                      <Box className="typing-box" bg={"gray.200"}>
+                      <Box
+                        // className="typing-box"
+                        maxW="350px"
+                        px={5}
+                        py={3}
+                        rounded="md"
+                        bg={"gray.200"}
+                        border={"0px"}
+                        borderColor={" "}
+                        alignSelf={"flex-start"}
+                      >
                         <Text>
                           Chatbot is thinking <span className="dots"></span>
                         </Text>
@@ -233,12 +251,12 @@ const App = () => {
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
                       placeholder="Type your message..."
-                       disabled={!isConnected}
+                      disabled={!isConnected}
                     />
                     <Button
                       colorScheme="blue"
                       type="submit"
-                       disabled={!isConnected}
+                      disabled={!isConnected}
                     >
                       Send
                     </Button>

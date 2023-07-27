@@ -20,7 +20,7 @@ input.chakra-input:focus-visible{
 .user {
   text-align: right;
   background-color: #C41230;
-  color: white;
+  color: black;
 }
 .chatbot {
   text-align: left;
