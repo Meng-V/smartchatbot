@@ -47,7 +47,7 @@ query:
       }
       const response = await EBSCOBookSearchTool.run(query);
       resolve(
-        `Please intepret this JSON result to the customer in a human-readable way. If there is a link, write it out directly; do not include html tag. ${JSON.stringify(
+        `Please intepret this JSON result to the customer in a markdown language output. ${JSON.stringify(
           response,
         )}`,
       );
