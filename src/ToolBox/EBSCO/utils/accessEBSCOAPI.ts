@@ -10,9 +10,13 @@ export async function performSearch(
   query: string,
   numOfBooks: number,
 ): Promise<Either<Error, SearchResponse>> {
-  const url = `${process.env.SEARCH_URL},${encodeURIComponent(
-    query,
+  // const url = `${process.env.SEARCH_URL}&q=${encodeURIComponent(
+  //   query,
+  // )}&resultsperpage=${numOfBooks}&view=detailed`;
+  const url = `${process.env.SEARCH_URL}?q=${encodeURIComponent(
+    `"${query}"`,
   )}&resultsperpage=${numOfBooks}&view=detailed`;
+
   try {
     const response = await axios.get<SearchResponse>(url, {
       headers: getHeaders(sessionToken),

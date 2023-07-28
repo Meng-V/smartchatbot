@@ -6,12 +6,12 @@ class EBSCOBookSearchTool implements Tool {
 
   public name: string = "EBSCOBookSearchTool";
   public description: string =
-  "This tool searches for academic books/articles based on user-provided keywords, such as economics, pattern matching, DNA, Evolution, etc. The input query should be in the format of an EBSCO query, which includes codes to represent specific types of data (TX for All Text, AU for Author, TI for Title, SU for Subject Terms, SO for Journal Title/Source, AB for Abstract, IS for ISSN, IB for ISBN) and logical operators (AND/OR). The query can also utilize proximity operators (NEAR (N), WITHIN (W)), exact phrase search using quotes, wildcard character (*), single character substitution (?), and single/no character substitution (#).";
+    "This tool searches for academic books/articles based on user-provided keywords, such as economics, pattern matching, DNA, Evolution, etc. The input query should be in the format of an EBSCO query, which includes codes to represent specific types of data (TX for All Text, AU for Author, TI for Title, SU for Subject Terms, SO for Journal Title/Source, AB for Abstract, IS for ISSN, IB for ISBN) and logical operators (AND/OR). The query can also utilize proximity operators (NEAR (N), WITHIN (W)), exact phrase search using quotes, wildcard character (*), single character substitution (?), and single/no character substitution (#).";
 
   public parameters: { [parameterName: string]: string } = {
-    query: "string [REQUIRED] The input should be an EBSCO formatted query. For example, \"{SU:Math}and{TI:Geometry}and{AU:gaim}\". Avoid using commas, double quotes or single quotes. Proximity, exact phrase search, wildcard, and character substitution queries are supported."
-  };  
-
+    query:
+      'string [REQUIRED] The input should be an EBSCO formatted query. For example, "{SU:Math}and{TI:Geometry}and{AU:gaim}". Avoid using commas, double quotes or single quotes. Proximity, exact phrase search, wildcard, and character substitution queries are supported.',
+  };
 
   private constructor() {
     EBSCOBookSearchTool.instance = this;

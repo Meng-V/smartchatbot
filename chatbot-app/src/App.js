@@ -48,6 +48,7 @@ const App = () => {
         "Hi this is the Library chatbot, how may I help you?",
         "chatbot",
       );
+      setIsTyping(false);
     });
 
     socketIo.on("message", function (message) {
