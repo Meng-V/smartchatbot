@@ -15,7 +15,6 @@ const MessageComponents = ({ message }) => {
       >
           {line}
       </ReactMarkdown>
-      <br />
     </React.Fragment>
   );
 
