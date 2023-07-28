@@ -51,13 +51,4 @@ async function searchBooks(
   return bookInfo;
 }
 
-// async function main() {
-//     const query = "machine learning";
-//     const books = await searchBooks(query, 1);
-
-//     console.log(books);
-//   }
-
-//   main();
-
 export { searchBooks, getEnvironmentVariables };

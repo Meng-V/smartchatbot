@@ -11,12 +11,9 @@ const MessageComponents = ({ message }) => {
         remarkPlugins={[gfm]} 
         components={{ 
           a: ({node, ...props}) => <a {...props} className="styled-link" target="_blank" rel="noopener noreferrer"/>
-        }}
-        
+        }} 
       >
-        
-        <Text color={"black"}>
-          {line}</Text>
+          {line}
       </ReactMarkdown>
     </React.Fragment>
   );

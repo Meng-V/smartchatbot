@@ -50,3 +50,21 @@ input.chakra-input:focus-visible{
 .typing-box{
   width: 65%;
 }
+
+.styled-link {
+  color: skyblue;
+  background-color: transparent;
+  text-decoration: none;
+}
+
+.styled-link {
+  color: purple;
+  background-color: transparent;
+  text-decoration: none;
+}
+
+.styled-link {
+  color: blue;
+  background-color: transparent;
+  text-decoration: underline;
+}
