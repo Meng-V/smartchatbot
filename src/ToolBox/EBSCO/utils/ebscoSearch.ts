@@ -155,7 +155,9 @@ async function queryEbscoApi(
   }
 
   const response: SearchResponse = responseResult.right;
-
+  console.log(query)
+  console.log(response)
+  
   // Check if the 'Records' property exists in the response
   if (!response.SearchResult.Data.Records) {
     return left(new Error("The response from the API did not contain any records."));
