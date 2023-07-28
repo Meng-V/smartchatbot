@@ -12,9 +12,11 @@ class ConversationSummarizePrompt implements PromptTemplate {
 
   async getPrompt(): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      resolve(`${
-        this.modelDescription
-      }\n${this.conversationMemory?.getConversationAsString()}`);
+      resolve(
+        `${
+          this.modelDescription
+        }\n${this.conversationMemory?.getConversationAsString()}`,
+      );
     });
   }
 

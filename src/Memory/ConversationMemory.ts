@@ -13,7 +13,10 @@ class ConversationMemory {
   }
 
   addToConversation(role: Role, text: string) {
-    if (this.maxContextWindow && this.conversation.length >= this.maxContextWindow) {
+    if (
+      this.maxContextWindow &&
+      this.conversation.length >= this.maxContextWindow
+    ) {
       this.conversation.shift();
     }
     this.conversation.push([role, text]);
@@ -21,12 +24,9 @@ class ConversationMemory {
   }
 
   getConversationAsString(): string {
-    let conversationString = this.conversation.reduce(
-      (prevString, curLine) => {
-        return prevString + `${curLine[0]}: ${curLine[1]}\n`;
-      },
-      ""
-    );
+    let conversationString = this.conversation.reduce((prevString, curLine) => {
+      return prevString + `${curLine[0]}: ${curLine[1]}\n`;
+    }, "");
 
     // conversationString += this.curRole === "AIAgent" ? "Customer: " : "AIAgent";
 

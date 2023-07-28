@@ -15,17 +15,17 @@ import {
   ModalCloseButton,
   ModalBody,
   IconButton,
-  FormControl, 
-  FormLabel
+  FormControl,
+  FormLabel,
 } from "@chakra-ui/react";
 import { ChatIcon } from "@chakra-ui/icons";
 import "./App.css";
-
+import MessageComponents from "./components/ParseLinks";
 const App = () => {
   const chatRef = useRef();
   const [messages, setMessages] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [inputMessage, setInputMessage] = useState('');
+  const [inputMessage, setInputMessage] = useState("");
   const [step, setStep] = useState("initial");
   const [question, setQuestion] = useState("");
   const [email, setEmail] = useState("");
@@ -38,21 +38,24 @@ const App = () => {
 
   useEffect(() => {
     const url = `http://localhost:${process.env.REACT_APP_BACKEND_PORT}`;
-    console.log(url)
-    const socketIo = io(url, { transports: ['websocket'], upgrade: false });
+    console.log(url);
+    const socketIo = io(url, { transports: ["websocket"], upgrade: false });
 
-    socketIo.on('connect', () => {
-      console.log('Connected');
+    socketIo.on("connect", () => {
+      console.log("Connected");
       setIsConnected(true);
-      addMessage("Hi this is the Library chatbot, how may I help you?", 'chatbot');
+      addMessage(
+        "Hi this is the Library chatbot, how may I help you?",
+        "chatbot",
+      );
     });
 
     socketIo.on("message", function (message) {
       setIsTyping(false);
-      addMessage(message, 'chatbot');
+      addMessage(message, "chatbot");
     });
 
-    socketIo.on('disconnect', function () {
+    socketIo.on("disconnect", function () {
       setIsConnected(false);
       // addMessage('User disconnected....', 'chatbot');
     });
@@ -60,10 +63,9 @@ const App = () => {
     socketRef.current = socketIo;
 
     return () => {
-      socketIo.off('message');
-      socketIo.off('disconnect');
-    }
-
+      socketIo.off("message");
+      socketIo.off("disconnect");
+    };
   }, []);
 
   useEffect(() => {
@@ -72,8 +74,6 @@ const App = () => {
     }
   }, [messages]);
 
-
-  
   const addMessage = (message, sender) => {
     setMessages((prevMessages) => [...prevMessages, { text: message, sender }]);
   };
@@ -81,8 +81,8 @@ const App = () => {
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (inputMessage && socketRef.current) {
-      addMessage(inputMessage, 'user');
-      setInputMessage('');
+      addMessage(inputMessage, "user");
+      setInputMessage("");
       setIsTyping(true);
       socketRef.current.emit("message", inputMessage, (response) => {
         console.log(response);
@@ -91,9 +91,9 @@ const App = () => {
   };
 
   const handleClose = () => {
-    setStep('initial');
+    setStep("initial");
     setMessages([]);
-    setInputMessage('');
+    setInputMessage("");
     onClose();
   };
 
@@ -103,7 +103,10 @@ const App = () => {
   };
 
   const handleLibrarianClick = () => {
-    window.open(" https://www.lib.miamioh.edu/research/research-support/ask/", "_blank");
+    window.open(
+      " https://www.lib.miamioh.edu/research/research-support/ask/",
+      "_blank",
+    );
   };
 
   const handleTicketClick = () => {
@@ -126,11 +129,11 @@ const App = () => {
         },
         (responseMessage) => {
           console.log(responseMessage);
-          setStep("initial")
-        }
+          setStep("initial");
+        },
       );
     }
-  };  
+  };
 
   return (
     <>
@@ -143,7 +146,7 @@ const App = () => {
         width={50}
         height={50}
       />
-  
+
       <Modal isOpen={isOpen} onClose={handleClose}>
         <ModalOverlay />
         <ModalContent
@@ -159,11 +162,15 @@ const App = () => {
             {step === "initial" && (
               <VStack>
                 <Button onClick={handleServicesClick}>Library Chatbot</Button>
-                <Button onClick={handleLibrarianClick}>Talk to a human librarian</Button>
-                <Button onClick={handleTicketClick}>Create a ticket for offline help</Button>
+                <Button onClick={handleLibrarianClick}>
+                  Talk to a human librarian
+                </Button>
+                <Button onClick={handleTicketClick}>
+                  Create a ticket for offline help
+                </Button>
               </VStack>
             )}
-  
+
             {step === "services" && (
               <>
                 <Box
@@ -176,49 +183,121 @@ const App = () => {
                   height="60vh"
                 >
                   <VStack align="start" spacing={4}>
-                    {!isConnected &&  (<Box maxW="md" p={5} rounded="md" bg={'gray.200'} alignSelf={'flex-start'}>
-                        <Text color={'black'}>Connecting to the chatbot</Text>
-                      </Box>)}
+                    {!isConnected && (
+                      <Box
+                        maxW="350px"
+                        px={5}
+                        py={3}
+                        rounded="md"
+                        bg={"gray.200"}
+                        border={"0px"}
+                        borderColor={" "}
+                        alignSelf={"flex-start"}
+                      >
+                        <Text color={"black"}>Connecting to the chatbot</Text>
+                      </Box>
+                    )}
                     {messages.map((message, index) => (
-                      <Box key={index} maxW="md" p={5} rounded="md" bg={message.sender === 'user' ? 'blue.500' : 'gray.200'} alignSelf={message.sender === 'user' ? 'flex-end' : 'flex-start'}>
-                        <Text color={message.sender === 'user' ? 'white' : 'black'}>
-                          {typeof message.text === 'object' ? message.text.response.join(', ') : message.text}
+                      <Box
+                        key={index}
+                        maxW="350px"
+                        px={5}
+                        py={3}
+                        rounded="md"
+                        bg={message.sender === "user" ? "silver" : "gray.200"}
+                        border={message.sender === "user" ? "1px" : "0px"}
+                        borderColor={
+                          message.sender === "user" ? "red.500" : " "
+                        }
+                        alignSelf={
+                          message.sender === "user" ? "flex-end" : "flex-start"
+                        }
+                      >
+                        <Text
+                          color={message.sender === "user" ? "red" : "black"}
+                        >
+                          {typeof message.text === "object" ? (
+                            <MessageComponents
+                              message={message.text.response.join(", ")}
+                            />
+                          ) : (
+                            <MessageComponents message={message.text} />
+                          )}
                         </Text>
                       </Box>
                     ))}
                     {isTyping && (
-                      <Box className="typing-box" bg={'gray.200'}>
-                        <Text>Chatbot is thinking <span className="dots"></span></Text>
+                      <Box
+                        // className="typing-box"
+                        maxW="350px"
+                        px={5}
+                        py={3}
+                        rounded="md"
+                        bg={"gray.200"}
+                        border={"0px"}
+                        borderColor={" "}
+                        alignSelf={"flex-start"}
+                      >
+                        <Text>
+                          Chatbot is thinking <span className="dots"></span>
+                        </Text>
                       </Box>
-                    )}  
+                    )}
                   </VStack>
                 </Box>
                 <form onSubmit={handleFormSubmit}>
                   <HStack spacing={3}>
-                    <Input value={inputMessage} onChange={e => setInputMessage(e.target.value)} placeholder="Type your message..." {...!isConnected? 'disabled':'' }/>
-                    <Button colorScheme="blue" type="submit" {...!isConnected? 'disabled':'' }>Send</Button>
+                    <Input
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      placeholder="Type your message..."
+                      disabled={!isConnected}
+                    />
+                    <Button
+                      colorScheme="blue"
+                      type="submit"
+                      disabled={!isConnected}
+                    >
+                      Send
+                    </Button>
                   </HStack>
                 </form>
               </>
             )}
-  
+
             {step === "ticket" && (
               <form onSubmit={handleTicketSubmit}>
                 <FormControl>
                   <FormLabel>Name</FormLabel>
-                  <Input placeholder="Enter your name..." value={name} onChange={e => setName(e.target.value)} />
+                  <Input
+                    placeholder="Enter your name..."
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
                 </FormControl>
                 <FormControl>
                   <FormLabel>Question</FormLabel>
-                  <Input placeholder="Enter your question..." value={question} onChange={e => setQuestion(e.target.value)}/>
+                  <Input
+                    placeholder="Enter your question..."
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                  />
                 </FormControl>
                 <FormControl>
                   <FormLabel>Details</FormLabel>
-                  <Input placeholder="Enter details about your question..." value={details} onChange={e => setDetails(e.target.value)} />
+                  <Input
+                    placeholder="Enter details about your question..."
+                    value={details}
+                    onChange={(e) => setDetails(e.target.value)}
+                  />
                 </FormControl>
                 <FormControl>
                   <FormLabel>Email</FormLabel>
-                  <Input placeholder="Enter your email..." value={email} onChange={e => setEmail(e.target.value)} />
+                  <Input
+                    placeholder="Enter your email..."
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </FormControl>
                 <Button type="submit">Submit</Button>
               </form>
@@ -228,6 +307,6 @@ const App = () => {
       </Modal>
     </>
   );
-  };
+};
 
 export default App;

@@ -17,8 +17,11 @@ RUN npm install -g prisma
 COPY . .
 
 # Copy the wait-for script into the Docker image
-COPY ./wait-for /app/wait-for
+# COPY ./wait-for /app/wait-for
 
+RUN apk add curl
+
+RUN curl https://raw.githubusercontent.com/eficode/wait-for/master/wait-for -o wait-for
 # Make the wait-for script executable
 RUN chmod +x /app/wait-for
 

@@ -1,0 +1,7 @@
+*.json
+*.prisma
+*.html
+*.md
+*.css
+*.jsx
+*.yaml

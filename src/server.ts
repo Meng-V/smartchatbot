@@ -15,13 +15,14 @@ import session from "express-session";
 import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
 import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
-import * as dotenv from 'dotenv';
+import { LibrarianSubjectSearchTool } from "./ToolBox/LibrarianSubject";
+import * as dotenv from "dotenv";
 import axios from "axios";
 import qs from "qs";
 dotenv.config();
 
-const PORT=process.env.BACKEND_PORT
-const URL=`http://localhost:${PORT}`
+const PORT = process.env.BACKEND_PORT;
+const URL = `http://localhost:${PORT}`;
 
 const sessionMiddleware = session({
   secret: "changeit",
@@ -52,38 +53,39 @@ app.use(
         "connect-src": ["'self'", URL],
       },
     },
-  })
-);
-
-// Initialize the AI agent
-const llmModel = new OpenAIModel();
-const memory = new ConversationMemory(10);
-const searchTool = SearchEngine.getInstance();
-const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
-const reservationTool = RoomReservationTool.getInstance();
-const cancelReservationTool = CancelReservationTool.getInstance();
-const ebscoBookSearchTool = EBSCOBookSearchTool.getInstance();
-const checkOpenHourTool = CheckOpenHourTool.getInstance();
-
-const agent = new Agent(
-  llmModel,
-  [
-    searchTool,
-    reservationTool,
-    cancelReservationTool,
-    checkRoomAvailabilityTool,
-    ebscoBookSearchTool,
-    checkOpenHourTool,
-  ],
-  memory
+  }),
 );
 
 io.engine.use(sessionMiddleware);
 
 io.on("connection", async (socket) => {
+  // Initialize the AI agent
+  const llmModel = new OpenAIModel();
+  const memory = new ConversationMemory(10);
+  const searchTool = SearchEngine.getInstance();
+  const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
+  const reservationTool = RoomReservationTool.getInstance();
+  const cancelReservationTool = CancelReservationTool.getInstance();
+  const ebscoBookSearchTool = EBSCOBookSearchTool.getInstance();
+  const checkOpenHourTool = CheckOpenHourTool.getInstance();
+
+  const agent = new Agent(
+    llmModel,
+    [
+      searchTool,
+      reservationTool,
+      cancelReservationTool,
+      checkRoomAvailabilityTool,
+      ebscoBookSearchTool,
+      checkOpenHourTool,
+    ],
+    memory,
+  );
+
   let cookie = socket.handshake.headers.cookie || "";
   console.log("New user connected");
   socket.emit("connected", "User connected");
+
   const userAgent = socket.request.headers["user-agent"]
     ? socket.request.headers["user-agent"]
     : null;
@@ -95,8 +97,6 @@ io.on("connection", async (socket) => {
   });
 
   let toolsUsed: Set<string> = new Set();
-
-  
 
   socket.on("message", async (message, callback) => {
     try {
@@ -139,18 +139,20 @@ io.on("connection", async (socket) => {
     console.log("User disconnected");
   });
 
-
   socket.on("createTicket", async (ticketData, callback) => {
     try {
       const { question, email, details, name, ip } = ticketData;
-  
-      const authResponse = await axios.post("https://libanswers.lib.miamioh.edu/api/1.1/oauth/token", {
-        client_id: process.env.LIB_ANS_CLIENT_ID, // use your actual client_id and client_secret
-        client_secret: process.env.LIB_ANS_CLIENT_SECRET,
-        grant_type: "client_credentials",
-      });
+
+      const authResponse = await axios.post(
+        "https://libanswers.lib.miamioh.edu/api/1.1/oauth/token",
+        {
+          client_id: process.env.LIB_ANS_CLIENT_ID, // use your actual client_id and client_secret
+          client_secret: process.env.LIB_ANS_CLIENT_SECRET,
+          grant_type: "client_credentials",
+        },
+      );
       const { access_token } = authResponse.data;
-  
+
       // Use the access token to authenticate the 'createTicket' request
       const data = qs.stringify({
         quid: process.env.QUEUE_ID, // use the actual queue id
@@ -162,18 +164,21 @@ io.on("connection", async (socket) => {
         confirm_email: "true",
         // Add other fields as needed, e.g., custom1, custom2 etc.
       });
-  
-      const ticketResponse = await axios.post("https://libanswers.lib.miamioh.edu/api/1.1/ticket/create", data, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: `Bearer ${access_token}`,
+
+      const ticketResponse = await axios.post(
+        "https://libanswers.lib.miamioh.edu/api/1.1/ticket/create",
+        data,
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Bearer ${access_token}`,
+          },
         },
-      });
-  
+      );
+
       console.log(ticketResponse);
-  
+
       callback("Ticket created successfully");
-  
     } catch (error) {
       console.error(error);
       callback("Error: Unable to create ticket");

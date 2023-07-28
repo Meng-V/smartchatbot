@@ -1,3 +1,7 @@
+input.chakra-input:focus-visible{
+  border-color: #C41230!important;
+  box-shadow: 0 0 0 1px #c3142d;
+}
 .chat {
   height: 60vh;
   border: 1px solid #ccc;
@@ -15,8 +19,8 @@
 }
 .user {
   text-align: right;
-  background-color: #007bff;
-  color: white;
+  background-color: #C41230;
+  color: black;
 }
 .chatbot {
   text-align: left;
