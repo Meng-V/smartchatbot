@@ -29,6 +29,7 @@ type AgentResponse = {
 };
 
 interface IAgent {
+  name: string;
   llmModel: OpenAIModel;
   memory: ConversationMemory | null;
   toolsMap: Map<string, Tool>;

@@ -1,11 +1,11 @@
-import prisma from "../../prisma/prisma";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { ModelPromptWithTools } from "../Prompt/Prompts";
 import { OpenAIModel } from "../LLM/LLMModels";
 import { Tool } from "../ToolBox/ToolTemplates";
-import { IAgent, AgentResponse, AgentOutput, TokenUsage } from "./IAgent";
+import { IAgent, AgentResponse, AgentOutput } from "./IAgent";
 
 class Agent implements IAgent {
+  name: string;
   llmModel: OpenAIModel;
   basePrompt: ModelPromptWithTools;
   memory: ConversationMemory | null;
@@ -16,10 +16,12 @@ class Agent implements IAgent {
   actions: Set<string> = new Set();
 
   constructor(
+    name: string,
     llmModel: OpenAIModel,
     tools: Tool[],
     memory: ConversationMemory
   ) {
+    this.name = name;
     this.llmModel = llmModel;
     this.memory = memory;
     this.basePrompt = new ModelPromptWithTools(tools, this.memory);
