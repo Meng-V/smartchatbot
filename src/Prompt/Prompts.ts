@@ -50,7 +50,8 @@ class ModelPromptWithTools implements PromptTemplate {
       }\n\n`;
     return reActModelDescription;
   }
-  private constructToolsDescription(tools: Tool[]) {
+  private constructToolsDescription(tools: Tool[]): string {
+    if (tools.length === 0) return "";
     const toolsDescription = tools.reduce(
       (previousToolsDescription: string, currentToolDescription: Tool) => {
         const toolParamtersDescription = Object.keys(
