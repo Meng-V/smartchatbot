@@ -48,6 +48,7 @@ async function searchBooks(
 ): Promise<DisplayRecord[]> {
   const sessionToken = await authenticateUser();
   const bookInfo = await searchForBook(query, sessionToken, numOfBooks);
+  console.log("searchBooks method:" , bookInfo);
   return bookInfo;
 }
 

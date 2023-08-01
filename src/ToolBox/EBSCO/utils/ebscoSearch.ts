@@ -207,6 +207,7 @@ export async function searchForBook(
   numOfBooks: number,
 ): Promise<DisplayRecord[]> {
   const dataResult = await queryEbscoApi(query, sessionToken, numOfBooks);
+  console.log("searchForBook method:" , dataResult);
   if (isLeft(dataResult)) {
     console.error("Error querying the EBSCO API:", dataResult.left);
     throw new Error("No results found due to an error.");
