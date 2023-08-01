@@ -106,7 +106,7 @@ class ModelPromptWithTools implements PromptTemplate {
     return new Promise<{ prompt: string; tokenUsage: TokenUsage }>(
       async (resolve, reject) => {
         const conversationStringObject =
-          await this.conversationMemory?.getConversationAsString(0, 0, true);
+          await this.conversationMemory?.getConversationAsString(0, -1, true);
         const wholePrompt: string =
           `\nThis is the conversation so far (delimited by the triple dashes):\n---\n${conversationStringObject?.conversationString}\n---\n` +
           `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;

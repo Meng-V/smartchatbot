@@ -60,13 +60,12 @@ class CentralCoordinator {
         examples: this.exampleToLabel,
       });
 
-      console.log(response);
 
-      // if (!response.body || !response.body.classifications) {
-      //   reject("Error connecting to Cohere API");
-      //   return;
-      // }
-
+      if (!response.body || !response.body.classifications) {
+        reject("Error connecting to Cohere API");
+        return;
+      }
+      console.log(JSON.stringify(response.body.classifications[0].labels));
       const agentPredictionScores: Map<IAgent, number> = new Map<
         IAgent,
         number
@@ -112,7 +111,8 @@ class CentralCoordinator {
         if (
           Math.abs(
             agentPredictionScoresArray[0][1] - agentPredictionScoresArray[1][1]
-          ) > threshold
+          ) > threshold &&
+          agentPredictionScoresArray[0][1] >= this.confidenceThreshold
         ) {
           break;
         }

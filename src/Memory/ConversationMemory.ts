@@ -6,7 +6,6 @@ import { TokenUsage } from "../Agent/IAgent";
 type Role = "AIAgent" | "Customer";
 
 class ConversationMemory {
-  private curRole: Role;
   private conversation: [Role | null, string][];
   //Maximum conversation line would be keep in the memory. Oldest conversation would be tossed if exceed maxContextWindow
   private maxContextWindow: number | null;
@@ -18,7 +17,6 @@ class ConversationMemory {
   private conversationSummarizePrompt: ConversationSummarizePrompt | null =
     null;
 
-  private oldestMessageIndex: number;
 
   //This to prevent OpenAI API is called continuously to summarize the past conversation.
   private minimumTimeBetweenSummarizations: number = 1;
@@ -40,7 +38,6 @@ class ConversationMemory {
     conversationTokenLimit: number | null,
     minimumTimeBetweenSummarizations: number
   ) {
-    this.curRole = "AIAgent";
     this.conversationBufferSize = conversationBufferSize;
 
     this.maxContextWindow = maxContextWindow;
@@ -48,7 +45,6 @@ class ConversationMemory {
     this.conversation = Array(
       this.maxContextWindow ? this.maxContextWindow : 10
     ).fill([null, ""]);
-    this.oldestMessageIndex = this.conversation.length;
     if (conversationTokenLimit) {
       this.conversationTokenLimit = conversationTokenLimit;
       this.llmModel = llmModel;
@@ -63,10 +59,6 @@ class ConversationMemory {
   addToConversation(role: Role, text: string) {
     this.conversation.shift();
     this.conversation.push([role, text]);
-    this.curRole = role;
-    if (this.maxContextWindow && this.oldestMessageIndex > 0) {
-      this.oldestMessageIndex -= 1;
-    }
     this.curBufferOffset += 1;
   }
 
@@ -110,10 +102,11 @@ class ConversationMemory {
 
       let conversationString = this.conversation
         .slice(
-          this.oldestMessageIndex + start,
+          start,
           end+1
         )
         .reduce((prevString, curLine) => {
+          if (!curLine[0])  return prevString;
           return prevString + `${curLine[0]}: ${curLine[1]}\n`;
         }, "");
       if (!summary) {
@@ -163,7 +156,6 @@ class ConversationMemory {
 
           let conversationBuffer = await this.getConversationAsString(
             this.conversation.length -
-              this.oldestMessageIndex -
               this.conversationBufferSize +
               start,
             -1,
@@ -182,7 +174,6 @@ class ConversationMemory {
           this.conversation.length -
             this.conversationBufferSize -
             this.curBufferOffset -
-            this.oldestMessageIndex +
             start,
           -1
         );
