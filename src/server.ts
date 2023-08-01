@@ -2,6 +2,7 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import bodyParser from "body-parser";
+import * as fs from "fs";
 
 import prisma from "../prisma/prisma";
 import { Agent } from "./Agent/Agent";
@@ -16,6 +17,7 @@ import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
 import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
 import { LibrarianSubjectSearchTool } from "./ToolBox/LibrarianSubject";
+import { CentralCoordinator } from "./Agent/CentralCoordinator";
 
 const PORT = 3001;
 
@@ -57,6 +59,12 @@ app.use(
 
 io.engine.use(sessionMiddleware);
 
+const classifyExampleJSONString = fs.readFileSync(
+  "classify_example.json",
+  "utf-8"
+);
+const classifyExample = JSON.parse(classifyExampleJSONString);
+
 io.on("connection", async (socket) => {
   // Initialize the AI agent
   const gpt3_5Model = OpenAIModel.getInstance("gpt-3.5-turbo");
@@ -72,29 +80,52 @@ io.on("connection", async (socket) => {
     LibrarianSubjectSearchTool.getInstance();
 
   const academicSupportAgent = new Agent(
+    "AcademicSupportAgent",
     gpt4Model,
     [ebscoBookSearchTool, searchLibrarianWithSubjectTool],
     memory
   );
 
   const roomReservationAgent = new Agent(
+    "RoomReservationAgent",
     gpt4Model,
-    [
-      reservationTool,
-      cancelReservationTool,
-      checkRoomAvailabilityTool,
-      searchTool,
-    ],
+    [reservationTool, cancelReservationTool, checkRoomAvailabilityTool],
     memory
   );
 
   const buildingInformationAgent = new Agent(
+    "BuildingInformationAgent",
     gpt4Model,
     [checkOpenHourTool],
     memory
   );
 
-  const generalPurposeAgent = new Agent(gpt4Model, [searchTool], memory);
+  const generalPurposeAgent = new Agent(
+    "GeneralPurposeAgent",
+    gpt4Model,
+    [
+      ebscoBookSearchTool,
+      searchLibrarianWithSubjectTool,
+      reservationTool,
+      cancelReservationTool,
+      checkRoomAvailabilityTool,
+      checkOpenHourTool,
+      searchTool,
+    ],
+    memory
+  );
+
+  //Initialize the Central Coordinator to coordinate the agent
+  const centralCoordinator = new CentralCoordinator(
+    memory,
+    generalPurposeAgent,
+    [academicSupportAgent, roomReservationAgent, buildingInformationAgent],
+    0.9
+  );
+
+  for (let agentName of Object.keys(classifyExample)) {
+    centralCoordinator.addAgent(agentName, classifyExample[agentName]);
+  }
 
   //For logging conversation data
   let cookie = socket.handshake.headers.cookie || "";
@@ -112,17 +143,19 @@ io.on("connection", async (socket) => {
     },
   });
 
-  socket.on("message", async (message, callback) => {
+  socket.on("message", async (userMessage, callback) => {
     try {
       await prisma.message.create({
         data: {
           type: "customer",
-          content: message,
+          content: userMessage,
           conversationId: conversation.id,
         },
       });
-      console.log(message);
-      const agentResponse = await agent.agentRun(message);
+      memory.addToConversation("Customer", userMessage);
+      const agent = await centralCoordinator.coordinateAgent(userMessage);
+      console.log(`Coordinate to agent ${agent.name}`);
+      const agentResponse = await agent.agentRun(userMessage);
 
       await prisma.message.create({
         data: {

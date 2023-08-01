@@ -50,7 +50,8 @@ class ModelPromptWithTools implements PromptTemplate {
       }\n\n`;
     return reActModelDescription;
   }
-  private constructToolsDescription(tools: Tool[]) {
+  private constructToolsDescription(tools: Tool[]): string {
+    if (tools.length === 0) return "";
     const toolsDescription = tools.reduce(
       (previousToolsDescription: string, currentToolDescription: Tool) => {
         const toolParamtersDescription = Object.keys(
@@ -106,7 +107,7 @@ class ModelPromptWithTools implements PromptTemplate {
     return new Promise<{ prompt: string; tokenUsage: TokenUsage }>(
       async (resolve, reject) => {
         const conversationStringObject =
-          await this.conversationMemory?.getConversationAsString(0, 0, true);
+          await this.conversationMemory?.getConversationAsString(0, -1, true);
         const wholePrompt: string =
           `\nThis is the conversation so far (delimited by the triple dashes):\n---\n${conversationStringObject?.conversationString}\n---\n` +
           `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;

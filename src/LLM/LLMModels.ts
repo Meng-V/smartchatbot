@@ -37,7 +37,7 @@ class OpenAIModel {
 
   public static getInstance(
     modelName: string,
-    temperature: number = 0.1,
+    temperature: number = 0.0,
     top_p: number = 0.1
   ): OpenAIModel {
     const modelSetting: LLMModelSetting = {
