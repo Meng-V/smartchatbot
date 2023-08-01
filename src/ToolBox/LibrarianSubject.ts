@@ -145,22 +145,6 @@ class LibrarianSubjectSearchTool implements Tool {
         },
       });
       resolve(response.data);
-
-      // const subjectToLibrarian: Map<string, { [key: string]: string }[]> =
-      //   new Map();
-      // for (let librarian of response.data) {
-      //   const name = `${librarian.first_name} ${librarian.last_name}`;
-      //   librarian.subjects.forEach(
-      //     (subject: { id: string; name: string; slug_id: string }) => {
-      //       if (!subjectToLibrarian.has(subject.name))
-      //         subjectToLibrarian.set(subject.name, []);
-      //       subjectToLibrarian.set(subject.name, [
-      //         ...subjectToLibrarian.get(subject.name)!,
-      //         { name: name, email: librarian.email },
-      //       ]);
-      //     }
-      //   );
-      // }
     });
   }
 

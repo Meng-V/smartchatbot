@@ -82,21 +82,21 @@ io.on("connection", async (socket) => {
   const academicSupportAgent = new Agent(
     "AcademicSupportAgent",
     gpt4Model,
-    [ebscoBookSearchTool, searchLibrarianWithSubjectTool],
+    [ebscoBookSearchTool, searchLibrarianWithSubjectTool, searchTool],
     memory
   );
 
   const roomReservationAgent = new Agent(
     "RoomReservationAgent",
     gpt4Model,
-    [reservationTool, cancelReservationTool, checkRoomAvailabilityTool],
+    [reservationTool, cancelReservationTool, checkRoomAvailabilityTool, searchTool],
     memory
   );
 
   const buildingInformationAgent = new Agent(
     "BuildingInformationAgent",
     gpt4Model,
-    [checkOpenHourTool],
+    [checkOpenHourTool,searchTool],
     memory
   );
 
