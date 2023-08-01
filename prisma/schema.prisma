@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl"]
 }
 
@@ -21,10 +21,13 @@ model Message {
 }
 
 model Conversation {
-  id          String    @id @default(uuid())
-  userAgent   String?
-  toolUsed    String[]
-  messageList Message[]
+  id               String    @id @default(uuid())
+  userAgent        String?
+  toolUsed         String[]
+  messageList      Message[]
+  completionTokens Int
+  promptTokens     Int
+  totalTokens      Int
 }
 
 model Subject {

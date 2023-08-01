@@ -3,25 +3,23 @@ import { PromptTemplate } from "./PromptTemplate";
 
 class ConversationSummarizePrompt implements PromptTemplate {
   public modelDescription: string;
-  public conversationMemory: ConversationMemory | null;
-  constructor(conversationMemory: ConversationMemory | null = null) {
+  public originalConversationString: string;
+  constructor() {
     this.modelDescription =
-      "You are trying to shorten the following conversation by summarizing it. Please include any vital data in the summarization.\n";
-    this.conversationMemory = conversationMemory;
+      "You are trying to shorten the following conversation by summarizing it. Include any vital ìnformations in the summary and stress that the latest question is unanswered\n";
+    this.originalConversationString = "";
   }
 
-  async getPrompt(): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      resolve(
-        `${
-          this.modelDescription
-        }\n${this.conversationMemory?.getConversationAsString()}`,
-      );
+  async getPrompt(): Promise<{prompt: string}> {
+    return new Promise<{prompt: string}>((resolve, reject) => {
+      resolve({prompt: `${
+        this.modelDescription
+      }\n${this.originalConversationString}`});
     });
   }
 
-  setConversationMemory(conversationMemory: ConversationMemory | null) {
-    this.conversationMemory = conversationMemory;
+  setConversationMemory(originalConversationString: string): void {
+    this.originalConversationString = originalConversationString;
   }
   getSystemDescription(): string {
     return this.modelDescription;
