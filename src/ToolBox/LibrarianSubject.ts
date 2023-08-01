@@ -121,10 +121,10 @@ class LibrarianSubjectSearchTool implements Tool {
                 Math.max(query.length, synonyms.get(choice)!.length)
           : 0
       );
-
       if (matchScore < threshold) continue;
-      if (result.length >= numberOfResult) result.shift();
       result.push([matchScore, choice]);
+      result.sort((a, b) => a[0]-b[0]);
+      if (result.length > numberOfResult) result.shift();
     }
 
     return result;
@@ -202,7 +202,7 @@ class LibrarianSubjectSearchTool implements Tool {
                           id: subject.id,
                         },
                         update: {},
-                        create: { id: subject.id, name: subject.name },
+                        create: { id: subject.id, name: subject.name.toLowerCase().trim() },
                       })
                     ),
               },
@@ -226,7 +226,7 @@ class LibrarianSubjectSearchTool implements Tool {
                           where: { id: subject.id },
                           create: {
                             id: subject.id,
-                            name: subject.name,
+                            name: subject.name.toLowerCase().trim(),
                           },
                         };
                       }
@@ -300,6 +300,7 @@ class LibrarianSubjectSearchTool implements Tool {
 
         await instance.updateLibrarianSubjectDatabase(30);
 
+        querySubjectName = querySubjectName.toLowerCase().trim();
         const subjects = await prisma.subject.findMany();
         const subjectNames = subjects.map((subject) => subject.name);
         const bestMatchSubject = instance.fuzzybestMatch(

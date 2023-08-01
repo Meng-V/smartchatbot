@@ -2,6 +2,7 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import bodyParser from "body-parser";
+import * as fs from "fs";
 
 import prisma from "../prisma/prisma";
 import { Agent } from "./Agent/Agent";
@@ -16,6 +17,7 @@ import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
 import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
 import { LibrarianSubjectSearchTool } from "./ToolBox/LibrarianSubject";
+import { CentralCoordinator } from "./Agent/CentralCoordinator";
 
 const PORT = 3001;
 
@@ -55,14 +57,18 @@ app.use(
   })
 );
 
-
-
 io.engine.use(sessionMiddleware);
+
+const classifyExampleJSONString = fs.readFileSync(
+  "classify_example.json",
+  "utf-8"
+);
+const classifyExample = JSON.parse(classifyExampleJSONString);
 
 io.on("connection", async (socket) => {
   // Initialize the AI agent
-  const gpt3_5Model = OpenAIModel.getInstance('gpt-3.5-turbo');
-  const gpt4Model = OpenAIModel.getInstance('gpt-4-0613');
+  const gpt3_5Model = OpenAIModel.getInstance("gpt-3.5-turbo");
+  const gpt4Model = OpenAIModel.getInstance("gpt-4-0613");
   const memory = new ConversationMemory(8, gpt3_5Model, 2, 50, 3);
   const searchTool = SearchEngine.getInstance();
   const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
@@ -70,21 +76,56 @@ io.on("connection", async (socket) => {
   const cancelReservationTool = CancelReservationTool.getInstance();
   const ebscoBookSearchTool = EBSCOBookSearchTool.getInstance();
   const checkOpenHourTool = CheckOpenHourTool.getInstance();
-  const searchLibrarianWithSubjectTool = LibrarianSubjectSearchTool.getInstance();
+  const searchLibrarianWithSubjectTool =
+    LibrarianSubjectSearchTool.getInstance();
 
-  const agent = new Agent(
+  const academicSupportAgent = new Agent(
+    "AcademicSupportAgent",
+    gpt4Model,
+    [ebscoBookSearchTool, searchLibrarianWithSubjectTool],
+    memory
+  );
+
+  const roomReservationAgent = new Agent(
+    "RoomReservationAgent",
+    gpt4Model,
+    [reservationTool, cancelReservationTool, checkRoomAvailabilityTool],
+    memory
+  );
+
+  const buildingInformationAgent = new Agent(
+    "BuildingInformationAgent",
+    gpt4Model,
+    [checkOpenHourTool],
+    memory
+  );
+
+  const generalPurposeAgent = new Agent(
+    "GeneralPurposeAgent",
     gpt4Model,
     [
-      checkOpenHourTool,
+      ebscoBookSearchTool,
+      searchLibrarianWithSubjectTool,
       reservationTool,
       cancelReservationTool,
       checkRoomAvailabilityTool,
-      ebscoBookSearchTool,
-      searchLibrarianWithSubjectTool,
+      checkOpenHourTool,
       searchTool,
     ],
     memory
   );
+
+  //Initialize the Central Coordinator to coordinate the agent
+  const centralCoordinator = new CentralCoordinator(
+    memory,
+    generalPurposeAgent,
+    [academicSupportAgent, roomReservationAgent, buildingInformationAgent],
+    0.9
+  );
+
+  for (let agentName of Object.keys(classifyExample)) {
+    centralCoordinator.addAgent(agentName, classifyExample[agentName]);
+  }
 
   //For logging conversation data
   let cookie = socket.handshake.headers.cookie || "";
@@ -102,17 +143,19 @@ io.on("connection", async (socket) => {
     },
   });
 
-  socket.on("message", async (message, callback) => {
+  socket.on("message", async (userMessage, callback) => {
     try {
       await prisma.message.create({
         data: {
           type: "customer",
-          content: message,
+          content: userMessage,
           conversationId: conversation.id,
         },
       });
-      console.log(message)
-      const agentResponse = await agent.agentRun(message);
+      memory.addToConversation("Customer", userMessage);
+      const agent = await centralCoordinator.coordinateAgent(userMessage);
+      console.log(`Coordinate to agent ${agent.name}`);
+      const agentResponse = await agent.agentRun(userMessage);
 
       await prisma.message.create({
         data: {
@@ -122,7 +165,7 @@ io.on("connection", async (socket) => {
         },
       });
       await prisma.conversation.update({
-        where: {id: conversation.id},
+        where: { id: conversation.id },
         data: {
           completionTokens: {
             increment: agentResponse.tokenUsage.completionTokens,
@@ -132,22 +175,21 @@ io.on("connection", async (socket) => {
           },
           totalTokens: {
             increment: agentResponse.tokenUsage.totalTokens,
-          }
-
-        }
-      })
+          },
+        },
+      });
       socket.emit("message", agentResponse);
 
-      agentResponse.actions.forEach( async (action) => {
+      agentResponse.actions.forEach(async (action) => {
         const existingTool = await prisma.conversation.findUnique({
-          where: {id: conversation.id},
-          select: {toolUsed: true},
+          where: { id: conversation.id },
+          select: { toolUsed: true },
         });
 
         if (!existingTool) {
-          throw new Error('Entry not found');
+          throw new Error("Entry not found");
         }
-        const {toolUsed} = existingTool;
+        const { toolUsed } = existingTool;
         if (!toolUsed.some((value) => value === action)) {
           // If not, add the new value to the toolUsed array
           await prisma.conversation.update({

@@ -5,7 +5,7 @@ import {
 } from "openai";
 import { PromptTemplate } from "../Prompt/PromptTemplate";
 import { ModelPromptWithTools } from "../Prompt/Prompts";
-import { TokenUsage } from "../Agent/Agent";
+import { TokenUsage } from "../Agent/IAgent";
 
 type LLMModelSetting = {
   modelName: string;
@@ -37,7 +37,7 @@ class OpenAIModel {
 
   public static getInstance(
     modelName: string,
-    temperature: number = 0.1,
+    temperature: number = 0.0,
     top_p: number = 0.1
   ): OpenAIModel {
     const modelSetting: LLMModelSetting = {
