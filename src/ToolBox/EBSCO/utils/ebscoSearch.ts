@@ -206,19 +206,26 @@ export async function searchForBook(
   sessionToken: string,
   numOfBooks: number,
 ): Promise<DisplayRecord[]> {
-  const dataResult = await queryEbscoApi(query, sessionToken, numOfBooks);
-  console.log("searchForBook method:" , dataResult);
-  var data: DisplayRecord[];
-  if (isLeft(dataResult)) {
-    console.error("Error querying the EBSCO API:", dataResult.left);
-    return "No results found due to an error.";
-  }
+  try {
+    const dataResult = await queryEbscoApi(query, sessionToken, numOfBooks);
+    console.log("searchForBook method:", dataResult);
 
-  data = dataResult.right;
-  data[0]['status'] = 'success'; 
-  if (data.length > 0) {
-    return data;
-  } else {
-    throw new Error("No results found");
+    if (isLeft(dataResult)) {
+      console.error("Error querying the EBSCO API:", dataResult.left);
+      return [{ status: "fail", error: `Error querying the EBSCO API: ${dataResult.left}` }];
+    }
+
+    var data: DisplayRecord[] = dataResult.right;
+    data[0]['status'] = 'success';
+
+    if (data.length > 0) {
+      return data;
+    } else {
+      return [{ status: "fail", error: "No results found" }];
+    }
+  } catch (err) {
+    console.error("An unexpected error occurred:", err);
+    return [{ status: "fail", error: `An unexpected error occurred, please try again.` }];
   }
 }
+

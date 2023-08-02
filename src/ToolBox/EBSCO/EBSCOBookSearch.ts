@@ -1,12 +1,13 @@
 import { cons } from "fp-ts/lib/ReadonlyNonEmptyArray";
 import { Tool } from "../ToolTemplates";
 import { searchBooks } from "./utils/ebscoService";
-import { Nodehun } from 'nodehun'
+import { Nodehun } from "nodehun";
+import { DisplayRecord } from "./utils/Record";
 
-const fs = require('fs')
-const affix = fs.readFileSync('./src/dictionaries/en_us.aff')
-const dictionary = fs.readFileSync('./src/dictionaries/en_us.dic')
-const nodehun = new Nodehun(affix, dictionary)
+const fs = require("fs");
+const affix = fs.readFileSync("./src/dictionaries/en_us.aff");
+const dictionary = fs.readFileSync("./src/dictionaries/en_us.dic");
+const nodehun = new Nodehun(affix, dictionary);
 
 class EBSCOBookSearchTool implements Tool {
   private static instance: EBSCOBookSearchTool;
@@ -57,7 +58,7 @@ class EBSCOBookSearchTool implements Tool {
         resolve("Sorry, no results were found for your query.");
       } else {
         resolve(
-          `Please interpret this JSON result to the customer in a markdown language output. ${JSON.stringify(
+          `Please interpret this JSON result to the customer in a markdown language output, including if there's value in the error field. ${JSON.stringify(
             response,
           )}`,
         );
@@ -65,37 +66,26 @@ class EBSCOBookSearchTool implements Tool {
     });
   }
 
-  static async run(query: string): Promise<
-    {
-      title: string;
-      author: string;
-      publicationYear: number;
-      url: string;
-      location: string;
-    }[]
-  > {
-    return new Promise<
-      {
-        title: string;
-        author: string;
-        publicationYear: number;
-        url: string;
-        location: string;
-      }[]
-    >(async (resolve, reject) => {
-      const searchResults = await searchBooks(query, 2);
+  static async run(query: string): Promise<DisplayRecord[]> {
+    return new Promise<DisplayRecord[]>(async (resolve) => {
+      const searchResults = await searchBooks(query, 5);
       console.log("run method:", searchResults);
+  
       if (searchResults.length === 0) {
         console.log("No results found for the given query");
-        reject([]);
+        resolve([{ status: "fail", title: "", author: "", publicationYear: 0, url: "", location: "", error: "No results found for the given query" }]);
+        return;
       }
+  
       const filteredSearchResult = searchResults.map((record) => {
         let location = "";
-
-        for (const info of record.locationInformation) {
-          location += `${info.Sublocation} - ${info.ShelfLocator}\n`;
+        if (record.locationInformation) {
+          for (const info of record.locationInformation) {
+            location += `${info.Sublocation} - ${info.ShelfLocator}\n`;
+          }
+          location = location.trim();
         }
-        location = location.trim();
+  
         return {
           title: record.title,
           author: record.author,
@@ -104,22 +94,32 @@ class EBSCOBookSearchTool implements Tool {
           location: location,
         };
       });
+  
       resolve(filteredSearchResult);
     });
   }
+  
 
   async correctSpelling(input: string): Promise<string> {
-    const words = input.split(' ')
-    for(let i = 0; i < words.length; i++) {
-      const isCorrect = await nodehun.spell(words[i])
+    const words = input.split(" ");
+    for (let i = 0; i < words.length; i++) {
+      const isCorrect = await nodehun.spell(words[i]);
       if (!isCorrect) {
-        const suggestions = await nodehun.suggest(words[i])
+        const suggestions = await nodehun.suggest(words[i]);
         if (suggestions && suggestions.length > 0) {
-          words[i] = suggestions[0] // replace the incorrect word with the first suggestion
+          let correctedWord = suggestions[0].toLowerCase(); // replace the incorrect word with the first suggestion in lowercase
+
+          // Capitalize the corrected word only if the original was capitalized
+          if (words[i].charAt(0) === words[i].charAt(0).toUpperCase()) {
+            correctedWord =
+              correctedWord.charAt(0).toUpperCase() + correctedWord.slice(1);
+          }
+
+          words[i] = correctedWord;
         }
       }
     }
-    return words.join(' ') // return the corrected query
+    return words.join(" "); // return the corrected query
   }
 }
 

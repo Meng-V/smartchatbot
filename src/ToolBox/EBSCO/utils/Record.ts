@@ -136,16 +136,17 @@ interface Title {
 }
 
 interface DisplayRecord {
-  title: string;
-  author: string;
-  publicationYear: number;
-  bookType: string;
-  subjects: string;
-  locationInformation: { Sublocation: string; ShelfLocator: string }[];
-  abstract: string;
-  url: string;
-  status: string;
-  error : string;
+  title?: string;
+  author?: string;
+  publicationYear?: number;
+  bookType?: string;
+  subjects?: string;
+  locationInformation?: { Sublocation?: string; ShelfLocator?: string }[];
+  abstract?: string;
+  url?: string;
+  status?: string;
+  error?: string;
+  location?: string;
 }
 
 export {

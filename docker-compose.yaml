@@ -21,6 +21,9 @@ services:
       # - redis
     env_file:
       - .env
+    # volumes:
+    # - ./:/app
+    restart: on-failure:5
 
   db:
     image: postgres:12
