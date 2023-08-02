@@ -56,7 +56,7 @@ class ModelPromptWithTools implements PromptTemplate {
     const toolsDescription = tools.reduce(
       (previousToolsDescription: string, currentToolDescription: Tool) => {
         const toolParamtersDescription = Object.keys(
-          currentToolDescription.parameters
+          currentToolDescription.parameters,
         ).reduce((previousParameter: string, parameterName: string) => {
           return (
             previousParameter +
@@ -76,7 +76,7 @@ class ModelPromptWithTools implements PromptTemplate {
   }
 
   public updateConversationMemory(
-    newConversationMemory: ConversationMemory | null
+    newConversationMemory: ConversationMemory | null,
   ): void {
     this.conversationMemory = newConversationMemory;
   }

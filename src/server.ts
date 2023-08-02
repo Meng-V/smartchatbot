@@ -18,8 +18,13 @@ import { CheckOpenHourTool } from "./ToolBox/LibCalAPI/CheckOpenHours";
 import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
 import { LibrarianSubjectSearchTool } from "./ToolBox/LibrarianSubject";
 import { CentralCoordinator } from "./Agent/CentralCoordinator";
+import * as dotenv from "dotenv";
+import axios from "axios";
+import qs from "qs";
+dotenv.config();
 
-const PORT = 3001;
+const PORT = process.env.BACKEND_PORT;
+const URL = `http://localhost:${PORT}`;
 
 const sessionMiddleware = session({
   secret: "changeit",
@@ -33,11 +38,7 @@ const io = new Server(httpServer, {
     origin: "*", // Configure as per your needs
   },
 });
-// app.use(session({
-//   secret: '34SDgsdgspsadfasfgddfsG', // just a long random string
-//   resave: false,
-//   saveUninitialized: true
-// }));
+
 app.use(express.static("public"));
 app.use(express.static(__dirname));
 app.use(bodyParser.json());
@@ -54,7 +55,7 @@ app.use(
         "connect-src": ["'self'", "http://localhost:3000"],
       },
     },
-  })
+  }),
 );
 
 io.engine.use(sessionMiddleware);
@@ -231,6 +232,52 @@ io.on("connection", async (socket) => {
 
   socket.on("disconnect", async () => {
     console.log("User disconnected");
+  });
+
+  socket.on("createTicket", async (ticketData, callback) => {
+    try {
+      const { question, email, details, name, ip } = ticketData;
+
+      const authResponse = await axios.post(
+        "https://libanswers.lib.miamioh.edu/api/1.1/oauth/token",
+        {
+          client_id: process.env.LIB_ANS_CLIENT_ID, // use your actual client_id and client_secret
+          client_secret: process.env.LIB_ANS_CLIENT_SECRET,
+          grant_type: "client_credentials",
+        },
+      );
+      const { access_token } = authResponse.data;
+
+      // Use the access token to authenticate the 'createTicket' request
+      const data = qs.stringify({
+        quid: process.env.QUEUE_ID, // use the actual queue id
+        pquestion: question,
+        pdetails: details,
+        pname: name,
+        pemail: email,
+        ip,
+        confirm_email: "true",
+        // Add other fields as needed, e.g., custom1, custom2 etc.
+      });
+
+      const ticketResponse = await axios.post(
+        "https://libanswers.lib.miamioh.edu/api/1.1/ticket/create",
+        data,
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Bearer ${access_token}`,
+          },
+        },
+      );
+
+      console.log(ticketResponse);
+
+      callback("Ticket created successfully");
+    } catch (error) {
+      console.error(error);
+      callback("Error: Unable to create ticket");
+    }
   });
 });
 

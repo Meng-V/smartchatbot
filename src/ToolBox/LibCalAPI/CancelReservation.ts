@@ -48,7 +48,7 @@ class CancelReservationTool extends LibCalAPIBaseTool {
       const response = await CancelReservationTool.run(bookingID);
       if (response.success) {
         resolve(
-          `Room reservation with ID: ${bookingID} is cancelled successfully\n`
+          `Room reservation with ID: ${bookingID} is cancelled successfully\n`,
         );
       } else {
         resolve(
@@ -59,7 +59,7 @@ class CancelReservationTool extends LibCalAPIBaseTool {
   }
 
   static async run(
-    bookingID: string
+    bookingID: string,
   ): Promise<{ success: boolean; error: string | null }> {
     return new Promise<{ success: boolean; error: string | null }>(
       async (resolve, reject) => {
@@ -94,7 +94,7 @@ class CancelReservationTool extends LibCalAPIBaseTool {
         } catch (error: any) {
           console.log(error.message);
         }
-      }
+      },
     );
   }
 }

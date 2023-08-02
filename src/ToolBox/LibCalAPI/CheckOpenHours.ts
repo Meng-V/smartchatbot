@@ -68,7 +68,7 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
       const currentDate = new Date(
         monday.getFullYear(),
         monday.getMonth(),
-        monday.getDate() + i
+        monday.getDate() + i,
       );
       datesOfWeek.push(this.formatDateString(currentDate));
     }

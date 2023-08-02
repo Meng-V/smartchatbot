@@ -57,7 +57,7 @@ class Agent implements IAgent {
       
       this.basePrompt.emptyScratchpad();
       let llmResponseObj = await this.llmModel.getModelResponse(
-        this.basePrompt
+        this.basePrompt,
       );
       let llmResponse = llmResponseObj.response;
       //Update tokens usage
@@ -77,15 +77,15 @@ class Agent implements IAgent {
         }
         if (outputParsed.outputType === "action") {
           this.basePrompt.updateScratchpad(
-            `Thought: ${outputParsed.thought}\n`
+            `Thought: ${outputParsed.thought}\n`,
           );
           this.basePrompt.updateScratchpad(`Action: ${outputParsed.action}\n`);
           this.basePrompt.updateScratchpad(
-            `Action Input: ${JSON.stringify(outputParsed.actionInput)}\n`
+            `Action Input: ${JSON.stringify(outputParsed.actionInput)}\n`,
           );
           const toolResponse = await this.accessToolBox(
             outputParsed.action,
-            outputParsed.actionInput
+            outputParsed.actionInput,
           );
           console.log(toolResponse)
 
@@ -114,7 +114,7 @@ class Agent implements IAgent {
 
   private async accessToolBox(
     toolName: string,
-    toolInput: { [key: string]: string }
+    toolInput: { [key: string]: string },
   ): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       //const timeout = setTimeout(() => {
