@@ -1,6 +1,12 @@
 import { cons } from "fp-ts/lib/ReadonlyNonEmptyArray";
 import { Tool } from "../ToolTemplates";
 import { searchBooks } from "./utils/ebscoService";
+import { Nodehun } from 'nodehun'
+
+const fs = require('fs')
+const affix = fs.readFileSync('./src/dictionaries/en_us.aff')
+const dictionary = fs.readFileSync('./src/dictionaries/en_us.dic')
+const nodehun = new Nodehun(affix, dictionary)
 
 class EBSCOBookSearchTool implements Tool {
   private static instance: EBSCOBookSearchTool;
@@ -15,11 +21,11 @@ class EBSCOBookSearchTool implements Tool {
   //     "REQUIRED string. Use an EBSCO query format. For example, 'AU Gaiman AND TI Sandman'. Avoid using special characters except when implementing specific search techniques.",
   // };
   public description: string =
-    "EBSCOBookSearchTool searches academic resources using an EBSCO query. Use specific book titles in your query rather than referring to their order in a series. The following codes are used to represent specific types of data: TX=All Text, AU=Author, TI=Title, SU=Subject, SO=Source, AB=Abstract, IS=ISSN [8-digit code], IB=ISBN [13 digits code]. Use logical operators such as AND/OR to combine search terms. Use proximity operators such as NEAR(N), WITHIN(W) to specify the closeness of terms. For a more precise search, use quotes for an exact phrase, * for a wildcard, ? for single character substitution, # for single/no character substitution.";
+    "EBSCOBookSearchTool is designed to search academic resources using an EBSCO query. It works best when you input specific book titles in your query rather than referring to their order in a series. Utilize the following codes to target specific data types: TX=All Text, AU=Author, TI=Title, SU=Subject, SO=Source, AB=Abstract, IS=ISSN [8-digit code], IB=ISBN [13-digit code]. Combine search terms using logical operators like AND/OR. If the book title or any other search parameter is not certain, use proximity operators such as NEAR(N), WITHIN(W) to specify the closeness of terms. For a more precise search, apply quotes for an exact phrase, * for a wildcard, ? for single character substitution, and # for single/no character substitution.";
 
   public parameters: { [parameterName: string]: string } = {
     query:
-      "REQUIRED string. Use an EBSCO query format with specific book titles. For example, 'AU Gaiman AND TI Sandman'. Avoid using special characters except when implementing specific search techniques. Don't use numerical order of books in a series, instead use the exact book titles.",
+      "REQUIRED string. Format your search in the EBSCO query style with specific book titles and fix very obvious spellings. For example, 'AU Gaiman AND TI Sandman'. In case of uncertainty about book titles or if the query uses words such as like or something or other parameters, use proximity operators in the format 'TI BookTitle1 N# BookTitle2' where '#' is the number of words in between. Avoid using special characters except when implementing specific search techniques. When referring to books in a series, use the exact book titles instead of their numerical order.",
   };
 
   private constructor() {
@@ -50,11 +56,11 @@ class EBSCOBookSearchTool implements Tool {
       if (response.length === 0) {
         resolve("Sorry, no results were found for your query.");
       } else {
-          resolve(
-              `Please interpret this JSON result to the customer in a markdown language output. ${JSON.stringify(
-              response,
-              )}`,
-          );
+        resolve(
+          `Please interpret this JSON result to the customer in a markdown language output. ${JSON.stringify(
+            response,
+          )}`,
+        );
       }
     });
   }
@@ -100,6 +106,20 @@ class EBSCOBookSearchTool implements Tool {
       });
       resolve(filteredSearchResult);
     });
+  }
+
+  async correctSpelling(input: string): Promise<string> {
+    const words = input.split(' ')
+    for(let i = 0; i < words.length; i++) {
+      const isCorrect = await nodehun.spell(words[i])
+      if (!isCorrect) {
+        const suggestions = await nodehun.suggest(words[i])
+        if (suggestions && suggestions.length > 0) {
+          words[i] = suggestions[0] // replace the incorrect word with the first suggestion
+        }
+      }
+    }
+    return words.join(' ') // return the corrected query
   }
 }
 

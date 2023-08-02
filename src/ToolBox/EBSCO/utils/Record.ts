@@ -144,6 +144,8 @@ interface DisplayRecord {
   locationInformation: { Sublocation: string; ShelfLocator: string }[];
   abstract: string;
   url: string;
+  status: string;
+  error : string;
 }
 
 export {

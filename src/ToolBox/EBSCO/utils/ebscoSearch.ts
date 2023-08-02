@@ -208,13 +208,14 @@ export async function searchForBook(
 ): Promise<DisplayRecord[]> {
   const dataResult = await queryEbscoApi(query, sessionToken, numOfBooks);
   console.log("searchForBook method:" , dataResult);
+  var data: DisplayRecord[];
   if (isLeft(dataResult)) {
     console.error("Error querying the EBSCO API:", dataResult.left);
-    throw new Error("No results found due to an error.");
+    return "No results found due to an error.";
   }
 
-  const data: DisplayRecord[] = dataResult.right;
-
+  data = dataResult.right;
+  data[0]['status'] = 'success'; 
   if (data.length > 0) {
     return data;
   } else {

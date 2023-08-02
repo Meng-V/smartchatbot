@@ -1,11 +1,12 @@
 # Dockerfile
 FROM node:18.16-alpine
-
+ENV TZ="America/New_York"
 WORKDIR /app
 
 # Install bash
 RUN apk add --no-cache bash
-
+RUN apk add --no-cache python3 py3-pip make alpine-sdk python3-dev
+RUN python3 --version && pip3 --version
 # Copy package.json and package-lock.json first
 COPY package*.json ./
 
