@@ -85,7 +85,8 @@ class CentralCoordinator {
 
   async coordinateAgent(message: string): Promise<IAgent> {
     return new Promise<IAgent>(async (resolve, reject) => {
-      const maximumContextWindow = 6;
+      let maximumContextWindow = 6;
+      maximumContextWindow = Math.min(maximumContextWindow, this.conversationMemory.messageNum);
       let bestAgent: IAgent | null = null;
       for (let startIdx = -1; startIdx >= -maximumContextWindow; startIdx--) {
         const conversationString = (

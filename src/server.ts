@@ -69,7 +69,7 @@ io.on("connection", async (socket) => {
   // Initialize the AI agent
   const gpt3_5Model = OpenAIModel.getInstance("gpt-3.5-turbo");
   const gpt4Model = OpenAIModel.getInstance("gpt-4-0613");
-  const memory = new ConversationMemory(8, gpt3_5Model, 2, 50, 3);
+  const memory = new ConversationMemory(8, gpt3_5Model, 1, 50, 3);
   const searchTool = SearchEngine.getInstance();
   const checkRoomAvailabilityTool = CheckRoomAvailabilityTool.getInstance();
   const reservationTool = RoomReservationTool.getInstance();
@@ -82,21 +82,28 @@ io.on("connection", async (socket) => {
   const academicSupportAgent = new Agent(
     "AcademicSupportAgent",
     gpt4Model,
-    [ebscoBookSearchTool, searchLibrarianWithSubjectTool, searchTool],
+    [ebscoBookSearchTool, searchLibrarianWithSubjectTool,],
     memory
   );
 
   const roomReservationAgent = new Agent(
     "RoomReservationAgent",
     gpt4Model,
-    [reservationTool, cancelReservationTool, checkRoomAvailabilityTool, searchTool],
+    [reservationTool, cancelReservationTool, checkRoomAvailabilityTool,],
     memory
   );
 
   const buildingInformationAgent = new Agent(
     "BuildingInformationAgent",
     gpt4Model,
-    [checkOpenHourTool,searchTool],
+    [checkOpenHourTool,],
+    memory
+  );
+
+  const googleSearchAgent = new Agent(
+    "GoogleSearchAgent",
+    gpt4Model,
+    [searchTool],
     memory
   );
 
@@ -115,12 +122,28 @@ io.on("connection", async (socket) => {
     memory
   );
 
+  const smallTalkAgent = new Agent(
+    "SmallTalkAgent",
+    gpt3_5Model,
+    [ebscoBookSearchTool,
+      searchLibrarianWithSubjectTool,
+      reservationTool,
+      cancelReservationTool,
+      checkRoomAvailabilityTool,
+      checkOpenHourTool,
+      searchTool,],
+    memory,
+    false,
+  )
+
   //Initialize the Central Coordinator to coordinate the agent
   const centralCoordinator = new CentralCoordinator(
     memory,
     generalPurposeAgent,
-    [academicSupportAgent, roomReservationAgent, buildingInformationAgent],
-    0.9
+    [academicSupportAgent, roomReservationAgent, buildingInformationAgent,
+    googleSearchAgent, smallTalkAgent,
+    ],
+    0.91,
   );
 
   for (let agentName of Object.keys(classifyExample)) {

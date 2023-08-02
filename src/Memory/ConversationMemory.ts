@@ -23,6 +23,8 @@ class ConversationMemory {
   private curBufferOffset: number;
   private curConversationSummary: string = "";
 
+  public messageNum: number = 0;
+
   /**
    *
    * @param maxContextWindow Maximum conversation line would be keep in the memory. Oldest conversation would be tossed if exceed maxContextWindow
@@ -60,6 +62,7 @@ class ConversationMemory {
     this.conversation.shift();
     this.conversation.push([role, text]);
     this.curBufferOffset += 1;
+    this.messageNum += 1;
   }
 
   /**

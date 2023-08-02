@@ -25,10 +25,10 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
 
   public readonly name: string = "CheckRoomAvailabilityTool";
   public readonly description: string =
-    "This tool is for checking the available hours of a specific study room on one specific date. Use Final Answer instead if you don't have enough required parameters (roomID and date) yet. Don't include any single quotes in the paramter. The year is implicitly the current year";
+    "This tool is for checking the available hours of a specific study room on one specific date.Use Final Answer instead if you don't have enough required parameters(roomID and date)yet.Don't include any single quotes in the paramter.The year is implicitly the current year";
 
   public readonly parameters: { [parameterName: string]: string } = {
-    date: "string [REQUIRED] [format YYYY-MM-DD]",
+    date: "string [REQUIRED][format YYYY-MM-DD]",
     roomID: "string [REQUIRED]",
   };
 
@@ -189,7 +189,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
       const endMatch = endTime.match(timeRegex);
 
       if (!startMatch || !endMatch) {
-        reject("Invalid time format. Expected format: HH:MM:SS");
+        reject("Invalid time format.Expected format: HH:MM:SS");
       }
 
       const requestStartTime: SimpleTimestamp = {
@@ -263,14 +263,14 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         console.log(
           `Cannot check room availability because missing parameter ${JSON.stringify(
             nullFields
-          )}. Ask the customer to provide ${JSON.stringify(
+          )}.Ask the customer to provide ${JSON.stringify(
             nullFields
           )} to check room availability.`
         );
         resolve(
           `Cannot check room availability because missing parameter ${JSON.stringify(
             nullFields
-          )}. Ask the customer to provide ${JSON.stringify(
+          )}.Ask the customer to provide ${JSON.stringify(
             nullFields
           )} to check room availability.`
         );
@@ -295,7 +295,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
           };
         })
       );
-      resolve(`Here is the room ${roomID} available time ${responseAsString}`);
+      resolve(`Room ${roomID}'s available time:${responseAsString}`);
     });
   }
 
