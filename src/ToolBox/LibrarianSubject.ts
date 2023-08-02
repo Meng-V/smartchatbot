@@ -62,7 +62,7 @@ class LibrarianSubjectSearchTool implements Tool {
     text2 = text2.trim().toLowerCase();
 
     let dp: Array<Array<number>> = [...Array(text2.length + 1)].map((e) =>
-      Array(text1.length + 1).fill(0)
+      Array(text1.length + 1).fill(0),
     );
     for (let i = 1; i < text1.length + 1; i++) {
       dp[0][i] = i;
@@ -119,7 +119,7 @@ class LibrarianSubjectSearchTool implements Tool {
           ? 1 -
               this.levenshteinDistance(query, synonyms.get(choice)!) /
                 Math.max(query.length, synonyms.get(choice)!.length)
-          : 0
+          : 0,
       );
 
       if (matchScore < threshold) continue;
@@ -170,7 +170,7 @@ class LibrarianSubjectSearchTool implements Tool {
    * @returns True if it performs update, False otherwise
    */
   private async updateLibrarianSubjectDatabase(
-    updateDuration: number
+    updateDuration: number,
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       const savedLibrarians = await prisma.librarian.findMany();
@@ -203,7 +203,7 @@ class LibrarianSubjectSearchTool implements Tool {
                         },
                         update: {},
                         create: { id: subject.id, name: subject.name },
-                      })
+                      }),
                     ),
               },
             },
@@ -229,7 +229,7 @@ class LibrarianSubjectSearchTool implements Tool {
                             name: subject.name,
                           },
                         };
-                      }
+                      },
                     ),
               },
             },
@@ -256,26 +256,24 @@ class LibrarianSubjectSearchTool implements Tool {
       if (nullFields.length > 0) {
         console.log(
           `Cannot search for librarian because missing parameter ${JSON.stringify(
-            nullFields
+            nullFields,
           )}. Ask the customer to provide ${JSON.stringify(
-            nullFields
-          )} to search for librarian.`
+            nullFields,
+          )} to search for librarian.`,
         );
         resolve(
           `Cannot search for librarian because missing parameter ${JSON.stringify(
-            nullFields
+            nullFields,
           )}. Ask the customer to provide ${JSON.stringify(
-            nullFields
-          )} to search for librarian.`
+            nullFields,
+          )} to search for librarian.`,
         );
         return;
       }
 
-
-
       const { subjectName } = toolInput;
       const response = await LibrarianSubjectSearchTool.run(
-        subjectName as string
+        subjectName as string,
       );
 
       if ("error" in response) {
@@ -292,7 +290,7 @@ class LibrarianSubjectSearchTool implements Tool {
   }
 
   static async run(
-    querySubjectName: string
+    querySubjectName: string,
   ): Promise<SubjectLibrarianMap | { error: string }> {
     return new Promise<SubjectLibrarianMap | { error: string }>(
       async (resolve, reject) => {
@@ -327,11 +325,11 @@ class LibrarianSubjectSearchTool implements Tool {
                       name: `${librarian.firstName} ${librarian.lastName}`,
                       email: librarian.email,
                     };
-                  }
+                  },
                 ),
             };
           },
-          {}
+          {},
         );
         console.log(JSON.stringify(resultObject));
         if (Object.keys(resultObject).length === 0) {
@@ -343,7 +341,7 @@ class LibrarianSubjectSearchTool implements Tool {
         }
 
         resolve(resultObject);
-      }
+      },
     );
   }
 }

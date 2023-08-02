@@ -53,7 +53,7 @@ class SearchEngine implements Tool {
       }
       const response = await SearchEngine.run(query);
       resolve(
-        `Please also include the appropriate reference link. If there is a link, write it out directly; do not include html tag. Result: ${response}`
+        `Please also include the appropriate reference link. If there is a link, write it out directly; do not include html tag. Result: ${response}`,
       );
     });
   }

@@ -2,13 +2,10 @@ import axios, { AxiosError, AxiosResponse } from "axios";
 import { Tool, ToolInput } from "../ToolTemplates";
 import "dotenv/config";
 
-
-
 abstract class LibCalAPIBaseTool implements Tool {
-
   abstract readonly name: string;
   abstract readonly description: string;
-  abstract readonly parameters: { [parameterName: string]: string; };
+  abstract readonly parameters: { [parameterName: string]: string };
 
   protected readonly OAUTH_URL = process.env["LIBCAL_OAUTH_URL"]!;
   protected readonly CLIENT_ID = process.env["LIBCAL_CLIENT_ID"]!;
@@ -19,7 +16,7 @@ abstract class LibCalAPIBaseTool implements Tool {
   protected readonly RESERVATION_URL = process.env["LIBCAL_RESERVATION_URL"]!;
   protected readonly CANCEL_URL = process.env["LIBCAL_CANCEL_URL"]!;
   protected readonly HOUR_URL = process.env["LIBCAL_HOUR_URL"]!;
-  protected readonly BUILDING_ID = process.env["TEST_BUILDING"]
+  protected readonly BUILDING_ID = process.env["TEST_BUILDING"];
 
   protected static timezone = (() => {
     const diff = new Date().getTimezoneOffset() / 60;

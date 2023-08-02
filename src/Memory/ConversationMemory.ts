@@ -1,6 +1,7 @@
 import { max } from "fp-ts/lib/ReadonlyNonEmptyArray";
 import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationSummarizePrompt } from "../Prompt/ConversationSummarizePrompt";
+import { TokenUsage } from "../Agent/Agent";
 
 type Role = "AIAgent" | "Customer";
 
@@ -66,22 +67,34 @@ class ConversationMemory {
     if (this.maxContextWindow && this.oldestMessageIndex > 0) {
       this.oldestMessageIndex -= 1;
     }
-    this.curBufferOffset+=1;
+    this.curBufferOffset += 1;
   }
 
   /**
-   * Get the conversation in the current memory. Pass summary = true to get the conversation summary instead of the full conversation
+   * Get the conversation in the current memory. Pass summary = true to get the conversation summary instead of the full conversation. When doing summarization, LLM would be used and cost tokens, this function also return the token usage information for each call.
    * @param start integer and should be >= 0 and < maximum context window size. Indicate how old the conversation you want to retrieve. 0: start from the oldest message in the memory.
    * @param end (inclusive)integer and should be <= 0 and > -maximum context window size. 0: end at the newest message in the memory
    * @param summary  boolean: true if you want to summarize the retrived conversation
-   * @returns string representation of the conversation
+   * @returns {conversationString: string; tokenUsage: TokenUsage}
    */
   async getConversationAsString(
     start: number = 0,
     end: number = 0,
     summary: boolean = false
-  ): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
+  ): Promise<{
+    conversationString: string;
+    tokenUsage: TokenUsage;
+  }> {
+    return new Promise<{
+      conversationString: string;
+      tokenUsage: TokenUsage;
+    }>(async (resolve, reject) => {
+      let tokenUsage: TokenUsage = {
+        totalTokens: 0,
+        promptTokens: 0,
+        completionTokens: 0,
+      };
+
       if (this.maxContextWindow) {
         if (
           start >= this.maxContextWindow ||
@@ -100,51 +113,79 @@ class ConversationMemory {
           return prevString + `${curLine[0]}: ${curLine[1]}\n`;
         }, "");
       if (!summary) {
-        resolve(conversationString);
+        resolve({
+          conversationString: conversationString,
+          tokenUsage: { totalTokens: 0, completionTokens: 0, promptTokens: 0 },
+        });
         return;
       }
 
-      console.log(`Estimate length: ${conversationString.length}`);
-      console.log(`Estimate token: ${conversationString.length / 4}`);
+      const conversationToBeSummarized = (
+        await this.getConversationAsString(
+          0,
+          -this.conversationBufferSize,
+          false
+        )
+      ).conversationString;
+      console.log(`Estimate length: ${conversationToBeSummarized.length}`);
+      console.log(`Estimate token: ${conversationToBeSummarized.length / 4}`);
       if (
         this.conversationTokenLimit &&
-        conversationString.length / 4.0 >= this.conversationTokenLimit &&
+        conversationToBeSummarized.length / 4.0 >=
+          this.conversationTokenLimit &&
         this.conversationSummarizePrompt &&
         this.llmModel
       ) {
         if (this.curBufferOffset >= this.minimumTimeBetweenSummarizations) {
           this.curBufferOffset = 0;
+
           this.conversationSummarizePrompt.setConversationMemory(
-            await this.getConversationAsString(
-              0,
-              -this.conversationBufferSize,
-              false
-            )
+            conversationToBeSummarized
           );
-          this.curConversationSummary = (
-            await this.llmModel.getModelResponse(
-              this.conversationSummarizePrompt
-            )
-          ).response;
+
+          const llmSummaryResponse = await this.llmModel.getModelResponse(
+            this.conversationSummarizePrompt
+          );
+          this.curConversationSummary = llmSummaryResponse.response;
+          //Update token usage
+          tokenUsage.completionTokens +=
+            llmSummaryResponse.usage.completionTokens;
+          tokenUsage.promptTokens += llmSummaryResponse.usage.promptTokens;
+          tokenUsage.totalTokens += llmSummaryResponse.usage.totalTokens;
+
           let conversationBuffer = await this.getConversationAsString(
-            this.conversation.length - this.conversationBufferSize,
+            this.conversation.length -
+              this.oldestMessageIndex -
+              this.conversationBufferSize,
             0,
             false
           );
 
-          resolve(`${this.curConversationSummary}\n${conversationBuffer}`);
+          resolve({
+            conversationString: `${this.curConversationSummary}\n${conversationBuffer.conversationString}`,
+            tokenUsage: tokenUsage,
+          });
           return;
         }
 
         //Use the past summarization
         let conversationBuffer = await this.getConversationAsString(
-          this.conversation.length - this.conversationBufferSize - this.curBufferOffset,
-          0,
+          this.conversation.length -
+            this.conversationBufferSize -
+            this.curBufferOffset -
+            this.oldestMessageIndex,
+          0
         );
-        
-        resolve(`${this.curConversationSummary}\n${conversationBuffer}`);
+
+        resolve({
+          conversationString: `${this.curConversationSummary}\n${conversationBuffer.conversationString}`,
+          tokenUsage: tokenUsage,
+        });
       }
-      resolve(conversationString);
+      resolve({
+        conversationString: conversationString,
+        tokenUsage: tokenUsage,
+      });
     });
   }
 }

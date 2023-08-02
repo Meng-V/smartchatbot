@@ -51,4 +51,3 @@ services:
       CLUSTER_HOSTNAME: 'node1'
 volumes:
   postgres_data:
-  redis_data:

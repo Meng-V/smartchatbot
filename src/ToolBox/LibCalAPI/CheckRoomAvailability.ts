@@ -71,7 +71,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
   private timestampStringtify(
     timestamp: Timestamp,
     verbose: boolean = false,
-    timezone: boolean = false
+    timezone: boolean = false,
   ): string {
     if (verbose) {
       const timezoneStr = timezone ? `with timezone ${timestamp.timezone}` : "";
@@ -108,7 +108,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
    * @param hours
    */
   private mergeHours(
-    hours: { from: Timestamp; to: Timestamp }[]
+    hours: { from: Timestamp; to: Timestamp }[],
   ): { from: Timestamp; to: Timestamp }[] {
     const intervals: [number, number][] = hours.map((time_block, idx) => {
       return [
@@ -128,7 +128,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
       else
         mergeIntervals[mergeIntervals.length - 1][1] = Math.max(
           end,
-          mergeIntervals[mergeIntervals.length - 1][1]
+          mergeIntervals[mergeIntervals.length - 1][1],
         );
     }
     const [year, month, date, timezone] =
@@ -180,7 +180,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
     startDate: string,
     startTime: string,
     endDate: string,
-    endTime: string
+    endTime: string,
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       //Parse the start and endTime
@@ -216,7 +216,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
        */
       const compareTime = (
         time1: Timestamp | SimpleTimestamp,
-        time2: Timestamp | SimpleTimestamp
+        time2: Timestamp | SimpleTimestamp,
       ) => {
         if (time1.hour !== time2.hour) {
           return time1.hour > time2.hour ? 1 : -1;
@@ -262,24 +262,24 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
       if (nullFields.length > 0) {
         console.log(
           `Cannot check room availability because missing parameter ${JSON.stringify(
-            nullFields
+            nullFields,
           )}. Ask the customer to provide ${JSON.stringify(
-            nullFields
-          )} to check room availability.`
+            nullFields,
+          )} to check room availability.`,
         );
         resolve(
           `Cannot check room availability because missing parameter ${JSON.stringify(
-            nullFields
+            nullFields,
           )}. Ask the customer to provide ${JSON.stringify(
-            nullFields
-          )} to check room availability.`
+            nullFields,
+          )} to check room availability.`,
         );
         return;
       }
 
       const response = await CheckRoomAvailabilityTool.run(
         roomID as string,
-        date as string
+        date as string,
       );
       if ("error" in response[0]) {
         resolve(response[0]!.error);
@@ -293,7 +293,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
             from: this.timestampStringtify(timeBlock.from, true, false),
             to: this.timestampStringtify(timeBlock.to, true, false),
           };
-        })
+        }),
       );
       resolve(`Here is the room ${roomID} available time ${responseAsString}`);
     });
@@ -307,7 +307,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
    */
   static async run(
     roomID: string,
-    date: string
+    date: string,
   ): Promise<{ from: Timestamp; to: Timestamp }[] | { error: string }[]> {
     return new Promise<
       { from: Timestamp; to: Timestamp }[] | { error: string }[]
@@ -329,9 +329,12 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         });
         if (
           response.data[0].error ===
-          "item belongs to category of incorrect type"
+            "item belongs to category of incorrect type" ||
+          !response.data[0] ||
+          !response.data[0].availability
         ) {
           resolve([{ error: "Unexisted room ID" }]);
+          return;
         }
         const hours: { from: string; to: string }[] =
           response.data[0].availability;
@@ -341,7 +344,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
               from: instance.parseTimestamp(timeBlock.from),
               to: instance.parseTimestamp(timeBlock.to),
             };
-          }
+          },
         );
         const mergedTimeBlock: { from: Timestamp; to: Timestamp }[] =
           instance.mergeHours(hoursTimestamp);
@@ -352,8 +355,9 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
               from: timeBlock.from,
               to: timeBlock.to,
             };
-          })
+          }),
         );
+        return;
       } catch (error: any) {
         console.log(error);
       }

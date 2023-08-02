@@ -63,7 +63,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
    * @returns True if it performs update, False otherwise
    */
   private async updateRoomInfoDatabase(
-    updateDuration: number
+    updateDuration: number,
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       const savedRoomInfo = await prisma.room.findMany();
@@ -133,7 +133,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
    * @returns number[]. Array of available capacity in the database, sorted by how close from it to the number of people. For example, we have these capacity: [2, 4, 8, 12, 20], and 6 people; this function would return [8, 12, 20]
    */
   private async matchNumberOfPeopleToPotentialCapacity(
-    peopleNum: number
+    peopleNum: number,
   ): Promise<number[]> {
     return new Promise<number[]>(async (resolve, reject) => {
       const capacityList = (
@@ -182,7 +182,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     startDate: string,
     startTime: string,
     endDate: string,
-    endTime: string
+    endTime: string,
   ): Promise<Room> {
     return new Promise<Room>(async (resolve, reject) => {
       const checkRoomAvailabilityInstance =
@@ -194,7 +194,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
             startDate,
             startTime,
             endDate,
-            endTime
+            endTime,
           )
         ) {
           resolve(room);
@@ -204,7 +204,6 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       reject("No room satisfies");
     });
   }
-
 
   async toolRun(toolInput: {
     [key: string]: string | null;
@@ -234,17 +233,17 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       if (nullFields.length > 0) {
         console.log(
           `Cannot perform booking because missing parameter ${JSON.stringify(
-            nullFields
+            nullFields,
           )}. Ask the customer to provide ${JSON.stringify(
-            nullFields
-          )} to perform booking.`
+            nullFields,
+          )} to perform booking.`,
         );
         resolve(
           `Cannot perform booking because missing parameter ${JSON.stringify(
-            nullFields
+            nullFields,
           )}. Ask the customer to provide ${JSON.stringify(
-            nullFields
-          )} to perform booking.`
+            nullFields,
+          )} to perform booking.`,
         );
         return;
       }
@@ -278,7 +277,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
           endDate,
           endTime,
           roomCapacity,
-          roomCodeName
+          roomCodeName,
         );
         resolve(response);
       } catch (e: any) {
@@ -296,7 +295,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     endDate: string,
     endTime: string,
     roomCapacity: string | null,
-    roomCodeName: string | null
+    roomCodeName: string | null,
   ): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       // const timeout = setTimeout(() => {
@@ -316,12 +315,12 @@ class RoomReservationTool extends LibCalAPIBaseTool {
         return;
       } else if (!roomCapacity || roomCapacity === "null") {
         availableRoom = await instance.getRoomByCodeName(
-          roomCodeName as string
+          roomCodeName as string,
         );
       } else {
         const potentialCapacityList =
           await instance.matchNumberOfPeopleToPotentialCapacity(
-            parseInt(roomCapacity, 10)
+            parseInt(roomCapacity, 10),
           );
         if (potentialCapacityList.length === 0) {
           reject({
@@ -338,7 +337,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
               startDate,
               startTime,
               endDate,
-              endTime
+              endTime,
             );
             break;
           } catch (error: any) {
@@ -383,8 +382,8 @@ class RoomReservationTool extends LibCalAPIBaseTool {
             availableRoom.capacity
           } is booked successfully from ${startTime} to ${endTime} on ${startDate}. Confirmation email should be sent to customer's email. Please tell the customer that the reservation is successful and this booking number information: ${JSON.stringify(
             response.data,
-            ["booking_id"]
-          )}`
+            ["booking_id"],
+          )}`,
         );
       } catch (error: any) {
         if (error.response) {
@@ -392,7 +391,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
           console.log(error);
           if (errorData.includes("not a valid starting slot")) {
             resolve(
-              "Room reservation is unsuccessful. Time slot is not available for your room"
+              "Room reservation is unsuccessful. Time slot is not available for your room",
             );
           }
         } else {

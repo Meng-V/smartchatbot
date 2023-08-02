@@ -34,10 +34,10 @@ class CancelReservationTool extends LibCalAPIBaseTool {
         toolInput.bookingID === "undefined"
       ) {
         console.log(
-          `Cannot perform booking because missing parameter bookingID. Please ask the customer to provide bookingID to perform booking\n`
+          `Cannot perform booking because missing parameter bookingID. Please ask the customer to provide bookingID to perform booking\n`,
         );
         resolve(
-          `Cannot perform booking because missing parameter bookingID. Please ask the customer to provide bookingID to perform booking\n`
+          `Cannot perform booking because missing parameter bookingID. Please ask the customer to provide bookingID to perform booking\n`,
         );
 
         return;
@@ -48,18 +48,18 @@ class CancelReservationTool extends LibCalAPIBaseTool {
       const response = await CancelReservationTool.run(bookingID);
       if (response.success) {
         resolve(
-          `Room reservation with ID: ${bookingID} is cancelled successfully\n`
+          `Room reservation with ID: ${bookingID} is cancelled successfully\n`,
         );
       } else {
         resolve(
-          `Room reservation with ID: ${bookingID} is cancelled unsuccessfully. Error message: ${response.error}\n`
+          `Room reservation with ID: ${bookingID} is cancelled unsuccessfully. Error message: ${response.error}\n`,
         );
       }
     });
   }
 
   static async run(
-    bookingID: string
+    bookingID: string,
   ): Promise<{ success: boolean; error: string | null }> {
     return new Promise<{ success: boolean; error: string | null }>(
       async (resolve, reject) => {
@@ -94,7 +94,7 @@ class CancelReservationTool extends LibCalAPIBaseTool {
         } catch (error: any) {
           console.log(error.message);
         }
-      }
+      },
     );
   }
 }
