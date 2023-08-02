@@ -48,3 +48,6 @@ To start the server, simply run:
 ```
     npm start
 ```
+
+## Team Notes
++ Merge working branches in every Tue and Thu 1:00pm.
