@@ -26,7 +26,7 @@ class EBSCOBookSearchTool implements Tool {
 
   public parameters: { [parameterName: string]: string } = {
     query:
-      "REQUIRED string. Format your search in the EBSCO query style with specific book titles and fix very obvious spellings. For example, 'AU Gaiman AND TI Sandman'. In case of uncertainty about book titles or if the query uses words such as like or something or other parameters, use proximity operators in the format 'TI BookTitle1 N# BookTitle2' where '#' is the number of words in between. Avoid using special characters except when implementing specific search techniques. When referring to books in a series, use the exact book titles instead of their numerical order.",
+      "REQUIRED string. Format your search in the EBSCO query style with specific book titles and fix very obvious spellings. For example, 'AU Neil Gaiman AND TI Sandman'. In case of uncertainty about book titles or if the query uses words such as like or something or other parameters, use proximity operators in the format 'TI BookTitle1 N# BookTitle2' where '#' is the number of words in between. Avoid using special characters except when implementing specific search techniques. When referring to books in a series, use the exact book titles instead of their numerical order.",
   };
 
   private constructor() {
@@ -58,7 +58,7 @@ class EBSCOBookSearchTool implements Tool {
         resolve("Sorry, no results were found for your query.");
       } else {
         resolve(
-          `Please interpret this JSON result to the customer in a markdown language output, including if there's value in the error field. ${JSON.stringify(
+          `Please interpret the best two choice from this JSON result to the customer in a markdown language output, including if there's value in the error field. ${JSON.stringify(
             response,
           )}`,
         );

@@ -124,20 +124,26 @@ class LibrarianSubjectSearchTool implements Tool {
 
   private async fetchLibrarianSubjectData(): Promise<any[]> {
     return new Promise<any[]>(async (resolve, reject) => {
-      const instance = LibrarianSubjectSearchTool.instance;
-      const header = {
-        Authorization: `Bearer ${await instance.getAccessToken()}`,
-      };
-      const response = await axios({
-        method: "get",
-        headers: header,
-        url: "https://lgapi-us.libapps.com/1.2/accounts",
-        params: {
-          "expand[]": "subjects",
-        },
-      });
-      resolve(response.data);
-
+      try {
+        const instance = LibrarianSubjectSearchTool.instance;
+        const header = {
+          Authorization: `Bearer ${await instance.getAccessToken()}`,
+        };
+        const response = await axios({
+          method: "get",
+          headers: header,
+          url: "https://lgapi-us.libapps.com/1.2/accounts",
+          params: {
+            "expand[]": "subjects",
+          },
+        });
+        resolve(response.data);
+      } catch (error) {
+        console.error(error);
+        reject(
+          "Sorry, there was an error fetching the librarian data. Please try again.",
+        );
+      }
       // const subjectToLibrarian: Map<string, { [key: string]: string }[]> =
       //   new Map();
       // for (let librarian of response.data) {
@@ -165,119 +171,128 @@ class LibrarianSubjectSearchTool implements Tool {
     updateDuration: number,
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
-      const savedLibrarians = await prisma.librarian.findMany();
-      let didUpdate = false;
-      if (
-        !savedLibrarians ||
-        savedLibrarians.length === 0 ||
-        new Date().valueOf() - savedLibrarians[0].lastUpdated.valueOf() >
-          updateDuration * 1000 * 60 * 60 * 24
-      ) {
-        didUpdate = true;
-        const librarians = await this.fetchLibrarianSubjectData();
-        for (let librarian of librarians) {
-          await prisma.librarian.upsert({
-            where: {
-              uuid: librarian.uuid,
-            },
-            update: {
-              subjects: {
-                upsert: !librarian.subjects
-                  ? []
-                  : librarian.subjects.map(
-                      (subject: {
-                        id: string;
-                        name: string;
-                        slug_id: number;
-                      }) => ({
-                        where: {
-                          id: subject.id,
-                        },
-                        update: {},
-                        create: { id: subject.id, name: subject.name },
-                      }),
-                    ),
+      try {
+        const savedLibrarians = await prisma.librarian.findMany();
+        let didUpdate = false;
+        if (
+          !savedLibrarians ||
+          savedLibrarians.length === 0 ||
+          new Date().valueOf() - savedLibrarians[0].lastUpdated.valueOf() >
+            updateDuration * 1000 * 60 * 60 * 24
+        ) {
+          didUpdate = true;
+          const librarians = await this.fetchLibrarianSubjectData();
+          for (let librarian of librarians) {
+            await prisma.librarian.upsert({
+              where: {
+                uuid: librarian.uuid,
               },
-            },
-            create: {
-              id: librarian.id,
-              uuid: librarian.uuid,
-              firstName: librarian.first_name,
-              lastName: librarian.last_name,
-              email: librarian.email,
-              subjects: {
-                connectOrCreate: !librarian.subjects
-                  ? []
-                  : librarian.subjects.map(
-                      (subject: {
-                        id: string;
-                        name: string;
-                        slug_id: number;
-                      }) => {
-                        return {
-                          where: { id: subject.id },
-                          create: {
+              update: {
+                subjects: {
+                  upsert: !librarian.subjects
+                    ? []
+                    : librarian.subjects.map(
+                        (subject: {
+                          id: string;
+                          name: string;
+                          slug_id: number;
+                        }) => ({
+                          where: {
                             id: subject.id,
-                            name: subject.name,
                           },
-                        };
-                      },
-                    ),
+                          update: {},
+                          create: { id: subject.id, name: subject.name },
+                        }),
+                      ),
+                },
               },
-            },
-          });
+              create: {
+                id: librarian.id,
+                uuid: librarian.uuid,
+                firstName: librarian.first_name,
+                lastName: librarian.last_name,
+                email: librarian.email,
+                subjects: {
+                  connectOrCreate: !librarian.subjects
+                    ? []
+                    : librarian.subjects.map(
+                        (subject: {
+                          id: string;
+                          name: string;
+                          slug_id: number;
+                        }) => {
+                          return {
+                            where: { id: subject.id },
+                            create: {
+                              id: subject.id,
+                              name: subject.name,
+                            },
+                          };
+                        },
+                      ),
+                },
+              },
+            });
+          }
         }
+        resolve(didUpdate);
+      } catch (error) {
+        reject(error);
       }
-      resolve(didUpdate);
     });
   }
 
   async toolRun(toolInput: ToolInput): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
-      let nullFields = [];
-      for (const param of Object.keys(toolInput)) {
-        if (
-          toolInput[param] === null ||
-          toolInput[param] === "null" ||
-          toolInput[param] === undefined ||
-          toolInput[param] === "undefined"
-        ) {
-          nullFields.push(param);
+      try {
+        let nullFields = [];
+        for (const param of Object.keys(toolInput)) {
+          if (
+            toolInput[param] === null ||
+            toolInput[param] === "null" ||
+            toolInput[param] === undefined ||
+            toolInput[param] === "undefined"
+          ) {
+            nullFields.push(param);
+          }
         }
-      }
-      if (nullFields.length > 0) {
-        console.log(
-          `Cannot search for librarian because missing parameter ${JSON.stringify(
-            nullFields,
-          )}. Ask the customer to provide ${JSON.stringify(
-            nullFields,
-          )} to search for librarian.`,
-        );
-        resolve(
-          `Cannot search for librarian because missing parameter ${JSON.stringify(
-            nullFields,
-          )}. Ask the customer to provide ${JSON.stringify(
-            nullFields,
-          )} to search for librarian.`,
-        );
-        return;
-      }
+        if (nullFields.length > 0) {
+          console.log(
+            `Cannot search for librarian because missing parameter ${JSON.stringify(
+              nullFields,
+            )}. Ask the customer to provide ${JSON.stringify(
+              nullFields,
+            )} to search for librarian.`,
+          );
+          resolve(
+            `Cannot search for librarian because missing parameter ${JSON.stringify(
+              nullFields,
+            )}. Ask the customer to provide ${JSON.stringify(
+              nullFields,
+            )} to search for librarian.`,
+          );
+          return;
+        }
 
-      const { subjectName } = toolInput;
-      const response = await LibrarianSubjectSearchTool.run(
-        subjectName as string,
-      );
-
-      if ("error" in response) {
-        resolve(`Error: ${response.error}`);
-        return;
-      }
-
-      resolve(
-        `These are the librarians that can help you: ${await LibrarianSubjectSearchTool.run(
+        const { subjectName } = toolInput;
+        const response = await LibrarianSubjectSearchTool.run(
           subjectName as string,
-        )}`,
-      );
+        );
+
+        if ("error" in response) {
+          reject(`Error: ${response.error}`);
+          return;
+        }
+
+        resolve(
+          `These are the librarians that can help you: ${await LibrarianSubjectSearchTool.run(
+            subjectName as string,
+          )}`,
+        );
+      } catch (error) {
+        console.error(error);
+        reject("Sorry, there was an error. Please try again.");
+      }
     });
   }
 
@@ -286,53 +301,57 @@ class LibrarianSubjectSearchTool implements Tool {
   ): Promise<SubjectLibrarianMap | { error: string }> {
     return new Promise<SubjectLibrarianMap | { error: string }>(
       async (resolve, reject) => {
-        const instance = LibrarianSubjectSearchTool.instance;
+        try {
+          const instance = LibrarianSubjectSearchTool.instance;
+          await instance.updateLibrarianSubjectDatabase(30);
 
-        await instance.updateLibrarianSubjectDatabase(30);
+          const subjects = await prisma.subject.findMany();
+          const subjectNames = subjects.map((subject) => subject.name);
+          const bestMatchSubject = instance.fuzzybestMatch(
+            querySubjectName,
+            subjectNames,
+            2,
+          );
 
-        const subjects = await prisma.subject.findMany();
-        const subjectNames = subjects.map((subject) => subject.name);
-        const bestMatchSubject = instance.fuzzybestMatch(
-          querySubjectName,
-          subjectNames,
-          2,
-        );
-
-        const subjectsWithLibrarian = await prisma.subject.findMany({
-          where: {
-            name: { in: bestMatchSubject },
-          },
-          include: { assignedLibrarians: true },
-        });
-
-        const resultObject = subjectsWithLibrarian.reduce(
-          (prevObject, curSubject) => {
-            return {
-              ...prevObject,
-              [curSubject.name]: {
-                librarianName: curSubject.assignedLibrarians.map(
-                  (librarian) => {
-                    return {
-                      name: `${librarian.firstName} ${librarian.lastName}`,
-                      email: librarian.email,
-                    };
-                  },
-                ),
-              },
-            };
-          },
-          {},
-        );
-        console.log(JSON.stringify(resultObject));
-        if (Object.keys(resultObject).length === 0) {
-          resolve({
-            error:
-              "Sorry, the requested subject has no match with our subject database. Please try another subject.",
+          const subjectsWithLibrarian = await prisma.subject.findMany({
+            where: {
+              name: { in: bestMatchSubject },
+            },
+            include: { assignedLibrarians: true },
           });
-          return;
-        }
 
-        resolve(resultObject);
+          const resultObject = subjectsWithLibrarian.reduce(
+            (prevObject, curSubject) => {
+              return {
+                ...prevObject,
+                [curSubject.name]: {
+                  librarianName: curSubject.assignedLibrarians.map(
+                    (librarian) => {
+                      return {
+                        name: `${librarian.firstName} ${librarian.lastName}`,
+                        email: librarian.email,
+                      };
+                    },
+                  ),
+                },
+              };
+            },
+            {},
+          );
+          console.log(JSON.stringify(resultObject));
+          if (Object.keys(resultObject).length === 0) {
+            resolve({
+              error:
+                "Sorry, the requested subject has no match with our subject database. Please try another subject.",
+            });
+            return;
+          }
+
+          resolve(resultObject);
+        } catch (error) {
+          console.error(error);
+          reject("Sorry, the requested subject has no match with our subject database. Please try another subject.")
+        }
       },
     );
   }
