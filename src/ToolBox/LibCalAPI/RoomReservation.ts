@@ -12,22 +12,22 @@ class RoomReservationTool extends LibCalAPIBaseTool {
 
   public readonly name: string = "StudyRoomReservationTool";
   public readonly description: string =
-    "This tool is for study room reservation. No need to use tool CheckRoomAvailabilityTool before using this tool. Use Final Answer instead if you don't have enough required parameters yet. Don't include any single quotes in the paramter. Disclaimer: This tool assumes startDate is as same as endDate";
+    "This tool is for study room reservation.No need to use tool CheckRoomAvailabilityTool before using this tool.Use Final Answer instead if you don't have enough required parameters yet.Don't include any single quotes in the paramter.Disclaimer: This tool assumes startDate is as same as endDate";
 
   public readonly parameters: { [parameterName: string]: string } = {
-    firstName: "string [REQUIRED]",
-    lastName: "string [REQUIRED]",
-    email: "string [REQUIRED] [school email with @miamioh.edu domain]",
-    startDate: "string [REQUIRED] [format YYYY-MM-DD]",
+    firstName: "string[REQUIRED]",
+    lastName: "string[REQUIRED]",
+    email: "string[REQUIRED][school email with @miamioh.edu domain]",
+    startDate: "string[REQUIRED][format YYYY-MM-DD]",
     startTime:
-      "string [REQUIRED] [format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
-    endDate: "string [REQUIRED] [format YYYY-MM-DD]",
+      "string[REQUIRED][format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
+    endDate: "string[REQUIRED][format YYYY-MM-DD]",
     endTime:
-      "string [REQUIRED] [format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
+      "string[REQUIRED][format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
     roomCapacity:
-      "string | null [OPTIONAL] [capacity (number of people) of the room you wish to reserve.]",
+      "string|null[OPTIONAL][capacity(number of people)of the room you wish to reserve.]",
     roomCodeName:
-      "string | null [OPTIONAL] [such as: 145, 211, 297A, 108C, etc.]",
+      "string|null[OPTIONAL][such as: 145, 211, 297A, 108C, etc.]",
   };
 
   constructor() {
@@ -233,17 +233,17 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       if (nullFields.length > 0) {
         console.log(
           `Cannot perform booking because missing parameter ${JSON.stringify(
-            nullFields,
-          )}. Ask the customer to provide ${JSON.stringify(
-            nullFields,
-          )} to perform booking.`,
+            nullFields
+          )}.Ask the customer to provide ${JSON.stringify(
+            nullFields
+          )} to perform booking.`
         );
         resolve(
           `Cannot perform booking because missing parameter ${JSON.stringify(
-            nullFields,
-          )}. Ask the customer to provide ${JSON.stringify(
-            nullFields,
-          )} to perform booking.`,
+            nullFields
+          )}.Ask the customer to provide ${JSON.stringify(
+            nullFields
+          )} to perform booking.`
         );
         return;
       }
@@ -310,7 +310,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       ) {
         reject({
           error:
-            "Room capacity and room code name are both empty. Please ask customer to specify one of them.",
+            "Room capacity and room code name are both empty.Ask customer to specify one of them.",
         });
         return;
       } else if (!roomCapacity || roomCapacity === "null") {
@@ -380,7 +380,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
         resolve(
           `Room ${availableRoom.roomName} with capacity ${
             availableRoom.capacity
-          } is booked successfully from ${startTime} to ${endTime} on ${startDate}. Confirmation email should be sent to customer's email. Please tell the customer that the reservation is successful and this booking number information: ${JSON.stringify(
+          } is booked successfully from ${startTime} to ${endTime} on ${startDate}.Confirmation email should be sent to customer's email.Tell the customer that the reservation is successful and this booking number information:${JSON.stringify(
             response.data,
             ["booking_id"],
           )}`,
@@ -391,7 +391,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
           console.log(error);
           if (errorData.includes("not a valid starting slot")) {
             resolve(
-              "Room reservation is unsuccessful. Time slot is not available for your room",
+              "Room reservation is unsuccessful.Time slot is not available for your room"
             );
           }
         } else {

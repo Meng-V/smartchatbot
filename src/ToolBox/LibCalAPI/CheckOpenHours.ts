@@ -20,7 +20,7 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
     "This tool is for searching for King Library's opening hours in the week of one input date.";
 
   public readonly parameters: { [parameterName: string]: string } = {
-    date: "string [REQUIRED] [format YYYY-MM-DD]",
+    date: "string [REQUIRED][format YYYY-MM-DD]",
   };
 
   constructor() {
@@ -85,15 +85,15 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
         toolInput.date === "undefined"
       ) {
         resolve(
-          "Cannot check the building hour without a date. Ask the customer to provide the date before checking.",
+          "Cannot check the building hour without a date.Ask the customer to provide the date before checking."
         );
         return;
       }
 
       resolve(
         `Open Hour of the requested week: ${JSON.stringify(
-          await CheckOpenHourTool.run(toolInput.date),
-        )}. If any day does not exist in the array, the library does not open that day. Always answer with both open hour and close hour to the customer.`,
+          await CheckOpenHourTool.run(toolInput.date)
+        )}.If any day does not exist in the array, the library does not open that day.Always answer with both open hour and close hour to the customer.`
       );
     });
   }

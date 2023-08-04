@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "Room" ALTER COLUMN "codeName" SET DATA TYPE VARCHAR(10);

@@ -22,7 +22,9 @@ import { ChatIcon } from "@chakra-ui/icons";
 import "./App.css";
 import MessageComponents from "./components/ParseLinks";
 const App = () => {
+  const inputRef = useRef();
   const chatRef = useRef();
+  const [socket, setSocket] = useState(null);
   const [messages, setMessages] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [inputMessage, setInputMessage] = useState("");
@@ -75,9 +77,6 @@ const App = () => {
     }
   }, [messages]);
 
-  const addMessage = (message, sender) => {
-    setMessages((prevMessages) => [...prevMessages, { text: message, sender }]);
-  };
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
@@ -145,8 +144,8 @@ const App = () => {
         position="fixed"
         bottom={10}
         right={10}
-        width={50}
-        height={50}
+        width={30}
+        height={30}
       />
 
       <Modal isOpen={isOpen} onClose={handleClose}>

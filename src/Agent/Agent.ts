@@ -1,74 +1,39 @@
-import prisma from "../../prisma/prisma";
-import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { ModelPromptWithTools } from "../Prompt/Prompts";
-
+import { OpenAIModel } from "../LLM/LLMModels";
 import { Tool } from "../ToolBox/ToolTemplates";
-import { createObjectCsvWriter } from "csv-writer";
-
-type AgentResponse = {
-  actions: string[];
-  response: string[];
-};
-
-const csvWriter = createObjectCsvWriter({
-  path: "log.csv",
-  header: [
-    { id: "cookie", title: "COOKIES" },
-    { id: "timestamp", title: "TIMESTAMP" },
-    { id: "tokensUsed", title: "TOKENS_USED" },
-    // any other fields
-  ],
-  append: true,
-});
-
-interface IAgent {
-  llmModel: OpenAIModel;
-  memory: ConversationMemory | null;
-  toolsMap: Map<string, Tool>;
-
-  agentRun(userInput: string, cookie: string): Promise<AgentResponse>;
-}
-
-type AgentOutput =
-  | {
-      outputType: "final";
-      thought: string;
-      finalAnswer: string;
-    }
-  | {
-      outputType: "action";
-      thought: string;
-      action: string;
-      actionInput: { [key: string]: string };
-    }
-  | {
-      outputType: undefined;
-    };
+import { IAgent, AgentResponse, AgentOutput } from "./IAgent";
 
 class Agent implements IAgent {
+  name: string;
   llmModel: OpenAIModel;
   basePrompt: ModelPromptWithTools;
   memory: ConversationMemory | null;
 
   toolsMap: Map<string, Tool>;
-  LLMCallLimit: number = 5;
-  totalTokensUsed: number = 0;
+  LLMCallLimit: number = 3;
 
   actions: Set<string> = new Set();
 
+  /**
+   * Construct Agent object.
+   * @param name agent name
+   * @param llmModel llmModel to control the action of the agent
+   * @param tools array of the tools the Agent can use
+   * @param memory Conversation Memory to keep track of the current conversation context
+   * @param toolsAreReadyToUse if true, the agent can use the input tools. if false, the agent can only provide the tools information.
+   */
   constructor(
+    name: string,
     llmModel: OpenAIModel,
     tools: Tool[],
     memory: ConversationMemory,
+    toolsAreReadyToUse: boolean = true,
   ) {
+    this.name = name;
     this.llmModel = llmModel;
     this.memory = memory;
-    this.basePrompt = new ModelPromptWithTools(
-      tools,
-      this.llmModel,
-      this.memory,
-    );
+    this.basePrompt = new ModelPromptWithTools(tools, this.memory, toolsAreReadyToUse);
     this.toolsMap = new Map<string, Tool>();
     tools.forEach((tool) => {
       this.toolsMap.set(tool.name, tool);
@@ -77,26 +42,30 @@ class Agent implements IAgent {
   /**
    * This function takes in message from user to feed to the LLM Agent. Return the message from the Agent
    * @param userInput
-   * @param cookie
    * @returns message from the LLM Agent
    */
 
-  async agentRun(userInput: string, cookie: string): Promise<AgentResponse> {
+  async agentRun(userInput: string): Promise<AgentResponse> {
     return new Promise<AgentResponse>(async (resolve, reject) => {
       // const timeout = setTimeout(() => {
       //   reject(`Request Time Out. Prompt so far: ${this.basePrompt.getPrompt()}`);
       // }, 5000);
+      let completionTokens: number = 0;
+      let promptTokens: number = 0;
+      let totalTokens: number = 0;
 
-      this.memory?.addToConversation("Customer", userInput);
-      this.basePrompt.updateConversationMemory(this.memory);
+      
       this.basePrompt.emptyScratchpad();
       let llmResponseObj = await this.llmModel.getModelResponse(
         this.basePrompt,
       );
       let llmResponse = llmResponseObj.response;
-      this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
+      //Update tokens usage
+      totalTokens += llmResponseObj.usage.totalTokens;
+      promptTokens += llmResponseObj.usage.promptTokens;
+      completionTokens += llmResponseObj.usage.completionTokens;
 
-      // console.log(llmResponse)
+      console.log(llmResponse)
       let outputParsed = this.parseLLMOutput(llmResponse);
       let llmCallNum = 1;
 
@@ -118,35 +87,27 @@ class Agent implements IAgent {
             outputParsed.action,
             outputParsed.actionInput,
           );
+          console.log(toolResponse)
 
-          this.basePrompt.updateScratchpad(`Observation: ${toolResponse}`);
+          this.basePrompt.updateScratchpad(`Tool Response: ${toolResponse}`);
         }
         llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
         llmResponse = llmResponseObj.response;
-        this.totalTokensUsed += llmResponseObj.usage.total_tokens; // update the total tokens used
+        console.log(llmResponse)
+
+        //Update tokens usage
+        totalTokens += llmResponseObj.usage.totalTokens;
+        promptTokens += llmResponseObj.usage.promptTokens;
+        completionTokens += llmResponseObj.usage.completionTokens;
 
         outputParsed = this.parseLLMOutput(llmResponse);
         llmCallNum++;
       }
 
-      //What if outputParsed.outputType == undefined
-      this.memory?.addToConversation("AIAgent", outputParsed.finalAnswer);
-      this.basePrompt.updateConversationMemory(this.memory);
-
-      //loggin file
-      const record = {
-        cookie: cookie,
-        timestamp: new Date().toISOString(),
-        tokensUsed: this.totalTokensUsed,
-        // any other fields
-      };
-      csvWriter.writeRecords([record]); // returns a promise
-      // .then(() => console.log('Data logged successfully.'));
-
-      this.totalTokensUsed = 0;
       resolve({
         actions: [...this.actions],
         response: outputParsed.finalAnswer.split("\n"),
+        tokenUsage: { totalTokens, promptTokens, completionTokens },
       });
     });
   }

@@ -1,9 +1,10 @@
+import { TokenUsage } from "../Agent/IAgent";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 
 interface PromptTemplate {
-  modelDescription: string;
-  getSystemDescription(): string;
-  getPrompt(): Promise<string>;
+    modelDescription: string;
+    getSystemDescription(): string;
+    getPrompt(): Promise<{prompt: string} | { prompt: string; tokenUsage: TokenUsage }>;
 }
 
 export { PromptTemplate };

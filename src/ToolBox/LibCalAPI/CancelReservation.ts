@@ -7,7 +7,7 @@ class CancelReservationTool extends LibCalAPIBaseTool {
 
   public readonly name: string = "CancelReservationTool";
   public readonly description: string =
-    "This tool is for cancelling study room reservation. Use Final Answer instead if you don't have enough required parameters yet. Don't include any single quotes in the paramter.";
+    "This tool is for cancelling study room reservation.Use Final Answer instead if you don't have enough required parameters yet.Don't include any single quotes in the paramter.";
 
   public readonly parameters: { [parameterName: string]: string } = {
     bookingID: "string [REQUIRED]",
@@ -34,10 +34,10 @@ class CancelReservationTool extends LibCalAPIBaseTool {
         toolInput.bookingID === "undefined"
       ) {
         console.log(
-          `Cannot perform booking because missing parameter bookingID. Please ask the customer to provide bookingID to perform booking\n`,
+          `Cannot perform booking because missing parameter bookingID.Ask the customer to provide bookingID to perform booking\n`
         );
         resolve(
-          `Cannot perform booking because missing parameter bookingID. Please ask the customer to provide bookingID to perform booking\n`,
+          `Cannot perform booking because missing parameter bookingID.Ask the customer to provide bookingID to perform booking\n`
         );
 
         return;
@@ -52,7 +52,7 @@ class CancelReservationTool extends LibCalAPIBaseTool {
         );
       } else {
         resolve(
-          `Room reservation with ID: ${bookingID} is cancelled unsuccessfully. Error message: ${response.error}\n`,
+          `Room reservation with ID: ${bookingID} is cancelled unsuccessfully.Error message: ${response.error}\n`
         );
       }
     });

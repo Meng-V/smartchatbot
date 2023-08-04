@@ -15,10 +15,10 @@ class LibrarianSubjectSearchTool implements Tool {
 
   name: string = "LibrarianSearchWithSubjectTool";
   description: string =
-    "This tool is useful for searching which librarians are responsible for a specific subject (such as Computer Science, Finance, Environmental Studies, Biology, etc).";
+    "This tool is useful for searching which librarians are responsible for a specific subject(such as Computer Science,Finance,Environmental Studies,Biology,etc).";
 
   parameters: { [parameterName: string]: string } = {
-    subjectName: "string [REQUIRED]",
+    subjectName: "string[REQUIRED]",
   };
 
   protected readonly OAUTH_URL = process.env["LIBAPPS_OAUTH_URL"]!;
@@ -77,6 +77,14 @@ class LibrarianSubjectSearchTool implements Tool {
           continue;
         }
         dp[i][j] = Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]) + 1;
+        if (
+          i > 1 &&
+          j > 1 &&
+          text1[i - 1] === text2[j - 2] &&
+          text1[i - 2] === text2[j - 1]
+        ) {
+          dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1);
+        }
       }
     }
 
@@ -87,9 +95,9 @@ class LibrarianSubjectSearchTool implements Tool {
     query: string,
     choices: string[],
     numberOfResult: number = 2,
-    threshold: number = 0.45,
-  ): string[] {
-    let result: string[] = [];
+    threshold: number = 0.45
+  ): [number, string][] {
+    let result: [number, string][] = [];
     const synonyms: Map<string, string> = new Map([
       ["IT", "Information Technology"],
       ["Information Technology", "CS"],
@@ -113,10 +121,10 @@ class LibrarianSubjectSearchTool implements Tool {
                 Math.max(query.length, synonyms.get(choice)!.length)
           : 0,
       );
-
       if (matchScore < threshold) continue;
-      if (result.length >= numberOfResult) result.shift();
-      result.push(choice);
+      result.push([matchScore, choice]);
+      result.sort((a, b) => a[0]-b[0]);
+      if (result.length > numberOfResult) result.shift();
     }
 
     return result;
@@ -124,6 +132,7 @@ class LibrarianSubjectSearchTool implements Tool {
 
   private async fetchLibrarianSubjectData(): Promise<any[]> {
     return new Promise<any[]>(async (resolve, reject) => {
+<<<<<<< HEAD
       try {
         const instance = LibrarianSubjectSearchTool.instance;
         const header = {
@@ -159,6 +168,21 @@ class LibrarianSubjectSearchTool implements Tool {
       //     }
       //   );
       // }
+=======
+      const instance = LibrarianSubjectSearchTool.instance;
+      const header = {
+        Authorization: `Bearer ${await instance.getAccessToken()}`,
+      };
+      const response = await axios({
+        method: "get",
+        headers: header,
+        url: "https://lgapi-us.libapps.com/1.2/accounts",
+        params: {
+          "expand[]": "subjects",
+        },
+      });
+      resolve(response.data);
+>>>>>>> Dev
     });
   }
 
@@ -199,6 +223,7 @@ class LibrarianSubjectSearchTool implements Tool {
                         }) => ({
                           where: {
                             id: subject.id,
+                            name: subject.name.toLowerCase().trim(),
                           },
                           update: {},
                           create: { id: subject.id, name: subject.name },
