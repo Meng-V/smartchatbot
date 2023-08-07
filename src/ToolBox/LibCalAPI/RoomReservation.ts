@@ -4,7 +4,7 @@ import { CheckRoomAvailabilityTool } from "./CheckRoomAvailability";
 import { LibCalAPIBaseTool } from "./LibCalAPI";
 import axios, { AxiosResponse } from "axios";
 import { match } from "assert";
-import { AxiosRetries } from "../../Utils/NetworkUtils";
+import { retryWithMaxAttempts } from "../../Utils/NetworkUtils";
 
 type Room = { roomID: string; roomName: string; capacity: number };
 
@@ -18,7 +18,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
   public readonly parameters: { [parameterName: string]: string } = {
     firstName: "string[REQUIRED]",
     lastName: "string[REQUIRED]",
-    email: "string[REQUIRED][school email with @miamioh.edu domain]",
+    email: "string[REQUIRED][@miamioh.edu email][Always ask for email.Never predict.]",
     startDate: "string[REQUIRED][format YYYY-MM-DD]",
     startTime:
       "string[REQUIRED][format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
@@ -111,7 +111,6 @@ class RoomReservationTool extends LibCalAPIBaseTool {
               codeName: codeName,
               capacity: room.capacity,
               type: "study room",
-              isAccessible: room.isAccessible,
             },
           });
         }
@@ -406,7 +405,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       // console.log("Payload", payload);
       try {
         let response;
-        response = await AxiosRetries((): Promise<AxiosResponse<any, any>> => {
+        response = await retryWithMaxAttempts<AxiosResponse<any, any>>((): Promise<AxiosResponse<any, any>> => {
           return new Promise<AxiosResponse<any, any>>(
             (resolve, reject) => {
               try {

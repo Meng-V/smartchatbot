@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { Tool, ToolInput } from "../ToolTemplates";
 import "dotenv/config";
-import { AxiosRetries } from "../../Utils/NetworkUtils";
+import { retryWithMaxAttempts } from "../../Utils/NetworkUtils";
 
 abstract class LibCalAPIBaseTool implements Tool {
   abstract readonly name: string;
@@ -33,7 +33,7 @@ abstract class LibCalAPIBaseTool implements Tool {
       //      }, 5000);
       let response: AxiosResponse<any, any>;
       try {
-        response = await AxiosRetries((): Promise<AxiosResponse<any, any>> => {
+        response = await retryWithMaxAttempts<AxiosResponse<any, any>>((): Promise<AxiosResponse<any, any>> => {
           return new Promise<AxiosResponse<any, any>>((resolve, reject) => {
             try {
               const axiosResponse = axios({

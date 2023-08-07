@@ -1,9 +1,6 @@
-import { string } from "io-ts";
-import { ToolInput } from "../ToolTemplates";
 import { LibCalAPIBaseTool } from "./LibCalAPI";
-import axios, { AxiosError, AxiosResponse } from "axios";
-import { match } from "assert";
-import { time } from "console";
+import axios, { AxiosResponse } from "axios";
+import { retryWithMaxAttempts } from "../../Utils/NetworkUtils";
 
 type Timestamp = {
   year: number;
@@ -333,14 +330,25 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
       };
       let response;
       try {
-        response = await axios({
-          method: "get",
-          headers: header,
-          url: `${instance.AVAILABLE_URL}/${roomID}`,
-          params: {
-            availability: date,
-          },
-        });
+        response = await retryWithMaxAttempts<AxiosResponse<any, any>>(
+          (): Promise<AxiosResponse<any, any>> => {
+            return new Promise<AxiosResponse<any, any>>((resolve, reject) => {
+              try {
+                const axiosResponse = axios({
+                  method: "get",
+                  headers: header,
+                  url: `${instance.AVAILABLE_URL}/${roomID}`,
+                  params: {
+                    availability: date,
+                  },
+                });
+                resolve(axiosResponse);
+              } catch (error: any) {
+                reject(error);
+              }
+            });
+          }
+        );
         if (
           response.data[0].error ===
             "item belongs to category of incorrect type" ||

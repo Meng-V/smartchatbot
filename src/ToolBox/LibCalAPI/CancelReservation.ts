@@ -1,7 +1,7 @@
 import { LibCalAPIBaseTool } from "./LibCalAPI";
 import { ToolInput } from "../ToolTemplates";
 import axios, { AxiosError, AxiosResponse } from "axios";
-import { AxiosRetries } from "../../Utils/NetworkUtils";
+import { retryWithMaxAttempts } from "../../Utils/NetworkUtils";
 
 class CancelReservationTool extends LibCalAPIBaseTool {
   private static instance: CancelReservationTool;
@@ -81,7 +81,7 @@ class CancelReservationTool extends LibCalAPIBaseTool {
 
         try {
           let response;
-          response = await AxiosRetries(
+          response = await retryWithMaxAttempts<AxiosResponse<any, any>>(
             (): Promise<AxiosResponse<any, any>> => {
               return new Promise<AxiosResponse<any, any>>((resolve, reject) => {
                 try {

@@ -10,7 +10,10 @@
         "May I drop my room reservation?",
         "Can you check if room 210 is available the day after tomorrow?",
         "I want to book room with code name of 130.",
-        "How can I book the study room?"
+        "How can I book the study room?",
+        "Can you get me a study room?",
+        "Can you get me a study room next Monday?",
+        "On this Friday, I need a study room for 13 people."
     ],
     "AcademicSupportAgent": [
         "I am researching on Economics. Can you suggest me some material to support my study?",
@@ -75,15 +78,5 @@
         "Tell me about ICPSR?",
         "Tell me about Inter-university Consortium for Political and Social Research.",
         "How can I support King Library?"
-    ],
-    "SmallTalkAgent": [
-        "Hi, how are you?",
-        "Good morning!",
-        "My name is Steven Do",
-        "I am doing great",
-        "What services do you provided?",
-        "What can you help me with?",
-        "Thank you!",
-        "Goodbye!"
     ]
 }

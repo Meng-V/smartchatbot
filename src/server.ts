@@ -122,27 +122,13 @@ io.on("connection", async (socket) => {
     ],
     memory
   );
-
-  const smallTalkAgent = new Agent(
-    "SmallTalkAgent",
-    gpt3_5Model,
-    [ebscoBookSearchTool,
-      searchLibrarianWithSubjectTool,
-      reservationTool,
-      cancelReservationTool,
-      checkRoomAvailabilityTool,
-      checkOpenHourTool,
-      searchTool,],
-    memory,
-    false,
-  )
-
+  
   //Initialize the Central Coordinator to coordinate the agent
   const centralCoordinator = new CentralCoordinator(
     memory,
     generalPurposeAgent,
     [academicSupportAgent, roomReservationAgent, buildingInformationAgent,
-    googleSearchAgent, smallTalkAgent,
+    googleSearchAgent,
     ],
     0.91,
   );

@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import { LibCalAPIBaseTool } from "./LibCalAPI";
-import { AxiosRetries } from "../../Utils/NetworkUtils";
+import { retryWithMaxAttempts } from "../../Utils/NetworkUtils";
 
 type WeekDay =
   | "monday"
@@ -122,7 +122,7 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
 
         let response: AxiosResponse<any, any>;
         try {
-          response = await AxiosRetries(
+          response = await retryWithMaxAttempts<AxiosResponse<any, any>>(
             (): Promise<AxiosResponse<any, any>> => {
               return new Promise<AxiosResponse<any, any>>((resolve, reject) => {
                 try {
