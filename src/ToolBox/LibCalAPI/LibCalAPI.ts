@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { Tool, ToolInput } from "../ToolTemplates";
 import "dotenv/config";
+import { AxiosRetries } from "../../Utils/NetworkUtils";
 
 abstract class LibCalAPIBaseTool implements Tool {
   abstract readonly name: string;
@@ -30,15 +31,30 @@ abstract class LibCalAPIBaseTool implements Tool {
       //const timeout = setTimeout(() => {
       //        reject("Request Time Out");
       //      }, 5000);
-      const response = await axios({
-        method: "post",
-        url: this.OAUTH_URL,
-        data: { grant_type: this.GRANT_TYPE },
-        auth: {
-          username: this.CLIENT_ID,
-          password: this.CLIENT_SECRET,
-        },
-      });
+      let response: AxiosResponse<any, any>;
+      try {
+        response = await AxiosRetries((): Promise<AxiosResponse<any, any>> => {
+          return new Promise<AxiosResponse<any, any>>((resolve, reject) => {
+            try {
+              const axiosResponse = axios({
+                method: "post",
+                url: this.OAUTH_URL,
+                data: { grant_type: this.GRANT_TYPE },
+                auth: {
+                  username: this.CLIENT_ID,
+                  password: this.CLIENT_SECRET,
+                },
+              });
+              resolve(axiosResponse);
+            } catch (error: any) {
+              reject(error);
+            }
+          });
+        }, 5);
+      } catch (error: any) {
+        reject(error);
+        return;
+      }
 
       resolve(response.data.access_token!);
       // console.log(this.OAUTH_URL);

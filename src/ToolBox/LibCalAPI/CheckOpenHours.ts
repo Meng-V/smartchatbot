@@ -1,5 +1,6 @@
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { LibCalAPIBaseTool } from "./LibCalAPI";
+import { AxiosRetries } from "../../Utils/NetworkUtils";
 
 type WeekDay =
   | "monday"
@@ -68,7 +69,7 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
       const currentDate = new Date(
         monday.getFullYear(),
         monday.getMonth(),
-        monday.getDate() + i,
+        monday.getDate() + i
       );
       datesOfWeek.push(this.formatDateString(currentDate));
     }
@@ -76,7 +77,7 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
     return datesOfWeek;
   }
 
-  async toolRun(toolInput: { date: string }): Promise<string> {
+  async toolRun(toolInput: { date: string | null }): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       if (
         toolInput.date === null ||
@@ -89,12 +90,13 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
         );
         return;
       }
-
-      resolve(
-        `Open Hour of the requested week: ${JSON.stringify(
+      try {
+        const toolResponse = `Open Hour of the requested week: ${JSON.stringify(
           await CheckOpenHourTool.run(toolInput.date)
-        )}.If any day does not exist in the array, the library does not open that day.Always answer with both open hour and close hour to the customer.`
-      );
+        )}.If any day does not exist in the array, the library does not open that day.Always answer with both open hour and close hour to the customer.`;
+      } catch (error: any) {
+        reject(error);
+      }
     });
   }
 
@@ -117,15 +119,34 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
           "saturday",
           "sunday",
         ];
-        const response = await axios({
-          method: "get",
-          headers: header,
-          url: `${instance.HOUR_URL}/8113`,
-          params: {
-            from: weekdays[0],
-            to: weekdays[weekdays.length - 1],
-          },
-        });
+
+        let response: AxiosResponse<any, any>;
+        try {
+          response = await AxiosRetries(
+            (): Promise<AxiosResponse<any, any>> => {
+              return new Promise<AxiosResponse<any, any>>((resolve, reject) => {
+                try {
+                  const axiosResponse = axios({
+                    method: "get",
+                    headers: header,
+                    url: `${instance.HOUR_URL}/8113`,
+                    params: {
+                      from: weekdays[0],
+                      to: weekdays[weekdays.length - 1],
+                    },
+                  });
+                  resolve(axiosResponse);
+                } catch (error: any) {
+                  reject(error);
+                }
+              });
+            },
+            5
+          );
+        } catch (error: any) {
+          reject(error);
+          return;
+        }
 
         let filteredData = weekdays.reduce((prevObj, day, index) => {
           return {
