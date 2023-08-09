@@ -132,7 +132,6 @@ class LibrarianSubjectSearchTool implements Tool {
 
   private async fetchLibrarianSubjectData(): Promise<any[]> {
     return new Promise<any[]>(async (resolve, reject) => {
-<<<<<<< HEAD
       try {
         const instance = LibrarianSubjectSearchTool.instance;
         const header = {
@@ -150,7 +149,7 @@ class LibrarianSubjectSearchTool implements Tool {
       } catch (error) {
         console.error(error);
         reject(
-          "Sorry, there was an error fetching the librarian data. Please try again.",
+          ["Sorry, there was an error fetching the librarian data. Please try again."]
         );
       }
       // const subjectToLibrarian: Map<string, { [key: string]: string }[]> =
@@ -168,21 +167,6 @@ class LibrarianSubjectSearchTool implements Tool {
       //     }
       //   );
       // }
-=======
-      const instance = LibrarianSubjectSearchTool.instance;
-      const header = {
-        Authorization: `Bearer ${await instance.getAccessToken()}`,
-      };
-      const response = await axios({
-        method: "get",
-        headers: header,
-        url: "https://lgapi-us.libapps.com/1.2/accounts",
-        params: {
-          "expand[]": "subjects",
-        },
-      });
-      resolve(response.data);
->>>>>>> Dev
     });
   }
 
@@ -262,7 +246,7 @@ class LibrarianSubjectSearchTool implements Tool {
         }
         resolve(didUpdate);
       } catch (error) {
-        reject(error);
+        reject(false);
       }
     });
   }
@@ -340,7 +324,7 @@ class LibrarianSubjectSearchTool implements Tool {
 
           const subjectsWithLibrarian = await prisma.subject.findMany({
             where: {
-              name: { in: bestMatchSubject },
+              name: { in: bestMatchSubject.map((subjectData) => subjectData[1]) },
             },
             include: { assignedLibrarians: true },
           });
@@ -369,13 +353,13 @@ class LibrarianSubjectSearchTool implements Tool {
               error:
                 "Sorry, the requested subject has no match with our subject database. Please try another subject.",
             });
-            return;
+            // return;
           }
 
           resolve(resultObject);
         } catch (error) {
           console.error(error);
-          reject("Sorry, the requested subject has no match with our subject database. Please try another subject.")
+          reject({ error: "Sorry, the requested subject has no match with our subject database. Please try another subject."})
         }
       },
     );
