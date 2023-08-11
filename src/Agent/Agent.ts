@@ -124,9 +124,15 @@ class Agent implements IAgent {
       if (this.toolsMap.has(toolName)) {
         const tool = this.toolsMap.get(toolName);
 
-        resolve(await tool!.toolRun(toolInput));
+        let toolRespose;
+        try {
+          toolRespose = await tool!.toolRun(toolInput);
+        } catch (error) {
+          reject(error);
+          return;
+        }
+        resolve(toolRespose);
       } else {
-        throw new Error("Tool does not exist");
         reject("Tool does not exist");
       }
     });
