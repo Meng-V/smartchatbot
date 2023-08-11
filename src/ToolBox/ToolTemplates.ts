@@ -12,4 +12,4 @@ interface Tool {
   toolRun(input: ToolInput): Promise<string>; //Interface for agent to use
 }
 
-export {Tool, ToolInput}
+export { Tool, ToolInput };

@@ -15,10 +15,10 @@ class LibrarianSubjectSearchTool implements Tool {
 
   name: string = "LibrarianSearchWithSubjectTool";
   description: string =
-    "This tool is useful for searching which librarians are responsible for a specific subject (such as Computer Science, Finance, Environmental Studies, Biology, etc).";
+    "This tool is useful for searching which librarians are responsible for a specific subject(such as Computer Science,Finance,Environmental Studies,Biology,etc).";
 
   parameters: { [parameterName: string]: string } = {
-    subjectName: "string [REQUIRED]",
+    subjectName: "string[REQUIRED]",
   };
 
   protected readonly OAUTH_URL = process.env["LIBAPPS_OAUTH_URL"]!;
@@ -62,7 +62,7 @@ class LibrarianSubjectSearchTool implements Tool {
     text2 = text2.trim().toLowerCase();
 
     let dp: Array<Array<number>> = [...Array(text2.length + 1)].map((e) =>
-      Array(text1.length + 1).fill(0)
+      Array(text1.length + 1).fill(0),
     );
     for (let i = 1; i < text1.length + 1; i++) {
       dp[0][i] = i;
@@ -98,16 +98,29 @@ class LibrarianSubjectSearchTool implements Tool {
     threshold: number = 0.45
   ): [number, string][] {
     let result: [number, string][] = [];
-    const synonyms: Map<string, string> = new Map([
+    const originalSynonyms = new Map([
       ["IT", "Information Technology"],
       ["Information Technology", "CS"],
       ["Computer Science", "CS"],
       ["CS", "Computer Science"],
+      ["Computer Science", "Computer Science and Engineering"],
+      ["Computer Science and Engineering", "Computer Science"],
+      ["Software Engineering", "Computer Science and Software Engineering"],
+      ["Computer Science and Software Engineering", "Software Engineering"],
       ["Mathematics", "Math"],
       ["Math", "Mathematics"],
       ["Statistics", "Stats"],
       ["Stats", "Statistics"],
     ]);
+    
+    const synonyms = new Map();
+    
+    originalSynonyms.forEach((value, key) => {
+      synonyms.set(key.toLowerCase(), value.toLowerCase());
+    });
+        
+    // Deleting the originalSynonyms map
+    originalSynonyms.clear();
 
     for (let choice of choices) {
       //If choice is in synonym list, get fuzzy match with the synonym and return the higher value
@@ -117,9 +130,9 @@ class LibrarianSubjectSearchTool implements Tool {
             Math.max(query.length, choice.length),
         synonyms.has(choice)
           ? 1 -
-              this.levenshteinDistance(query, synonyms.get(choice)!) /
+              this.levenshteinDistance(query, synonyms.get(choice)!.toLocaleLowerCase().trim()) /
                 Math.max(query.length, synonyms.get(choice)!.length)
-          : 0
+          : 0,
       );
       if (matchScore < threshold) continue;
       result.push([matchScore, choice]);
@@ -154,7 +167,7 @@ class LibrarianSubjectSearchTool implements Tool {
    * @returns True if it performs update, False otherwise
    */
   private async updateLibrarianSubjectDatabase(
-    updateDuration: number
+    updateDuration: number,
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       const savedLibrarians = await prisma.librarian.findMany();
@@ -213,7 +226,7 @@ class LibrarianSubjectSearchTool implements Tool {
                             name: subject.name.toLowerCase().trim(),
                           },
                         };
-                      }
+                      },
                     ),
               },
             },
@@ -240,26 +253,24 @@ class LibrarianSubjectSearchTool implements Tool {
       if (nullFields.length > 0) {
         console.log(
           `Cannot search for librarian because missing parameter ${JSON.stringify(
-            nullFields
+            nullFields,
           )}. Ask the customer to provide ${JSON.stringify(
-            nullFields
-          )} to search for librarian.`
+            nullFields,
+          )} to search for librarian.`,
         );
         resolve(
           `Cannot search for librarian because missing parameter ${JSON.stringify(
-            nullFields
+            nullFields,
           )}. Ask the customer to provide ${JSON.stringify(
-            nullFields
-          )} to search for librarian.`
+            nullFields,
+          )} to search for librarian.`,
         );
         return;
       }
 
-
-
       const { subjectName } = toolInput;
       const response = await LibrarianSubjectSearchTool.run(
-        subjectName as string
+        subjectName as string,
       );
 
       if ("error" in response) {
@@ -276,7 +287,7 @@ class LibrarianSubjectSearchTool implements Tool {
   }
 
   static async run(
-    querySubjectName: string
+    querySubjectName: string,
   ): Promise<SubjectLibrarianMap | { error: string }> {
     return new Promise<SubjectLibrarianMap | { error: string }>(
       async (resolve, reject) => {
@@ -312,11 +323,11 @@ class LibrarianSubjectSearchTool implements Tool {
                       name: `${librarian.firstName} ${librarian.lastName}`,
                       email: librarian.email,
                     };
-                  }
+                  },
                 ),
             };
           },
-          {}
+          {},
         );
         console.log(JSON.stringify(resultObject));
         if (Object.keys(resultObject).length === 0) {
@@ -328,7 +339,7 @@ class LibrarianSubjectSearchTool implements Tool {
         }
 
         resolve(resultObject);
-      }
+      },
     );
   }
 }

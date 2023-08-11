@@ -7,4 +7,4 @@ interface PromptTemplate {
     getPrompt(): Promise<{prompt: string} | { prompt: string; tokenUsage: TokenUsage }>;
 }
 
-export {PromptTemplate};
+export { PromptTemplate };

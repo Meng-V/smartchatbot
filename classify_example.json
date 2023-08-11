@@ -9,12 +9,19 @@
         "I want to cancel the room reservation",
         "May I drop my room reservation?",
         "Can you check if room 210 is available the day after tomorrow?",
-        "I want to book room with code name of 130."
+        "I want to book room with code name of 130.",
+        "How can I book the study room?",
+        "Can you get me a study room?",
+        "Can you get me a study room next Monday?",
+        "On this Friday, I need a study room for 13 people."
     ],
     "AcademicSupportAgent": [
         "I am researching on Economics. Can you suggest me some material to support my study?",
         "Can you recommend me some books on Computer Science",
         "Do you know any articles about Modern Art?",
+        "Can you recommend me some articles?",
+        "Can you suggest me some books?",
+        "Please tell me some articles that I can read.",
         "I want to read more articles/books about Biology. Can you recommend me some?",
         "Who is responsible for Civic and Regional Development",
         "Which librarian I can contact regarding Communication Studies?",

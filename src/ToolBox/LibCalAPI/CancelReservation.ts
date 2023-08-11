@@ -1,13 +1,14 @@
 import { LibCalAPIBaseTool } from "./LibCalAPI";
 import { ToolInput } from "../ToolTemplates";
 import axios, { AxiosError, AxiosResponse } from "axios";
+import { retryWithMaxAttempts } from "../../Utils/NetworkUtils";
 
 class CancelReservationTool extends LibCalAPIBaseTool {
   private static instance: CancelReservationTool;
 
   public readonly name: string = "CancelReservationTool";
   public readonly description: string =
-    "This tool is for cancelling study room reservation. Use Final Answer instead if you don't have enough required parameters yet. Don't include any single quotes in the paramter.";
+    "This tool is for cancelling study room reservation.Use Final Answer instead if you don't have enough required parameters yet.Don't include any single quotes in the paramter.";
 
   public readonly parameters: { [parameterName: string]: string } = {
     bookingID: "string [REQUIRED]",
@@ -25,7 +26,7 @@ class CancelReservationTool extends LibCalAPIBaseTool {
     return CancelReservationTool.instance;
   }
 
-  async toolRun(toolInput: { bookingID: string }): Promise<string> {
+  async toolRun(toolInput: { bookingID: string | null }): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       if (
         toolInput.bookingID === null ||
@@ -34,26 +35,29 @@ class CancelReservationTool extends LibCalAPIBaseTool {
         toolInput.bookingID === "undefined"
       ) {
         console.log(
-          `Cannot perform booking because missing parameter bookingID. Please ask the customer to provide bookingID to perform booking\n`
+          `Cannot perform booking because missing parameter bookingID.Ask the customer to provide bookingID to perform booking\n`
         );
         resolve(
-          `Cannot perform booking because missing parameter bookingID. Please ask the customer to provide bookingID to perform booking\n`
+          `Cannot perform booking because missing parameter bookingID.Ask the customer to provide bookingID to perform booking\n`
         );
 
         return;
       }
 
       const { bookingID } = toolInput;
-
-      const response = await CancelReservationTool.run(bookingID);
-      if (response.success) {
-        resolve(
-          `Room reservation with ID: ${bookingID} is cancelled successfully\n`
-        );
-      } else {
-        resolve(
-          `Room reservation with ID: ${bookingID} is cancelled unsuccessfully. Error message: ${response.error}\n`
-        );
+      try {
+        const response = await CancelReservationTool.run(bookingID);
+        if (response.success) {
+          resolve(
+            `Room reservation with ID: ${bookingID} is cancelled successfully\n`
+          );
+        } else {
+          resolve(
+            `Room reservation with ID: ${bookingID} is cancelled unsuccessfully.Error message: ${response.error}\n`
+          );
+        }
+      } catch (error: any) {
+        reject(error);
       }
     });
   }
@@ -74,12 +78,26 @@ class CancelReservationTool extends LibCalAPIBaseTool {
         };
 
         // console.log("Payload", payload);
+
         try {
-          let response = await axios({
-            method: "post",
-            headers: header,
-            url: `${instance.CANCEL_URL}/${bookingID}`,
-          });
+          let response;
+          response = await retryWithMaxAttempts<AxiosResponse<any, any>>(
+            (): Promise<AxiosResponse<any, any>> => {
+              return new Promise<AxiosResponse<any, any>>((resolve, reject) => {
+                try {
+                  const axiosResponse = axios({
+                    method: "post",
+                    headers: header,
+                    url: `${instance.CANCEL_URL}/${bookingID}`,
+                  });
+                  resolve(axiosResponse);
+                } catch (error: any) {
+                  reject(error);
+                }
+              });
+            }
+          );
+
           if (response.data[0].cancelled) {
             resolve({
               success: true,
@@ -92,7 +110,7 @@ class CancelReservationTool extends LibCalAPIBaseTool {
             });
           }
         } catch (error: any) {
-          console.log(error.message);
+          reject(error);
         }
       }
     );

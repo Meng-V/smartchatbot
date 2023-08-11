@@ -21,7 +21,6 @@
 //   return chatCompletion;
 // }
 
-
 // /**
 //  * Parses the JSON part from the content string.
 //  * @param content - The content string containing JSON data.

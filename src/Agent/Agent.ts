@@ -11,20 +11,29 @@ class Agent implements IAgent {
   memory: ConversationMemory | null;
 
   toolsMap: Map<string, Tool>;
-  LLMCallLimit: number = 5;
+  LLMCallLimit: number = 3;
 
   actions: Set<string> = new Set();
 
+  /**
+   * Construct Agent object.
+   * @param name agent name
+   * @param llmModel llmModel to control the action of the agent
+   * @param tools array of the tools the Agent can use
+   * @param memory Conversation Memory to keep track of the current conversation context
+   * @param toolsAreReadyToUse if true, the agent can use the input tools. if false, the agent can only provide the tools information.
+   */
   constructor(
     name: string,
     llmModel: OpenAIModel,
     tools: Tool[],
-    memory: ConversationMemory
+    memory: ConversationMemory,
+    toolsAreReadyToUse: boolean = true,
   ) {
     this.name = name;
     this.llmModel = llmModel;
     this.memory = memory;
-    this.basePrompt = new ModelPromptWithTools(tools, this.memory);
+    this.basePrompt = new ModelPromptWithTools(tools, this.memory, toolsAreReadyToUse);
     this.toolsMap = new Map<string, Tool>();
     tools.forEach((tool) => {
       this.toolsMap.set(tool.name, tool);
@@ -48,7 +57,7 @@ class Agent implements IAgent {
       
       this.basePrompt.emptyScratchpad();
       let llmResponseObj = await this.llmModel.getModelResponse(
-        this.basePrompt
+        this.basePrompt,
       );
       let llmResponse = llmResponseObj.response;
       //Update tokens usage
@@ -56,7 +65,7 @@ class Agent implements IAgent {
       promptTokens += llmResponseObj.usage.promptTokens;
       completionTokens += llmResponseObj.usage.completionTokens;
 
-      // console.log(llmResponse)
+      console.log(llmResponse)
       let outputParsed = this.parseLLMOutput(llmResponse);
       let llmCallNum = 1;
 
@@ -68,21 +77,23 @@ class Agent implements IAgent {
         }
         if (outputParsed.outputType === "action") {
           this.basePrompt.updateScratchpad(
-            `Thought: ${outputParsed.thought}\n`
+            `Thought: ${outputParsed.thought}\n`,
           );
           this.basePrompt.updateScratchpad(`Action: ${outputParsed.action}\n`);
           this.basePrompt.updateScratchpad(
-            `Action Input: ${JSON.stringify(outputParsed.actionInput)}\n`
+            `Action Input: ${JSON.stringify(outputParsed.actionInput)}\n`,
           );
           const toolResponse = await this.accessToolBox(
             outputParsed.action,
-            outputParsed.actionInput
+            outputParsed.actionInput,
           );
+          console.log(toolResponse)
 
-          this.basePrompt.updateScratchpad(`Observation: ${toolResponse}`);
+          this.basePrompt.updateScratchpad(`Tool Response: ${toolResponse}`);
         }
         llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
         llmResponse = llmResponseObj.response;
+        console.log(llmResponse)
 
         //Update tokens usage
         totalTokens += llmResponseObj.usage.totalTokens;
@@ -103,7 +114,7 @@ class Agent implements IAgent {
 
   private async accessToolBox(
     toolName: string,
-    toolInput: { [key: string]: string }
+    toolInput: { [key: string]: string },
   ): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       //const timeout = setTimeout(() => {

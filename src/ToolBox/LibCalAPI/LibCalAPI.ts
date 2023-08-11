@@ -1,14 +1,12 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { Tool, ToolInput } from "../ToolTemplates";
 import "dotenv/config";
-
-
+import { retryWithMaxAttempts } from "../../Utils/NetworkUtils";
 
 abstract class LibCalAPIBaseTool implements Tool {
-
   abstract readonly name: string;
   abstract readonly description: string;
-  abstract readonly parameters: { [parameterName: string]: string; };
+  abstract readonly parameters: { [parameterName: string]: string };
 
   protected readonly OAUTH_URL = process.env["LIBCAL_OAUTH_URL"]!;
   protected readonly CLIENT_ID = process.env["LIBCAL_CLIENT_ID"]!;
@@ -19,7 +17,7 @@ abstract class LibCalAPIBaseTool implements Tool {
   protected readonly RESERVATION_URL = process.env["LIBCAL_RESERVATION_URL"]!;
   protected readonly CANCEL_URL = process.env["LIBCAL_CANCEL_URL"]!;
   protected readonly HOUR_URL = process.env["LIBCAL_HOUR_URL"]!;
-  protected readonly BUILDING_ID = process.env["TEST_BUILDING"]
+  protected readonly BUILDING_ID = process.env["TEST_BUILDING"];
 
   protected static timezone = (() => {
     const diff = new Date().getTimezoneOffset() / 60;
@@ -33,15 +31,30 @@ abstract class LibCalAPIBaseTool implements Tool {
       //const timeout = setTimeout(() => {
       //        reject("Request Time Out");
       //      }, 5000);
-      const response = await axios({
-        method: "post",
-        url: this.OAUTH_URL,
-        data: { grant_type: this.GRANT_TYPE },
-        auth: {
-          username: this.CLIENT_ID,
-          password: this.CLIENT_SECRET,
-        },
-      });
+      let response: AxiosResponse<any, any>;
+      try {
+        response = await retryWithMaxAttempts<AxiosResponse<any, any>>((): Promise<AxiosResponse<any, any>> => {
+          return new Promise<AxiosResponse<any, any>>((resolve, reject) => {
+            try {
+              const axiosResponse = axios({
+                method: "post",
+                url: this.OAUTH_URL,
+                data: { grant_type: this.GRANT_TYPE },
+                auth: {
+                  username: this.CLIENT_ID,
+                  password: this.CLIENT_SECRET,
+                },
+              });
+              resolve(axiosResponse);
+            } catch (error: any) {
+              reject(error);
+            }
+          });
+        }, 5);
+      } catch (error: any) {
+        reject(error);
+        return;
+      }
 
       resolve(response.data.access_token!);
       // console.log(this.OAUTH_URL);

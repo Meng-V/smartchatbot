@@ -2,8 +2,9 @@ import prisma from "../../../prisma/prisma";
 import { LibrarianSubjectSearchTool } from "../LibrarianSubject";
 import { CheckRoomAvailabilityTool } from "./CheckRoomAvailability";
 import { LibCalAPIBaseTool } from "./LibCalAPI";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { match } from "assert";
+import { retryWithMaxAttempts } from "../../Utils/NetworkUtils";
 
 type Room = { roomID: string; roomName: string; capacity: number };
 
@@ -12,23 +13,24 @@ class RoomReservationTool extends LibCalAPIBaseTool {
 
   public readonly name: string = "StudyRoomReservationTool";
   public readonly description: string =
-    "This tool is for study room reservation. No need to use tool CheckRoomAvailabilityTool before using this tool. Use Final Answer instead if you don't have enough required parameters yet. Don't include any single quotes in the paramter. Disclaimer: This tool assumes startDate is as same as endDate";
+    "This tool is for study room reservation.No need to use tool CheckRoomAvailabilityTool before using this tool.Use Final Answer instead if you don't have enough required parameters yet.Don't include any single quotes in the paramter.Disclaimer: This tool assumes startDate is as same as endDate";
 
   public readonly parameters: { [parameterName: string]: string } = {
-    firstName: "string [REQUIRED]",
-    lastName: "string [REQUIRED]",
-    email: "string [REQUIRED] [school email with @miamioh.edu domain]",
-    startDate: "string [REQUIRED] [format YYYY-MM-DD]",
+    firstName: "string[REQUIRED]",
+    lastName: "string[REQUIRED]",
+    email: "string[REQUIRED][@miamioh.edu email][Always ask for email.Never predict.]",
+    startDate: "string[REQUIRED][format YYYY-MM-DD]",
     startTime:
-      "string [REQUIRED] [format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
-    endDate: "string [REQUIRED] [format YYYY-MM-DD]",
+      "string[REQUIRED][format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
+    endDate: "string[REQUIRED][format YYYY-MM-DD]",
     endTime:
-      "string [REQUIRED] [format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
+      "string[REQUIRED][format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
     roomCapacity:
-      "string | null [OPTIONAL] [capacity (number of people) of the room you wish to reserve.]",
-    roomCodeName:
-      "string | null [OPTIONAL] [such as: 145, 211, 297A, 108C, etc.]",
+      "string|null[OPTIONAL][capacity(number of people)of the room you wish to reserve.]",
+    roomCodeName: "string|null[OPTIONAL][such as: 145, 211, 297A, 108C, etc.]",
   };
+
+  private updateDatabaseDuration: number = 1;
 
   constructor() {
     super();
@@ -48,12 +50,16 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       const header = {
         Authorization: `Bearer ${await instance.getAccessToken()}`,
       };
-      const response = await axios({
-        method: "get",
-        headers: header,
-        url: `${instance.ROOM_INFO_URL}/${instance.BUILDING_ID}`,
-      });
-      resolve(response.data);
+      try {
+        const response = await axios({
+          method: "get",
+          headers: header,
+          url: `${instance.ROOM_INFO_URL}/${instance.BUILDING_ID}`,
+        });
+        resolve(response.data);
+      } catch (error: any) {
+        reject(error);
+      }
     });
   }
 
@@ -66,7 +72,13 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     updateDuration: number
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
-      const savedRoomInfo = await prisma.room.findMany();
+      let savedRoomInfo;
+      try {
+        savedRoomInfo = await prisma.room.findMany();
+      } catch (error) {
+        reject(error);
+        return;
+      }
       let didUpdate = false;
       if (
         !savedRoomInfo ||
@@ -99,7 +111,6 @@ class RoomReservationTool extends LibCalAPIBaseTool {
               codeName: codeName,
               capacity: room.capacity,
               type: "study room",
-              isAccessible: room.isAccessible,
             },
           });
         }
@@ -110,11 +121,17 @@ class RoomReservationTool extends LibCalAPIBaseTool {
 
   private async getRoomByCapacity(capacity: number): Promise<Room[]> {
     return new Promise<Room[]>(async (resolve, reject) => {
-      const rooms = await prisma.room.findMany({
-        where: {
-          capacity: capacity,
-        },
-      });
+      let rooms;
+      try {
+        rooms = await prisma.room.findMany({
+          where: {
+            capacity: capacity,
+          },
+        });
+      } catch (error: any) {
+        reject(error);
+        return;
+      }
 
       const returnRoomObjs = rooms.map((room) => {
         return {
@@ -136,27 +153,35 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     peopleNum: number
   ): Promise<number[]> {
     return new Promise<number[]>(async (resolve, reject) => {
-      const capacityList = (
-        await prisma.room.findMany({
+      let roomObjs;
+      try {
+        roomObjs = await prisma.room.findMany({
           distinct: ["capacity"],
           select: {
             capacity: true,
           },
-        })
-      )
+        });
+      } catch (error: any) {
+        reject(error);
+        return;
+      }
+      if (!roomObjs)
+        this.updateRoomInfoDatabase(
+          RoomReservationTool.getInstance().updateDatabaseDuration
+        );
+      const capacityList = roomObjs
         .map((room) => room.capacity)
         .filter((capacity) => capacity >= peopleNum);
       resolve(capacityList);
     });
   }
 
-  private async getRoomByCodeName(roomCodeName: string): Promise<Room> {
-    return new Promise<Room>(async (resolve, reject) => {
-      console.log(roomCodeName);
+  private async getRoomByCodeName(roomCodeName: string): Promise<Room | null> {
+    return new Promise<Room | null>(async (resolve, reject) => {
       const rooms: { id: string; codeName: string; capacity: number }[] =
         await prisma.$queryRaw`SELECT id, "codeName", capacity FROM "Room" WHERE "codeName" LIKE ${`%${roomCodeName}%`}`;
       if (!rooms) {
-        reject("Cannot find any room with input name");
+        resolve(null);
         return;
       }
       const returnedRoom = {
@@ -187,40 +212,44 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     return new Promise<Room>(async (resolve, reject) => {
       const checkRoomAvailabilityInstance =
         CheckRoomAvailabilityTool.getInstance();
-      for (let room of rooms) {
-        if (
-          await checkRoomAvailabilityInstance.isAvailable(
-            room.roomID,
-            startDate,
-            startTime,
-            endDate,
-            endTime
-          )
-        ) {
-          resolve(room);
-          return;
+      try {
+        for (let room of rooms) {
+          if (
+            await checkRoomAvailabilityInstance.isAvailable(
+              room.roomID,
+              startDate,
+              startTime,
+              endDate,
+              endTime
+            )
+          ) {
+            resolve(room);
+            return;
+          }
         }
+      } catch (error: any) {
+        reject(error);
       }
       reject("No room satisfies");
     });
   }
 
-
   async toolRun(toolInput: {
-    [key: string]: string | null;
-    firstName: string;
-    lastName: string;
-    email: string;
-    startDate: string;
-    startTime: string;
-    endDate: string;
-    endTime: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string | null;
+    startDate: string | null;
+    startTime: string | null;
+    endDate: string | null;
+    endTime: string | null;
     roomCapacity: string | null;
     roomCodeName: string | null;
   }): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       let nullFields = [];
-      for (const param of Object.keys(toolInput)) {
+      for (const param of Object.keys(
+        toolInput
+      ) as (keyof typeof toolInput)[]) {
         if (param === "roomCapacity" || param === "roomCodeName") continue;
         if (
           toolInput[param] === null ||
@@ -235,14 +264,14 @@ class RoomReservationTool extends LibCalAPIBaseTool {
         console.log(
           `Cannot perform booking because missing parameter ${JSON.stringify(
             nullFields
-          )}. Ask the customer to provide ${JSON.stringify(
+          )}.Ask the customer to provide ${JSON.stringify(
             nullFields
           )} to perform booking.`
         );
         resolve(
           `Cannot perform booking because missing parameter ${JSON.stringify(
             nullFields
-          )}. Ask the customer to provide ${JSON.stringify(
+          )}.Ask the customer to provide ${JSON.stringify(
             nullFields
           )} to perform booking.`
         );
@@ -263,26 +292,26 @@ class RoomReservationTool extends LibCalAPIBaseTool {
 
       //Validate miamioh.edu email
       const emailRegex = /^[a-zA-Z0-9._%+-]+@miamioh\.edu$/;
-      if (!emailRegex.test(email)) {
+      if (!emailRegex.test(email!)) {
         resolve("Email has to have @miamioh.edu domain");
         return;
       }
 
       try {
         const response = await RoomReservationTool.run(
-          firstName,
-          lastName,
-          email,
-          startDate,
-          startTime,
-          endDate,
-          endTime,
+          firstName!,
+          lastName!,
+          email!,
+          startDate!,
+          startTime!,
+          endDate!,
+          endTime!,
           roomCapacity,
           roomCodeName
         );
         resolve(response);
-      } catch (e: any) {
-        resolve(`Tell the customer this error: ${e.error}`);
+      } catch (error: any) {
+        reject(error);
       }
     });
   }
@@ -303,30 +332,34 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       //   reject("Request Time Out");
       // }, 5000);
       const instance = RoomReservationTool.getInstance();
-      await instance.updateRoomInfoDatabase(60);
+      await instance.updateRoomInfoDatabase(instance.updateDatabaseDuration);
       let availableRoom: Room | null = null;
       if (
         (!roomCapacity || roomCapacity === "null") &&
         (!roomCodeName || roomCodeName === "null")
       ) {
-        reject({
-          error:
-            "Room capacity and room code name are both empty. Please ask customer to specify one of them.",
-        });
+        resolve(
+          "Room capacity and room code name are both empty.Ask customer to specify one of them."
+        );
         return;
       } else if (!roomCapacity || roomCapacity === "null") {
-        availableRoom = await instance.getRoomByCodeName(
-          roomCodeName as string
-        );
+        try {
+          availableRoom = await instance.getRoomByCodeName(
+            roomCodeName as string
+          );
+          if (!availableRoom) {
+            resolve("No such room with the input code name.");
+          }
+        } catch (error: any) {
+          reject(error);
+        }
       } else {
         const potentialCapacityList =
           await instance.matchNumberOfPeopleToPotentialCapacity(
             parseInt(roomCapacity, 10)
           );
         if (potentialCapacityList.length === 0) {
-          reject({
-            error: `We do not have any room that fit ${roomCapacity}.`,
-          });
+          resolve(`We do not have any room that fit ${roomCapacity}.`);
         }
 
         for (let capacity of potentialCapacityList) {
@@ -347,7 +380,7 @@ class RoomReservationTool extends LibCalAPIBaseTool {
         }
       }
       if (availableRoom === null) {
-        reject({ error: "No room is available for the input condition" });
+        resolve("No room is available for the input condition");
         return;
       }
 
@@ -371,17 +404,29 @@ class RoomReservationTool extends LibCalAPIBaseTool {
 
       // console.log("Payload", payload);
       try {
-        console.log(payload);
-        let response = await axios({
-          method: "post",
-          headers: header,
-          url: instance.RESERVATION_URL,
-          data: payload,
-        });
+        let response;
+        response = await retryWithMaxAttempts<AxiosResponse<any, any>>((): Promise<AxiosResponse<any, any>> => {
+          return new Promise<AxiosResponse<any, any>>(
+            (resolve, reject) => {
+              try {
+                const axiosResponse = axios({
+                  method: "post",
+                  headers: header,
+                  url: instance.RESERVATION_URL,
+                  data: payload,
+                });
+                resolve(axiosResponse);
+              } catch (error: any) {
+                reject(error);
+              }
+            }
+          );
+        }, 5);
+
         resolve(
           `Room ${availableRoom.roomName} with capacity ${
             availableRoom.capacity
-          } is booked successfully from ${startTime} to ${endTime} on ${startDate}. Confirmation email should be sent to customer's email. Please tell the customer that the reservation is successful and this booking number information: ${JSON.stringify(
+          } is booked successfully from ${startTime} to ${endTime} on ${startDate}.Confirmation email should be sent to customer's email.Tell the customer that the reservation is successful and this booking number information:${JSON.stringify(
             response.data,
             ["booking_id"]
           )}`
@@ -389,14 +434,13 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       } catch (error: any) {
         if (error.response) {
           const errorData = error.response.data as string;
-          console.log(error);
           if (errorData.includes("not a valid starting slot")) {
             resolve(
-              "Room reservation is unsuccessful. Time slot is not available for your room"
+              "Room reservation is unsuccessful.Time slot is not available for your room"
             );
           }
         } else {
-          console.log(error.message);
+          reject(error);
         }
       }
       // console.log(instance.RESERVATION_URL);
