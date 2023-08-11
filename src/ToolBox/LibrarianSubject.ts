@@ -65,12 +65,10 @@ class LibrarianSubjectSearchTool implements Tool {
   
   private initializeChoices() {
     for (let choice in synonymsData) {
-      if (Array.isArray(synonymsData[choice])) {
+      if (Array.isArray(synonymsData[choice]) && synonymsData[choice].length > 0) {
         synonymsData[choice].forEach((synonym: string) => {
           this.synonymMapping.set(synonym.toLowerCase().trim(), choice.toLowerCase().trim());
         });
-      } else {
-        console.warn('Unexpected type for choice:', choice);
       }
     }
   }

@@ -166,6 +166,7 @@ io.on("connection", async (socket) => {
       const agent = await centralCoordinator.coordinateAgent(userMessage);
       console.log(`Coordinate to agent ${agent.name}`);
       const agentResponse = await agent.agentRun(userMessage);
+      memory.addToConversation("AIAgent", agentResponse.response.join('\n'));
 
       await prisma.message.create({
         data: {
