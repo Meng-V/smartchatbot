@@ -156,7 +156,7 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
         }, {});
         resolve(filteredData as WeekAvailability);
       } catch (error: any) {
-        console.log(error);
+        reject(error);
       }
     });
   }

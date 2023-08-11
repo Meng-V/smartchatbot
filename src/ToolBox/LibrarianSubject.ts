@@ -98,16 +98,29 @@ class LibrarianSubjectSearchTool implements Tool {
     threshold: number = 0.45
   ): [number, string][] {
     let result: [number, string][] = [];
-    const synonyms: Map<string, string> = new Map([
+    const originalSynonyms = new Map([
       ["IT", "Information Technology"],
       ["Information Technology", "CS"],
       ["Computer Science", "CS"],
       ["CS", "Computer Science"],
+      ["Computer Science", "Computer Science and Engineering"],
+      ["Computer Science and Engineering", "Computer Science"],
+      ["Software Engineering", "Computer Science and Software Engineering"],
+      ["Computer Science and Software Engineering", "Software Engineering"],
       ["Mathematics", "Math"],
       ["Math", "Mathematics"],
       ["Statistics", "Stats"],
       ["Stats", "Statistics"],
     ]);
+    
+    const synonyms = new Map();
+    
+    originalSynonyms.forEach((value, key) => {
+      synonyms.set(key.toLowerCase(), value.toLowerCase());
+    });
+        
+    // Deleting the originalSynonyms map
+    originalSynonyms.clear();
 
     for (let choice of choices) {
       //If choice is in synonym list, get fuzzy match with the synonym and return the higher value
@@ -117,7 +130,7 @@ class LibrarianSubjectSearchTool implements Tool {
             Math.max(query.length, choice.length),
         synonyms.has(choice)
           ? 1 -
-              this.levenshteinDistance(query, synonyms.get(choice)!) /
+              this.levenshteinDistance(query, synonyms.get(choice)!.toLocaleLowerCase().trim()) /
                 Math.max(query.length, synonyms.get(choice)!.length)
           : 0,
       );

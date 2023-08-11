@@ -101,12 +101,12 @@ io.on("connection", async (socket) => {
     memory
   );
 
-  const googleSearchAgent = new Agent(
-    "GoogleSearchAgent",
-    gpt4Model,
-    [searchTool],
-    memory
-  );
+  // const googleSearchAgent = new Agent(
+  //   "GoogleSearchAgent",
+  //   gpt4Model,
+  //   [searchTool],
+  //   memory
+  // );
 
   const generalPurposeAgent = new Agent(
     "GeneralPurposeAgent",
@@ -128,11 +128,11 @@ io.on("connection", async (socket) => {
     memory,
     generalPurposeAgent,
     [academicSupportAgent, roomReservationAgent, buildingInformationAgent,
-    googleSearchAgent,
+    // googleSearchAgent,
     ],
     0.91,
   );
-
+  
   for (let agentName of Object.keys(classifyExample)) {
     centralCoordinator.addAgent(agentName, classifyExample[agentName]);
   }
