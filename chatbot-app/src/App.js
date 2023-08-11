@@ -75,7 +75,10 @@ const App = () => {
     }
   }, [messages]);
 
-
+  const addMessage = (message, sender) => {
+    setMessages((prevMessages) => [...prevMessages, { text: message, sender }]);
+  };
+  
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (inputMessage && socketRef.current) {
@@ -87,10 +90,6 @@ const App = () => {
       });
     }
   };
-  const addMessage = (message, sender) => {
-    setMessages((prevMessages) => [...prevMessages, { text: message, sender }]);
-  };
-
   const handleClose = () => {
     setStep("initial");
     setMessages([]);
