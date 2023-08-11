@@ -101,12 +101,12 @@ io.on("connection", async (socket) => {
     memory
   );
 
-  const googleSearchAgent = new Agent(
-    "GoogleSearchAgent",
-    gpt4Model,
-    [searchTool],
-    memory
-  );
+  // const googleSearchAgent = new Agent(
+  //   "GoogleSearchAgent",
+  //   gpt4Model,
+  //   [searchTool],
+  //   memory
+  // );
 
   const generalPurposeAgent = new Agent(
     "GeneralPurposeAgent",
@@ -122,32 +122,18 @@ io.on("connection", async (socket) => {
     ],
     memory
   );
-
-  const smallTalkAgent = new Agent(
-    "SmallTalkAgent",
-    gpt3_5Model,
-    [ebscoBookSearchTool,
-      searchLibrarianWithSubjectTool,
-      reservationTool,
-      cancelReservationTool,
-      checkRoomAvailabilityTool,
-      checkOpenHourTool,
-      searchTool,],
-    memory,
-    false,
-  )
-
+  
   //Initialize the Central Coordinator to coordinate the agent
   const centralCoordinator = new CentralCoordinator(
     memory,
     generalPurposeAgent,
     [academicSupportAgent, roomReservationAgent, buildingInformationAgent,
-    googleSearchAgent, smallTalkAgent,
+    // googleSearchAgent,
     ],
     0.91,
   );
-
-  for (let agentName of Object.keys(classifyExample)) {
+  
+  for (let agentName of centralCoordinator.getAgentNameIterable()) {
     centralCoordinator.addAgent(agentName, classifyExample[agentName]);
   }
 

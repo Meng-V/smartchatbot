@@ -89,7 +89,7 @@ class EBSCOBookSearchTool implements Tool {
         return {
           title: record.title,
           author: record.author,
-          publicationYear: record.publicationYear,
+          publicationYear: record.publicationYear, 
           url: record.url,
           location: location,
         };

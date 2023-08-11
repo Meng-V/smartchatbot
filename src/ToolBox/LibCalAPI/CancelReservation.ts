@@ -1,6 +1,7 @@
 import { LibCalAPIBaseTool } from "./LibCalAPI";
 import { ToolInput } from "../ToolTemplates";
 import axios, { AxiosError, AxiosResponse } from "axios";
+import { retryWithMaxAttempts } from "../../Utils/NetworkUtils";
 
 class CancelReservationTool extends LibCalAPIBaseTool {
   private static instance: CancelReservationTool;
@@ -25,7 +26,7 @@ class CancelReservationTool extends LibCalAPIBaseTool {
     return CancelReservationTool.instance;
   }
 
-  async toolRun(toolInput: { bookingID: string }): Promise<string> {
+  async toolRun(toolInput: { bookingID: string | null }): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       if (
         toolInput.bookingID === null ||
@@ -44,22 +45,25 @@ class CancelReservationTool extends LibCalAPIBaseTool {
       }
 
       const { bookingID } = toolInput;
-
-      const response = await CancelReservationTool.run(bookingID);
-      if (response.success) {
-        resolve(
-          `Room reservation with ID: ${bookingID} is cancelled successfully\n`,
-        );
-      } else {
-        resolve(
-          `Room reservation with ID: ${bookingID} is cancelled unsuccessfully.Error message: ${response.error}\n`
-        );
+      try {
+        const response = await CancelReservationTool.run(bookingID);
+        if (response.success) {
+          resolve(
+            `Room reservation with ID: ${bookingID} is cancelled successfully\n`
+          );
+        } else {
+          resolve(
+            `Room reservation with ID: ${bookingID} is cancelled unsuccessfully.Error message: ${response.error}\n`
+          );
+        }
+      } catch (error: any) {
+        reject(error);
       }
     });
   }
 
   static async run(
-    bookingID: string,
+    bookingID: string
   ): Promise<{ success: boolean; error: string | null }> {
     return new Promise<{ success: boolean; error: string | null }>(
       async (resolve, reject) => {
@@ -74,12 +78,26 @@ class CancelReservationTool extends LibCalAPIBaseTool {
         };
 
         // console.log("Payload", payload);
+
         try {
-          let response = await axios({
-            method: "post",
-            headers: header,
-            url: `${instance.CANCEL_URL}/${bookingID}`,
-          });
+          let response;
+          response = await retryWithMaxAttempts<AxiosResponse<any, any>>(
+            (): Promise<AxiosResponse<any, any>> => {
+              return new Promise<AxiosResponse<any, any>>((resolve, reject) => {
+                try {
+                  const axiosResponse = axios({
+                    method: "post",
+                    headers: header,
+                    url: `${instance.CANCEL_URL}/${bookingID}`,
+                  });
+                  resolve(axiosResponse);
+                } catch (error: any) {
+                  reject(error);
+                }
+              });
+            }
+          );
+
           if (response.data[0].cancelled) {
             resolve({
               success: true,
@@ -92,13 +110,9 @@ class CancelReservationTool extends LibCalAPIBaseTool {
             });
           }
         } catch (error: any) {
-          console.log(error.message);
-          resolve({
-            success: false,
-            error: "Sorry there was an error with the reservation, " + error.message,
-          })
+          reject(error);
         }
-      },
+      }
     );
   }
 }

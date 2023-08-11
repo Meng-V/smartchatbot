@@ -51,6 +51,5 @@ model Room {
   codeName     String   @unique @db.VarChar(10)
   capacity     Int
   type         String
-  isAccessible Boolean
   lastUpdated  DateTime @updatedAt
 }

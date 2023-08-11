@@ -47,7 +47,7 @@ class ModelPromptWithTools implements PromptTemplate {
         (toolDocumentation) => toolDocumentation.name
       )}].If you don't need to use any tool,put "null" here,
       Action Input:{parameter1:value1,parameter2:value2,parameter3:value3,etc}.If Action is not null,do not ever put null here.Put null here if Action is null,
-      Final Answer: Provide your final answer for the input question from the input question or the Tool Response (if it exists).Put "null" here if you decide to use any tools,
+      Final Answer: Provide your final answer for the input question from the input question or the Tool Response (if it exists).Always put "null" here if you decide to use any tools,
       }\n\n`;
     return reActModelDescription;
   }

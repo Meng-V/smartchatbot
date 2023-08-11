@@ -17,7 +17,6 @@ class ConversationMemory {
   private conversationSummarizePrompt: ConversationSummarizePrompt | null =
     null;
 
-
   //This to prevent OpenAI API is called continuously to summarize the past conversation.
   private minimumTimeBetweenSummarizations: number = 1;
   private curBufferOffset: number;
@@ -104,12 +103,9 @@ class ConversationMemory {
       }
 
       let conversationString = this.conversation
-        .slice(
-          start,
-          end+1
-        )
+        .slice(start, end + 1)
         .reduce((prevString, curLine) => {
-          if (!curLine[0])  return prevString;
+          if (!curLine[0]) return prevString;
           return prevString + `${curLine[0]}: ${curLine[1]}\n`;
         }, "");
       if (!summary) {
@@ -123,16 +119,14 @@ class ConversationMemory {
         reject("If summary = true, end index must be at the newest message.");
         return;
       }
-      
+
       const conversationToBeSummarized = (
         await this.getConversationAsString(
           start,
-          -this.conversationBufferSize-1,
+          -this.conversationBufferSize - 1,
           false
         )
       ).conversationString;
-      console.log(`Estimate length: ${conversationToBeSummarized.length}`);
-      console.log(`Estimate token: ${conversationToBeSummarized.length / 4}`);
       if (
         this.conversationTokenLimit &&
         conversationToBeSummarized.length / 4.0 >=
@@ -147,9 +141,15 @@ class ConversationMemory {
             conversationToBeSummarized
           );
 
-          const llmSummaryResponse = await this.llmModel.getModelResponse(
-            this.conversationSummarizePrompt
-          );
+          let llmSummaryResponse;
+          try {
+            llmSummaryResponse = await this.llmModel.getModelResponse(
+              this.conversationSummarizePrompt
+            );
+          } catch (error: any) {
+            reject(error);
+            return;
+          }
           this.curConversationSummary = llmSummaryResponse.response;
           //Update token usage
           tokenUsage.completionTokens +=
@@ -158,9 +158,7 @@ class ConversationMemory {
           tokenUsage.totalTokens += llmSummaryResponse.usage.totalTokens;
 
           let conversationBuffer = await this.getConversationAsString(
-            this.conversation.length -
-              this.conversationBufferSize +
-              start,
+            this.conversation.length - this.conversationBufferSize + start,
             -1,
             false
           );

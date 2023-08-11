@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown'
 import gfm from 'remark-gfm'
-import { Text } from '@chakra-ui/react';
 const MessageComponents = ({ message }) => {
   // const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/ig;
 
