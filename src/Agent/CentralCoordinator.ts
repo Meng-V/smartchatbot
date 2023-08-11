@@ -48,6 +48,10 @@ class CentralCoordinator {
     });
   }
 
+  getAgentNameIterable(): IterableIterator<string> {
+    return this.labelToAgent.keys();
+  }
+
   /**
    * This function return the match score of the input message with the current agent
    * @param message
@@ -81,6 +85,7 @@ class CentralCoordinator {
       }
 
       if (!response.body || !response.body.classifications) {
+        console.log(response);
         reject("Error connecting to Cohere API");
         return;
       }

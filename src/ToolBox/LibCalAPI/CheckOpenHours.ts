@@ -94,6 +94,7 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
         const toolResponse = `Open Hour of the requested week: ${JSON.stringify(
           await CheckOpenHourTool.run(toolInput.date)
         )}.If any day does not exist in the array, the library does not open that day.Always answer with both open hour and close hour to the customer.`;
+        resolve(toolResponse);
       } catch (error: any) {
         reject(error);
       }
@@ -147,7 +148,7 @@ class CheckOpenHourTool extends LibCalAPIBaseTool {
           reject(error);
           return;
         }
-
+  
         let filteredData = weekdays.reduce((prevObj, day, index) => {
           return {
             ...prevObj,

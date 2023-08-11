@@ -133,7 +133,7 @@ io.on("connection", async (socket) => {
     0.91,
   );
   
-  for (let agentName of Object.keys(classifyExample)) {
+  for (let agentName of centralCoordinator.getAgentNameIterable()) {
     centralCoordinator.addAgent(agentName, classifyExample[agentName]);
   }
 
