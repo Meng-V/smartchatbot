@@ -90,10 +90,6 @@ const App = () => {
       });
     }
   };
-  const addMessage = (message, sender) => {
-    setMessages((prevMessages) => [...prevMessages, { text: message, sender }]);
-  };
-
   const handleClose = () => {
     setStep("initial");
     setMessages([]);
