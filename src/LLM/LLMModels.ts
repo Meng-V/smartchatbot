@@ -92,6 +92,7 @@ class OpenAIModel {
               AxiosResponse<CreateChatCompletionResponse, any>
             >((resolve, reject) => {
               try {
+                console.log(promptObjectResponse.prompt)
                 const chatResponse = this.model.createChatCompletion({
                   model: this.modelName,
                   temperature: this.temperature,

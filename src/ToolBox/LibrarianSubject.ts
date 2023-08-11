@@ -25,7 +25,7 @@ class LibrarianSubjectSearchTool implements Tool {
     subjectName: "string[REQUIRED]",
   };
 
-  private allChoices: [string, string][] = [];
+  private synonymMapping: Map<string, string> = new Map<string, string>;
 
   protected readonly OAUTH_URL = process.env["LIBAPPS_OAUTH_URL"]!;
   protected readonly CLIENT_ID = process.env["LIBAPPS_CLIENT_ID"]!;
@@ -64,12 +64,10 @@ class LibrarianSubjectSearchTool implements Tool {
   }
   
   private initializeChoices() {
-    console.log(synonymsData);
     for (let choice in synonymsData) {
-      this.allChoices.push([choice, choice]);
       if (Array.isArray(synonymsData[choice])) {
         synonymsData[choice].forEach((synonym: string) => {
-          this.allChoices.push([synonym, choice]);
+          this.synonymMapping.set(synonym.toLowerCase().trim(), choice.toLowerCase().trim());
         });
       } else {
         console.warn('Unexpected type for choice:', choice);
@@ -119,22 +117,26 @@ class LibrarianSubjectSearchTool implements Tool {
     threshold: number = 0.45
   ): [number, string][] {
     let result: [number, string][] = [];
-  
+    query = query.toLowerCase().trim();
     // Check for exact matches first
-    for (let [choice, originalChoice] of this.allChoices) {
-      if (query.trim().toLowerCase() === choice.trim().toLowerCase()) {
-        result.push([1, originalChoice]); // Exact match found
-        result.sort((a, b) => b[0] - a[0]);
-        if (result.length > numberOfResult) result.pop();
-        return result; // Return exact match results
-      }
+    if (this.synonymMapping.has(query)) {
+      return [[1, this.synonymMapping.get(query)!]]
     }
   
     // Fallback to fuzzy matching using Levenshtein distance
-    for (let [choice, originalChoice] of this.allChoices) {
-      let matchScore = 1 - this.levenshteinDistance(query, choice) / Math.max(query.length, choice.length);
+    for (let choice of choices) {
+      const matchScore = Math.max(
+        1 -
+          this.levenshteinDistance(query, choice) /
+            Math.max(query.length, choice.length),
+        this.synonymMapping.has(choice)
+          ? 1 -
+              this.levenshteinDistance(query, this.synonymMapping.get(choice)!.toLocaleLowerCase().trim()) /
+                Math.max(query.length, this.synonymMapping.get(choice)!.length)
+          : 0,
+      );
       if (matchScore < threshold) continue;
-      result.push([matchScore, originalChoice]);
+      result.push([matchScore, choice]);
       result.sort((a, b) => b[0] - a[0]);
       if (result.length > numberOfResult) result.pop();
     }
@@ -285,16 +287,14 @@ class LibrarianSubjectSearchTool implements Tool {
         const response = await LibrarianSubjectSearchTool.run(
           subjectName as string,
         );
-
+  
         if ("error" in response) {
-          reject(`Error: ${response.error}`);
+          resolve(`Error: ${response.error}`);
           return;
         }
-
+  
         resolve(
-          `These are the librarians that can help you: ${await LibrarianSubjectSearchTool.run(
-            subjectName as string,
-          )}`,
+          `These are the librarians that can help you with the requested subject: ${JSON.stringify(response)}`
         );
       } catch (error) {
         console.error(error);
@@ -342,7 +342,7 @@ class LibrarianSubjectSearchTool implements Tool {
             },
             {},
           );
-          console.log(JSON.stringify(resultObject));
+          // console.log(JSON.stringify(resultObject));
           if (Object.keys(resultObject).length === 0) {
             resolve({
               error:
@@ -352,9 +352,8 @@ class LibrarianSubjectSearchTool implements Tool {
           }
 
           resolve(resultObject);
-        } catch (error) {
-          console.error(error);
-          reject("Sorry, the requested subject has no match with our subject database. Please try another subject.")
+        } catch (error: any) {
+          reject(error);
         }
       },
     );
