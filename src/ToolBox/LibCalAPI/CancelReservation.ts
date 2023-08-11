@@ -93,6 +93,10 @@ class CancelReservationTool extends LibCalAPIBaseTool {
           }
         } catch (error: any) {
           console.log(error.message);
+          resolve({
+            success: false,
+            error: "Sorry there was an error with the reservation, " + error.message,
+          })
         }
       },
     );

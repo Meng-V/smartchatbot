@@ -1,14 +1,18 @@
-import axios, { create } from "axios";
+import axios from "axios";
 import { Tool, ToolInput } from "./ToolTemplates";
-import { resolveModuleName } from "typescript";
-import { number } from "io-ts";
 import prisma from "../../prisma/prisma";
 import { exists } from "fp-ts/lib/Option";
 import { Prisma } from "@prisma/client";
+import * as synonymJSON from '../../synonyms.json';
 
 type SubjectLibrarianMap = {
   [subject: string]: { name: string; email: string }[];
 };
+
+type SynonymsData = {
+  [key: string]: string[];
+};
+const synonymsData: SynonymsData = synonymJSON;
 
 class LibrarianSubjectSearchTool implements Tool {
   private static instance: LibrarianSubjectSearchTool;
@@ -21,12 +25,16 @@ class LibrarianSubjectSearchTool implements Tool {
     subjectName: "string[REQUIRED]",
   };
 
+  private allChoices: [string, string][] = [];
+
   protected readonly OAUTH_URL = process.env["LIBAPPS_OAUTH_URL"]!;
   protected readonly CLIENT_ID = process.env["LIBAPPS_CLIENT_ID"]!;
   protected readonly CLIENT_SECRET = process.env["LIBAPPS_CLIENT_SECRET"]!;
   protected readonly GRANT_TYPE = process.env["LIBAPPS_GRANT_TYPE"]!;
 
-  protected constructor() {}
+  protected constructor() {
+    this.initializeChoices();
+  }
 
   protected async getAccessToken(): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
@@ -44,8 +52,6 @@ class LibrarianSubjectSearchTool implements Tool {
       });
 
       resolve(response.data.access_token!);
-      // console.log(this.OAUTH_URL);
-      // resolve("yay")
     });
   }
 
@@ -56,40 +62,55 @@ class LibrarianSubjectSearchTool implements Tool {
 
     return LibrarianSubjectSearchTool.instance;
   }
+  
+  private initializeChoices() {
+    console.log(synonymsData);
+    for (let choice in synonymsData) {
+      this.allChoices.push([choice, choice]);
+      if (Array.isArray(synonymsData[choice])) {
+        synonymsData[choice].forEach((synonym: string) => {
+          this.allChoices.push([synonym, choice]);
+        });
+      } else {
+        console.warn('Unexpected type for choice:', choice);
+      }
+    }
+  }
+  
 
   private levenshteinDistance(text1: string, text2: string): number {
     text1 = text1.trim().toLowerCase();
     text2 = text2.trim().toLowerCase();
-
-    let dp: Array<Array<number>> = [...Array(text2.length + 1)].map((e) =>
-      Array(text1.length + 1).fill(0),
-    );
-    for (let i = 1; i < text1.length + 1; i++) {
+  
+    const m = text1.length;
+    const n = text2.length;
+  
+    let dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  
+    for (let i = 0; i <= m; i++) {
       dp[0][i] = i;
     }
-    for (let i = 1; i < text2.length + 1; i++) {
+    for (let i = 0; i <= n; i++) {
       dp[i][0] = i;
     }
-    for (let i = 1; i < text2.length + 1; i++) {
-      for (let j = 1; j < text1.length + 1; j++) {
+  
+    for (let i = 1; i <= n; i++) {
+      for (let j = 1; j <= m; j++) {
         if (text1[j - 1] === text2[i - 1]) {
           dp[i][j] = dp[i - 1][j - 1];
-          continue;
-        }
-        dp[i][j] = Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]) + 1;
-        if (
-          i > 1 &&
-          j > 1 &&
-          text1[i - 1] === text2[j - 2] &&
-          text1[i - 2] === text2[j - 1]
-        ) {
-          dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1);
+        } else {
+          dp[i][j] = Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]) + 1;
+  
+          if (i > 1 && j > 1 && text1[j - 1] === text2[i - 2] && text1[j - 2] === text2[i - 1]) {
+            dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1);
+          }
         }
       }
     }
-
-    return dp[dp.length - 1][dp[0].length - 1];
+  
+    return dp[n][m];
   }
+  
 
   private fuzzybestMatch(
     query: string,
@@ -98,41 +119,32 @@ class LibrarianSubjectSearchTool implements Tool {
     threshold: number = 0.45
   ): [number, string][] {
     let result: [number, string][] = [];
-    const synonyms: Map<string, string> = new Map([
-      ["IT", "Information Technology"],
-      ["Information Technology", "CS"],
-      ["Computer Science", "CS"],
-      ["CS", "Computer Science"],
-      ["Mathematics", "Math"],
-      ["Math", "Mathematics"],
-      ["Statistics", "Stats"],
-      ["Stats", "Statistics"],
-    ]);
-
-    for (let choice of choices) {
-      //If choice is in synonym list, get fuzzy match with the synonym and return the higher value
-      const matchScore = Math.max(
-        1 -
-          this.levenshteinDistance(query, choice) /
-            Math.max(query.length, choice.length),
-        synonyms.has(choice)
-          ? 1 -
-              this.levenshteinDistance(query, synonyms.get(choice)!) /
-                Math.max(query.length, synonyms.get(choice)!.length)
-          : 0,
-      );
-      if (matchScore < threshold) continue;
-      result.push([matchScore, choice]);
-      result.sort((a, b) => a[0]-b[0]);
-      if (result.length > numberOfResult) result.shift();
+  
+    // Check for exact matches first
+    for (let [choice, originalChoice] of this.allChoices) {
+      if (query.trim().toLowerCase() === choice.trim().toLowerCase()) {
+        result.push([1, originalChoice]); // Exact match found
+        result.sort((a, b) => b[0] - a[0]);
+        if (result.length > numberOfResult) result.pop();
+        return result; // Return exact match results
+      }
     }
-
+  
+    // Fallback to fuzzy matching using Levenshtein distance
+    for (let [choice, originalChoice] of this.allChoices) {
+      let matchScore = 1 - this.levenshteinDistance(query, choice) / Math.max(query.length, choice.length);
+      if (matchScore < threshold) continue;
+      result.push([matchScore, originalChoice]);
+      result.sort((a, b) => b[0] - a[0]);
+      if (result.length > numberOfResult) result.pop();
+    }
+  
     return result;
   }
+  
 
   private async fetchLibrarianSubjectData(): Promise<any[]> {
     return new Promise<any[]>(async (resolve, reject) => {
-<<<<<<< HEAD
       try {
         const instance = LibrarianSubjectSearchTool.instance;
         const header = {
@@ -153,36 +165,6 @@ class LibrarianSubjectSearchTool implements Tool {
           "Sorry, there was an error fetching the librarian data. Please try again.",
         );
       }
-      // const subjectToLibrarian: Map<string, { [key: string]: string }[]> =
-      //   new Map();
-      // for (let librarian of response.data) {
-      //   const name = `${librarian.first_name} ${librarian.last_name}`;
-      //   librarian.subjects.forEach(
-      //     (subject: { id: string; name: string; slug_id: string }) => {
-      //       if (!subjectToLibrarian.has(subject.name))
-      //         subjectToLibrarian.set(subject.name, []);
-      //       subjectToLibrarian.set(subject.name, [
-      //         ...subjectToLibrarian.get(subject.name)!,
-      //         { name: name, email: librarian.email },
-      //       ]);
-      //     }
-      //   );
-      // }
-=======
-      const instance = LibrarianSubjectSearchTool.instance;
-      const header = {
-        Authorization: `Bearer ${await instance.getAccessToken()}`,
-      };
-      const response = await axios({
-        method: "get",
-        headers: header,
-        url: "https://lgapi-us.libapps.com/1.2/accounts",
-        params: {
-          "expand[]": "subjects",
-        },
-      });
-      resolve(response.data);
->>>>>>> Dev
     });
   }
 
@@ -332,11 +314,8 @@ class LibrarianSubjectSearchTool implements Tool {
 
           const subjects = await prisma.subject.findMany();
           const subjectNames = subjects.map((subject) => subject.name);
-          const bestMatchSubject = instance.fuzzybestMatch(
-            querySubjectName,
-            subjectNames,
-            2,
-          );
+          const bestMatchSubject = instance.fuzzybestMatch(querySubjectName, subjectNames, 2)
+                                  .map(match => match[1]); 
 
           const subjectsWithLibrarian = await prisma.subject.findMany({
             where: {

@@ -126,7 +126,7 @@ class Agent implements IAgent {
 
         resolve(await tool!.toolRun(toolInput));
       } else {
-        throw new Error("Tool does not exist");
+        // throw new Error("Tool does not exist");
         reject("Tool does not exist");
       }
     });
