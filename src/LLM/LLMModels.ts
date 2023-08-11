@@ -1,11 +1,8 @@
-import {
-  Configuration,
-  CreateCompletionResponseUsage,
-  OpenAIApi,
-} from "openai";
+import { Configuration, CreateChatCompletionResponse, OpenAIApi } from "openai";
 import { PromptTemplate } from "../Prompt/PromptTemplate";
-import { ModelPromptWithTools } from "../Prompt/Prompts";
-import { TokenUsage } from "../Agent/Agent";
+import { TokenUsage } from "../Agent/IAgent";
+import { retryWithMaxAttempts } from "../Utils/NetworkUtils";
+import { AxiosResponse } from "axios";
 
 type LLMModelSetting = {
   modelName: string;
@@ -37,7 +34,7 @@ class OpenAIModel {
 
   public static getInstance(
     modelName: string,
-    temperature: number = 0.1,
+    temperature: number = 0.0,
     top_p: number = 0.1
   ): OpenAIModel {
     const modelSetting: LLMModelSetting = {
@@ -72,9 +69,6 @@ class OpenAIModel {
         //   reject("Request Time Out");
         // }, 5000);
         const promptObjectResponse = await promptObject.getPrompt();
-        // console.log('----------------')
-        // console.log(promptObjectResponse.prompt);
-        // console.log('----------------')
 
         const usageInfo: TokenUsage = {
           totalTokens: 0,
@@ -88,16 +82,39 @@ class OpenAIModel {
           usageInfo.promptTokens +=
             promptObjectResponse.tokenUsage.promptTokens;
         }
-        console.log('Using LLM!');
-        const response = await this.model.createChatCompletion({
-          model: this.modelName,
-          temperature: this.temperature,
-          top_p: this.top_p,
-          messages: [
-            { role: "system", content: promptObject.getSystemDescription() },
-            { role: "user", content: promptObjectResponse.prompt },
-          ],
-        });
+
+        let response;
+        try {
+          response = await retryWithMaxAttempts<
+            AxiosResponse<CreateChatCompletionResponse, any>
+          >((): Promise<AxiosResponse<CreateChatCompletionResponse, any>> => {
+            return new Promise<
+              AxiosResponse<CreateChatCompletionResponse, any>
+            >((resolve, reject) => {
+              try {
+                const chatResponse = this.model.createChatCompletion({
+                  model: this.modelName,
+                  temperature: this.temperature,
+                  top_p: this.top_p,
+                  messages: [
+                    {
+                      role: "system",
+                      content: promptObject.getSystemDescription(),
+                    },
+                    { role: "user", content: promptObjectResponse.prompt },
+                  ],
+                }) as Promise<AxiosResponse<CreateChatCompletionResponse, any>>;
+                resolve(chatResponse);
+              } catch (error: any) {
+                reject(error);
+              }
+            });
+          });
+        } catch (error: any) {
+          reject(error);
+          return;
+        }
+
         if (response.data.choices[0].message?.content) {
           // Extract the usage information from the response
           usageInfo.totalTokens += response.data.usage!.total_tokens;
@@ -117,5 +134,4 @@ class OpenAIModel {
     );
   }
 }
-
 export { OpenAIModel };

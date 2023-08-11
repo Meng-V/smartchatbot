@@ -11,10 +11,10 @@ class SearchEngine implements Tool {
   private static instance: SearchEngine;
   public name: string = "GoogleCustomSearchEngine";
   public description: string =
-    "This tool is for searching relevant general documents about King Library. This tool should be always the last solution you should consider if other tools are not appropriate for the task.";
+    "This tool is for searching relevant general documents about King Library.This tool should be always the last solution you should consider if other tools are not appropriate for the task.";
   public parameters: { [parameterName: string]: string } = {
     query:
-      "string [REQUIRED] [only includes keywords in this string, don't include any commas, double quotes or quotes, don't inlcude the word 'King Library' inside the parameter]",
+      "string[REQUIRED][only includes keywords in this string, don't include any commas, double quotes or quotes, don't inlcude the word 'King Library' inside the parameter]",
   };
 
   private GOOGLE_API_KEY: string;
@@ -48,12 +48,12 @@ class SearchEngine implements Tool {
         query === undefined ||
         query === "undefined"
       ) {
-        resolve("Input query not found. Please use a query");
+        resolve("Input query not found.Use a query");
         return;
       }
       const response = await SearchEngine.run(query);
       resolve(
-        `Please also include the appropriate reference link. If there is a link, write it out directly; do not include html tag. Result: ${response}`,
+        `Also include the appropriate reference link.Result: ${JSON.stringify(response)}`
       );
     });
   }

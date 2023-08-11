@@ -1,4 +1,4 @@
-import { TokenUsage } from "../Agent/Agent";
+import { TokenUsage } from "../Agent/IAgent";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 
 interface PromptTemplate {

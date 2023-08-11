@@ -47,7 +47,6 @@ CREATE TABLE "Room" (
     "codeName" VARCHAR(10) NOT NULL,
     "capacity" INTEGER NOT NULL,
     "type" TEXT NOT NULL,
-    "isAccessible" BOOLEAN NOT NULL,
     "lastUpdated" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Room_pkey" PRIMARY KEY ("id")

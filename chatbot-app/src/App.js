@@ -22,9 +22,7 @@ import { ChatIcon } from "@chakra-ui/icons";
 import "./App.css";
 import MessageComponents from "./components/ParseLinks";
 const App = () => {
-  const inputRef = useRef();
   const chatRef = useRef();
-  const [socket, setSocket] = useState(null);
   const [messages, setMessages] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [inputMessage, setInputMessage] = useState("");
@@ -39,7 +37,7 @@ const App = () => {
   const socketRef = useRef();
 
   useEffect(() => {
-    const url = `http://localhost:${process.env.REACT_APP_BACKEND_PORT}`;
+    const url = `http://localhost:3602`;
     console.log(url);
     const socketIo = io(url, { transports: ["websocket"], upgrade: false });
 
@@ -77,7 +75,10 @@ const App = () => {
     }
   }, [messages]);
 
-
+  const addMessage = (message, sender) => {
+    setMessages((prevMessages) => [...prevMessages, { text: message, sender }]);
+  };
+  
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (inputMessage && socketRef.current) {
@@ -89,7 +90,6 @@ const App = () => {
       });
     }
   };
-
   const handleClose = () => {
     setStep("initial");
     setMessages([]);
