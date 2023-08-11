@@ -157,11 +157,17 @@ class ConversationMemory {
           tokenUsage.promptTokens += llmSummaryResponse.usage.promptTokens;
           tokenUsage.totalTokens += llmSummaryResponse.usage.totalTokens;
 
-          let conversationBuffer = await this.getConversationAsString(
-            this.conversation.length - this.conversationBufferSize + start,
-            -1,
-            false
-          );
+          let conversationBuffer;
+          try {
+            conversationBuffer = await this.getConversationAsString(
+              this.conversation.length - this.conversationBufferSize + start,
+              -1,
+              false
+            );
+          } catch (error: any) {
+            reject(error);
+            return;
+          }
 
           resolve({
             conversationString: `${this.curConversationSummary}\n${conversationBuffer.conversationString}`,
@@ -171,13 +177,19 @@ class ConversationMemory {
         }
 
         //Use the past summarization
-        let conversationBuffer = await this.getConversationAsString(
-          this.conversation.length -
-            this.conversationBufferSize -
-            this.curBufferOffset -
-            start,
-          -1
-        );
+        let conversationBuffer;
+        try {
+          conversationBuffer = await this.getConversationAsString(
+            this.conversation.length -
+              this.conversationBufferSize -
+              this.curBufferOffset -
+              start,
+            -1
+          );
+        } catch (error: any) {
+          reject(error);
+          return;
+        }
 
         resolve({
           conversationString: `${this.curConversationSummary}\n${conversationBuffer.conversationString}`,

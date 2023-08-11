@@ -50,65 +50,69 @@ class Agent implements IAgent {
       // const timeout = setTimeout(() => {
       //   reject(`Request Time Out. Prompt so far: ${this.basePrompt.getPrompt()}`);
       // }, 5000);
-      let completionTokens: number = 0;
-      let promptTokens: number = 0;
-      let totalTokens: number = 0;
+      try {
+        let completionTokens: number = 0;
+        let promptTokens: number = 0;
+        let totalTokens: number = 0;
 
-      
-      this.basePrompt.emptyScratchpad();
-      let llmResponseObj = await this.llmModel.getModelResponse(
-        this.basePrompt,
-      );
-      let llmResponse = llmResponseObj.response;
-      //Update tokens usage
-      totalTokens += llmResponseObj.usage.totalTokens;
-      promptTokens += llmResponseObj.usage.promptTokens;
-      completionTokens += llmResponseObj.usage.completionTokens;
-
-      console.log(llmResponse)
-      let outputParsed = this.parseLLMOutput(llmResponse);
-      let llmCallNum = 1;
-
-      //Handle cases when model doesn't output either actions and final answer
-      while (outputParsed.outputType !== "final") {
-        if (llmCallNum > this.LLMCallLimit) {
-          reject("Too many LMM Call. Possible inifinity loop");
-          return;
-        }
-        if (outputParsed.outputType === "action") {
-          this.basePrompt.updateScratchpad(
-            `Thought: ${outputParsed.thought}\n`,
-          );
-          this.basePrompt.updateScratchpad(`Action: ${outputParsed.action}\n`);
-          this.basePrompt.updateScratchpad(
-            `Action Input: ${JSON.stringify(outputParsed.actionInput)}\n`,
-          );
-          const toolResponse = await this.accessToolBox(
-            outputParsed.action,
-            outputParsed.actionInput,
-          );
-          console.log(toolResponse)
-
-          this.basePrompt.updateScratchpad(`Tool Response: ${toolResponse}`);
-        }
-        llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
-        llmResponse = llmResponseObj.response;
-        console.log(llmResponse)
-
+        
+        this.basePrompt.emptyScratchpad();
+        let llmResponseObj = await this.llmModel.getModelResponse(
+          this.basePrompt,
+        );
+        let llmResponse = llmResponseObj.response;
         //Update tokens usage
         totalTokens += llmResponseObj.usage.totalTokens;
         promptTokens += llmResponseObj.usage.promptTokens;
         completionTokens += llmResponseObj.usage.completionTokens;
 
-        outputParsed = this.parseLLMOutput(llmResponse);
-        llmCallNum++;
-      }
+        console.log(llmResponse)
+        let outputParsed = this.parseLLMOutput(llmResponse);
+        let llmCallNum = 1;
 
-      resolve({
-        actions: [...this.actions],
-        response: outputParsed.finalAnswer.split("\n"),
-        tokenUsage: { totalTokens, promptTokens, completionTokens },
-      });
+        //Handle cases when model doesn't output either actions and final answer
+        while (outputParsed.outputType !== "final") {
+          if (llmCallNum > this.LLMCallLimit) {
+            reject("Too many LMM Call. Possible inifinity loop");
+            return;
+          }
+          if (outputParsed.outputType === "action") {
+            this.basePrompt.updateScratchpad(
+              `Thought: ${outputParsed.thought}\n`,
+            );
+            this.basePrompt.updateScratchpad(`Action: ${outputParsed.action}\n`);
+            this.basePrompt.updateScratchpad(
+              `Action Input: ${JSON.stringify(outputParsed.actionInput)}\n`,
+            );
+            const toolResponse = await this.accessToolBox(
+              outputParsed.action,
+              outputParsed.actionInput,
+            );
+            console.log(toolResponse)
+
+            this.basePrompt.updateScratchpad(`Tool Response: ${toolResponse}`);
+          }
+          llmResponseObj = await this.llmModel.getModelResponse(this.basePrompt);
+          llmResponse = llmResponseObj.response;
+          console.log(llmResponse)
+
+          //Update tokens usage
+          totalTokens += llmResponseObj.usage.totalTokens;
+          promptTokens += llmResponseObj.usage.promptTokens;
+          completionTokens += llmResponseObj.usage.completionTokens;
+
+          outputParsed = this.parseLLMOutput(llmResponse);
+          llmCallNum++;
+        }
+
+        resolve({
+          actions: [...this.actions],
+          response: outputParsed.finalAnswer.split("\n"),
+          tokenUsage: { totalTokens, promptTokens, completionTokens },
+        });
+      } catch (error: any) {
+        reject(error);
+      }
     });
   }
 
