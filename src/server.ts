@@ -21,6 +21,7 @@ import { CentralCoordinator } from "./Agent/CentralCoordinator";
 import * as dotenv from "dotenv";
 import axios from "axios";
 import qs from "qs";
+import { AgentResponse } from "./Agent/IAgent";
 dotenv.config();
 
 const PORT = process.env.BACKEND_PORT;
@@ -165,9 +166,14 @@ io.on("connection", async (socket) => {
       memory.addToConversation("Customer", userMessage);
       const agent = await centralCoordinator.coordinateAgent(userMessage);
       console.log(`Coordinate to agent ${agent.name}`);
-      const agentResponse = await agent.agentRun(userMessage);
-      memory.addToConversation("AIAgent", agentResponse.response.join('\n'));
-
+      let agentResponse: AgentResponse;
+      try {
+        agentResponse = await agent.agentRun(userMessage);
+        memory.addToConversation("AIAgent", agentResponse.response.join('\n'));
+      } catch (error: any) {
+        console.error(error);
+        return;
+      }
       await prisma.message.create({
         data: {
           type: "AIAgent",
