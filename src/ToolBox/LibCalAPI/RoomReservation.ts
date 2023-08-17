@@ -1,12 +1,9 @@
 import prisma from "../../../prisma/prisma";
-import { LibrarianSubjectSearchTool } from "../LibrarianSubject";
 import { CheckRoomAvailabilityTool } from "./CheckRoomAvailability";
-import { LibCalAPIBaseTool } from "./LibCalAPI";
+import { LibCalAPIBaseTool, Room } from "./LibCalAPI";
 import axios, { AxiosResponse } from "axios";
-import { match } from "assert";
 import { retryWithMaxAttempts } from "../../Utils/NetworkUtils";
-
-type Room = { roomID: string; roomName: string; capacity: number };
+import { Utils } from "./Utils";
 
 class RoomReservationTool extends LibCalAPIBaseTool {
   private static instance: RoomReservationTool;
@@ -18,7 +15,8 @@ class RoomReservationTool extends LibCalAPIBaseTool {
   public readonly parameters: { [parameterName: string]: string } = {
     firstName: "string[REQUIRED]",
     lastName: "string[REQUIRED]",
-    email: "string[REQUIRED][@miamioh.edu email][Always ask for email.Never predict.]",
+    email:
+      "string[REQUIRED][@miamioh.edu email][Always ask for email.Never predict.]",
     startDate: "string[REQUIRED][format YYYY-MM-DD]",
     startTime:
       "string[REQUIRED][format HH-MM-SS ranging from 00:00:00 to 23:59:59]",
@@ -29,8 +27,6 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       "string|null[OPTIONAL][capacity(number of people)of the room you wish to reserve.]",
     roomCodeName: "string|null[OPTIONAL][such as: 145, 211, 297A, 108C, etc.]",
   };
-
-  private updateDatabaseDuration: number = 1;
 
   constructor() {
     super();
@@ -44,154 +40,6 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     return RoomReservationTool.instance;
   }
 
-  private async fetchRoomData(): Promise<any[]> {
-    return new Promise<any[]>(async (resolve, reject) => {
-      const instance = RoomReservationTool.instance;
-      const header = {
-        Authorization: `Bearer ${await instance.getAccessToken()}`,
-      };
-      try {
-        const response = await axios({
-          method: "get",
-          headers: header,
-          url: `${instance.ROOM_INFO_URL}/${instance.BUILDING_ID}`,
-        });
-        resolve(response.data);
-      } catch (error: any) {
-        reject(error);
-      }
-    });
-  }
-
-  /**
-   * Update database of Room if it's too outdated
-   * @param updateDuration if the most recent update is older than this threshold (days). New data would be updated into database
-   * @returns True if it performs update, False otherwise
-   */
-  private async updateRoomInfoDatabase(
-    updateDuration: number
-  ): Promise<boolean> {
-    return new Promise<boolean>(async (resolve, reject) => {
-      let savedRoomInfo;
-      try {
-        savedRoomInfo = await prisma.room.findMany();
-      } catch (error) {
-        reject(error);
-        return;
-      }
-      let didUpdate = false;
-      if (
-        !savedRoomInfo ||
-        savedRoomInfo.length === 0 ||
-        new Date().valueOf() - savedRoomInfo[0].lastUpdated.valueOf() >
-          updateDuration * 1000 * 60 * 60 * 24
-      ) {
-        didUpdate = true;
-        const rooms = await this.fetchRoomData();
-        for (let room of rooms) {
-          const roomNameRegex = /(\d+)([A-Za-z])?/;
-          const roomNameMatch = room.name.match(roomNameRegex);
-          let codeName: string;
-          if (!roomNameMatch) {
-            console.log("Room name does not match pattern");
-            codeName = room.name;
-          } else {
-            codeName = `${roomNameMatch[1]}${
-              roomNameMatch[2] ? roomNameMatch[2] : ""
-            }`;
-          }
-
-          await prisma.room.upsert({
-            where: {
-              id: `${room.id}`,
-            },
-            update: {},
-            create: {
-              id: `${room.id}`,
-              codeName: codeName,
-              capacity: room.capacity,
-              type: "study room",
-            },
-          });
-        }
-      }
-      resolve(didUpdate);
-    });
-  }
-
-  private async getRoomByCapacity(capacity: number): Promise<Room[]> {
-    return new Promise<Room[]>(async (resolve, reject) => {
-      let rooms;
-      try {
-        rooms = await prisma.room.findMany({
-          where: {
-            capacity: capacity,
-          },
-        });
-      } catch (error: any) {
-        reject(error);
-        return;
-      }
-
-      const returnRoomObjs = rooms.map((room) => {
-        return {
-          roomID: room.id,
-          roomName: room.codeName,
-          capacity: room.capacity,
-        };
-      });
-      resolve(returnRoomObjs);
-    });
-  }
-
-  /**
-   * Match the number of people to the closest available capacity
-   * @param peopleNum
-   * @returns number[]. Array of available capacity in the database, sorted by how close from it to the number of people. For example, we have these capacity: [2, 4, 8, 12, 20], and 6 people; this function would return [8, 12, 20]
-   */
-  private async matchNumberOfPeopleToPotentialCapacity(
-    peopleNum: number
-  ): Promise<number[]> {
-    return new Promise<number[]>(async (resolve, reject) => {
-      let roomObjs;
-      try {
-        roomObjs = await prisma.room.findMany({
-          distinct: ["capacity"],
-          select: {
-            capacity: true,
-          },
-        });
-      } catch (error: any) {
-        reject(error);
-        return;
-      }
-      if (!roomObjs)
-        this.updateRoomInfoDatabase(
-          RoomReservationTool.getInstance().updateDatabaseDuration
-        );
-      const capacityList = roomObjs
-        .map((room) => room.capacity)
-        .filter((capacity) => capacity >= peopleNum);
-      resolve(capacityList);
-    });
-  }
-
-  private async getRoomByCodeName(roomCodeName: string): Promise<Room | null> {
-    return new Promise<Room | null>(async (resolve, reject) => {
-      const rooms: { id: string; codeName: string; capacity: number }[] =
-        await prisma.$queryRaw`SELECT id, "codeName", capacity FROM "Room" WHERE "codeName" LIKE ${`%${roomCodeName}%`}`;
-      if (!rooms) {
-        resolve(null);
-        return;
-      }
-      const returnedRoom = {
-        roomID: rooms[0].id,
-        roomName: rooms[0].codeName,
-        capacity: rooms[0].capacity,
-      };
-      resolve(returnedRoom);
-    });
-  }
 
   /**
    * Select an available room from the input room IDs list based on the requested time. This assumes startDate is as same as endDate
@@ -297,6 +145,9 @@ class RoomReservationTool extends LibCalAPIBaseTool {
         return;
       }
 
+      const instance = RoomReservationTool.getInstance();
+      await instance.updateRoomInfoDatabase();
+
       try {
         const response = await RoomReservationTool.run(
           firstName!,
@@ -332,38 +183,47 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       //   reject("Request Time Out");
       // }, 5000);
       const instance = RoomReservationTool.getInstance();
-      await instance.updateRoomInfoDatabase(instance.updateDatabaseDuration);
+
       let availableRoom: Room | null = null;
       if (
-        (!roomCapacity || roomCapacity === "null") &&
-        (!roomCodeName || roomCodeName === "null")
+        (!roomCapacity ||
+          roomCapacity === "null" ||
+          roomCapacity === "undefined") &&
+        (!roomCodeName ||
+          roomCodeName === "null" ||
+          roomCodeName === "undefined")
       ) {
         resolve(
           "Room capacity and room code name are both empty.Ask customer to specify one of them."
         );
         return;
-      } else if (!roomCapacity || roomCapacity === "null") {
+      } else if (
+        !roomCapacity ||
+        roomCapacity === "null" ||
+        roomCapacity === "undefined"
+      ) {
         try {
-          availableRoom = await instance.getRoomByCodeName(
-            roomCodeName as string
-          );
+          availableRoom = await Utils.getRoomByCodeName(roomCodeName as string);
           if (!availableRoom) {
             resolve("No such room with the input code name.");
+            return;
           }
         } catch (error: any) {
           reject(error);
+          return;
         }
       } else {
         const potentialCapacityList =
-          await instance.matchNumberOfPeopleToPotentialCapacity(
+          await Utils.matchNumberOfPeopleToPotentialCapacity(
             parseInt(roomCapacity, 10)
           );
         if (potentialCapacityList.length === 0) {
           resolve(`We do not have any room that fit ${roomCapacity}.`);
+          return;
         }
 
         for (let capacity of potentialCapacityList) {
-          const rooms = await instance.getRoomByCapacity(capacity);
+          const rooms = await Utils.getRoomByCapacity(capacity);
 
           try {
             availableRoom = await instance.selectAvailableRoom(
@@ -405,9 +265,9 @@ class RoomReservationTool extends LibCalAPIBaseTool {
       // console.log("Payload", payload);
       try {
         let response;
-        response = await retryWithMaxAttempts<AxiosResponse<any, any>>((): Promise<AxiosResponse<any, any>> => {
-          return new Promise<AxiosResponse<any, any>>(
-            (resolve, reject) => {
+        response = await retryWithMaxAttempts<AxiosResponse<any, any>>(
+          (): Promise<AxiosResponse<any, any>> => {
+            return new Promise<AxiosResponse<any, any>>((resolve, reject) => {
               try {
                 const axiosResponse = axios({
                   method: "post",
@@ -419,9 +279,10 @@ class RoomReservationTool extends LibCalAPIBaseTool {
               } catch (error: any) {
                 reject(error);
               }
-            }
-          );
-        }, 5);
+            });
+          },
+          5
+        );
 
         resolve(
           `Room ${availableRoom.roomName} with capacity ${
