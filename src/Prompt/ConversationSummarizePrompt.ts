@@ -6,7 +6,7 @@ class ConversationSummarizePrompt implements PromptTemplate {
   public originalConversationString: string;
   constructor() {
     this.modelDescription =
-      "You are trying to shorten the following conversation by summarizing it. Include any vital ìnformations in the summary and stress that the latest question is unanswered\n";
+      "You are trying to shorten the following conversation by summarizing it. Include any vital details like email,name,code,date,etc in the summary and stress that the latest question is unanswered\n";
     this.originalConversationString = "";
   }
 
