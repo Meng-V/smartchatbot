@@ -28,6 +28,6 @@ RUN chmod +x /app/wait-for
 RUN npx prisma generate
 # RUN npx prisma migrate reset 
 
-CMD /app/wait-for db:5432 -t 30 -- npx prisma migrate deploy --preview-feature && npm start
+CMD /app/wait-for db:5432 -t 30 -- npx prisma migrate dev --preview-feature && npm start
 
 # CMD npx prisma migrate dev && npm start
