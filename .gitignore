@@ -1,4 +1,37 @@
-node_modules/*
-.env*
-*.env
-.vscode/*
+# Ignore node_modules directory
+node_modules/
+
+# Ignore compiled JavaScript and TypeScript files
+*.js
+*.js.map
+*.d.ts
+
+# Ignore logs
+logs/
+
+# Ignore environment-specific files
+.env
+config.ini
+
+# Ignore built output
+dist/
+
+# Ignore editor-specific files
+.vscode/
+.idea/
+*.sublime-*
+
+# Ignore npm/yarn lock files
+package-lock.json
+yarn.lock
+
+run.ts
+# **/openai.ts
+src/index-chatbox-popup.html
+
+libcal.ipynb
+src/index.ts
+**/chatbox-test.html
+log.csv
+
+KILL.ps1
