@@ -1,7 +1,8 @@
-input.chakra-input:focus-visible{
-  border-color: #C41230!important;
+input.chakra-input:focus-visible {
+  border-color: #C41230 !important;
   box-shadow: 0 0 0 1px #c3142d;
 }
+
 .chat {
   height: 60vh;
   border: 1px solid #ccc;
@@ -10,18 +11,22 @@ input.chakra-input:focus-visible{
   overflow-y: auto;
   border-radius: 15px;
   background-color: #f8f8f8;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
+
 .chat li {
   margin-bottom: 10px;
   padding: 5px;
   border-radius: 15px;
   list-style-type: none;
 }
+
 .user {
   text-align: right;
   background-color: #C41230;
   color: white;
 }
+
 .chatbot {
   text-align: left;
   background-color: #e5e5e5;
@@ -29,7 +34,7 @@ input.chakra-input:focus-visible{
 
 .chatbox {
   width: 350px;
-  margin:100px;
+  margin: 100px;
 }
 
 @keyframes dots {
@@ -47,24 +52,17 @@ input.chakra-input:focus-visible{
   animation-iteration-count: infinite;
 }
 
-.typing-box{
+.typing-box {
   width: 65%;
-}
-
-.styled-link {
-  color: skyblue;
-  background-color: transparent;
-  text-decoration: none;
-}
-
-.styled-link {
-  color: purple;
-  background-color: transparent;
-  text-decoration: none;
 }
 
 .styled-link {
   color: blue;
   background-color: transparent;
   text-decoration: underline;
+}
+
+.chat-message-container {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }

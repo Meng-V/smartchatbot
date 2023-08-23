@@ -21,6 +21,7 @@ import {
 import { ChatIcon } from "@chakra-ui/icons";
 import "./App.css";
 import MessageComponents from "./components/ParseLinks";
+
 const App = () => {
   const chatRef = useRef();
   const [messages, setMessages] = useState([]);
@@ -33,24 +34,33 @@ const App = () => {
   const [details, setDetails] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-
+  const [welcomeMessageShown, setWelcomeMessageShown] = useState(false);
   const socketRef = useRef();
 
   useEffect(() => {
+    const storedMessages =
+      JSON.parse(sessionStorage.getItem("chat_messages")) || [];
+    setMessages(storedMessages);
+  
     const url = `http://localhost:3602`;
-    console.log(url);
     const socketIo = io(url, { transports: ["websocket"], upgrade: false });
-
+  
     socketIo.on("connect", () => {
-      console.log("Connected");
       setIsConnected(true);
-      addMessage(
-        "Hi this is the Library Smart Chatbot. How may I help you?",
-        "chatbot"
-      );
+      if (!welcomeMessageShown) {
+        const welcomeMessage = {
+          text: "Hi this is the Library Smart Chatbot. How may I help you?",
+          sender: "chatbot",
+        };
+        setMessages((prevMessages) => {
+          const updatedMessages = [...prevMessages, welcomeMessage];
+          sessionStorage.setItem("chat_messages", JSON.stringify(updatedMessages));
+          return updatedMessages;
+        });
+        setWelcomeMessageShown(true); // Update the state to ensure the welcome message is shown only once
+      }
       setIsTyping(false);
     });
-
     socketIo.on("message", function (message) {
       setIsTyping(false);
       addMessage(message, "chatbot");
@@ -58,7 +68,6 @@ const App = () => {
 
     socketIo.on("disconnect", function () {
       setIsConnected(false);
-      // addMessage('User disconnected....', 'chatbot');
     });
 
     socketRef.current = socketIo;
@@ -67,7 +76,7 @@ const App = () => {
       socketIo.off("message");
       socketIo.off("disconnect");
     };
-  }, []);
+  }, [welcomeMessageShown, setMessages]);
 
   useEffect(() => {
     if (chatRef.current) {
@@ -76,9 +85,18 @@ const App = () => {
   }, [messages]);
 
   const addMessage = (message, sender) => {
-    setMessages((prevMessages) => [...prevMessages, { text: message, sender }]);
+    console.log("Received message:", message); // To understand the structure of the received message
+    console.log("Current messages:", messages); // To analyze the current messages array
+    const messageText = typeof message === "object" && message.response ? message.response.join("\n") : message;
+    setMessages(prevMessages => {
+      const updatedMessages = [...prevMessages, { text: messageText, sender }];
+      sessionStorage.setItem("chat_messages", JSON.stringify(updatedMessages));
+      return updatedMessages;
+    });
   };
   
+  
+
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (inputMessage && socketRef.current) {
@@ -90,33 +108,30 @@ const App = () => {
       });
     }
   };
+
   const handleClose = () => {
     setStep("initial");
-    setMessages([]);
-    setInputMessage("");
+    setWelcomeMessageShown(false);
     onClose();
   };
 
   const handleServicesClick = () => {
     setStep("services");
-    // do any additional setup for this step
   };
 
   const handleLibrarianClick = () => {
     window.open(
-      " https://www.lib.miamioh.edu/research/research-support/ask/",
+      "https://www.lib.miamioh.edu/research/research-support/ask/",
       "_blank",
     );
   };
 
   const handleTicketClick = () => {
     setStep("ticket");
-    // do any additional setup for this step
   };
 
   const handleTicketSubmit = (e) => {
     e.preventDefault();
-    // handle the ticket creation logic here
     if (socketRef.current) {
       socketRef.current.emit(
         "createTicket",
@@ -157,8 +172,19 @@ const App = () => {
           right="10"
           borderRadius="md"
         >
-          <ModalHeader display="flex" alignItems="center" justifyContent={"space-evenly"} ps={0}>
-          <img src="https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png" heigh={50} width={120} alt="library logo"/>Smart Chatbot
+          <ModalHeader
+            display="flex"
+            alignItems="center"
+            justifyContent={"space-evenly"}
+            ps={0}
+          >
+            <img
+              src="https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png"
+              heigh={50}
+              width={120}
+              alt="library logo"
+            />
+            Smart Chatbot
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody py={5}>
@@ -176,15 +202,7 @@ const App = () => {
 
             {step === "services" && (
               <>
-                <Box
-                  ref={chatRef}
-                  borderWidth={1}
-                  borderRadius="md"
-                  p={3}
-                  mb={3}
-                  overflowY="auto"
-                  height="60vh"
-                >
+                <Box ref={chatRef} className="chat">
                   <VStack align="start" spacing={4}>
                     {!isConnected && (
                       <Box
@@ -193,50 +211,60 @@ const App = () => {
                         py={3}
                         rounded="md"
                         bg={"gray.200"}
-                        border={"0px"}
-                        borderColor={" "}
                         alignSelf={"flex-start"}
                       >
                         <Text color={"black"}>Connecting to the chatbot</Text>
                       </Box>
                     )}
-                    {messages.map((message, index) => (
-                      <Box
-                        key={index}
-                        maxW="md"
-                        px={5}
-                        py={3}
-                        rounded="md"
-                        bg={message.sender === "user" ? "white" : "gray.200"}
-                        border = {message.sender === "user" ? "1px" : "0px"}
-                        borderColor= {message.sender === "user" ? "red.400" : " "}
-                        alignSelf={
-                          message.sender === "user" ? "flex-end" : "flex-start"
-                        }
-                      >
-                        <Text
-                          color={message.sender === "user" ? "red.600" : "black"}
+                    {messages.map((message, index) => {
+                      // console.log("Message Sender:", message.sender); // Log the sender
+                      // console.log("Message Text:", message.text); // Log the text
+                      const adjustedMessage = typeof message.text === "object" ? message.text.response.join("") : message.text;
+                      return (
+                        <Box
+                          key={index}
+                          maxW="md"
+                          px={5}
+                          py={3}
+                          rounded="md"
+                          bg={message.sender === "user" ? "white" : "gray.200"}
+                          border={message.sender === "user" ? "1px" : "0px"}
+                          borderColor={
+                            message.sender === "user" ? "red.400" : " "
+                          }
+                          alignSelf={
+                            message.sender === "user"
+                              ? "flex-end"
+                              : "flex-start"
+                          }
                         >
-                          {typeof message.text === "object" ? (
-                            <MessageComponents
-                              message={message.text.response.join(", ")}
-                            />
-                          ) : (
-                            <MessageComponents message={message.text} />
-                          )}
-                        </Text>
-                      </Box>
-                    ))}
+                          <Box
+                            color={
+                              message.sender === "user" ? "red.600" : "black"
+                            }
+                            whiteSpace="pre-line"
+                          >
+                            {typeof message.text === "object" ? (
+                              <div className="half-line-height">
+                                <MessageComponents
+                                  message={adjustedMessage}
+                                />
+                              </div>
+                            ) : (
+                              <MessageComponents message={adjustedMessage} />
+                            )}
+                          </Box>
+                        </Box>
+                      );
+                    })}
+
                     {isTyping && (
                       <Box
-                        // className="typing-box"
                         maxW="350px"
                         px={5}
                         py={3}
                         rounded="md"
                         bg={"gray.200"}
-                        border={"0px"}
-                        borderColor={" "}
                         alignSelf={"flex-start"}
                       >
                         <Text>
