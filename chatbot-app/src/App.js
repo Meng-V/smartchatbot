@@ -21,6 +21,9 @@ import {
 import { ChatIcon } from "@chakra-ui/icons";
 import "./App.css";
 import MessageComponents from "./components/ParseLinks";
+// import * as dotenv from "dotenv";
+
+// dotenv.config();
 
 const App = () => {
   const chatRef = useRef();
@@ -42,7 +45,7 @@ const App = () => {
       JSON.parse(sessionStorage.getItem("chat_messages")) || [];
     setMessages(storedMessages);
   
-    const url = `http://localhost:3602`;
+    const url = `${process.env.REACT_APP_BACKEND_URL}:${process.env.REACT_APP_BACKEND_PORT}`;
     const socketIo = io(url, { transports: ["websocket"], upgrade: false });
   
     socketIo.on("connect", () => {
