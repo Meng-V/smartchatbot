@@ -11,7 +11,7 @@ class Agent implements IAgent {
   memory: ConversationMemory | null;
 
   toolsMap: Map<string, Tool>;
-  LLMCallLimit: number = 3;
+  LLMCallLimit: number = 5;
 
   actions: Set<string> = new Set();
 

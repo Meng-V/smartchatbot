@@ -18,9 +18,10 @@ import {
   FormControl,
   FormLabel,
 } from "@chakra-ui/react";
-import { ChatIcon } from "@chakra-ui/icons";
+import { ArrowBackIcon, ChatIcon } from "@chakra-ui/icons";
 import "./App.css";
 import MessageComponents from "./components/ParseLinks";
+import RealLibrarianWidget from "./components/RealLibrarianWidget";
 const App = () => {
   const chatRef = useRef();
   const [messages, setMessages] = useState([]);
@@ -78,7 +79,7 @@ const App = () => {
   const addMessage = (message, sender) => {
     setMessages((prevMessages) => [...prevMessages, { text: message, sender }]);
   };
-  
+
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (inputMessage && socketRef.current) {
@@ -97,23 +98,6 @@ const App = () => {
     onClose();
   };
 
-  const handleServicesClick = () => {
-    setStep("services");
-    // do any additional setup for this step
-  };
-
-  const handleLibrarianClick = () => {
-    window.open(
-      " https://www.lib.miamioh.edu/research/research-support/ask/",
-      "_blank",
-    );
-  };
-
-  const handleTicketClick = () => {
-    setStep("ticket");
-    // do any additional setup for this step
-  };
-
   const handleTicketSubmit = (e) => {
     e.preventDefault();
     // handle the ticket creation logic here
@@ -130,7 +114,7 @@ const App = () => {
         (responseMessage) => {
           console.log(responseMessage);
           setStep("initial");
-        },
+        }
       );
     }
   };
@@ -157,18 +141,44 @@ const App = () => {
           right="10"
           borderRadius="md"
         >
-          <ModalHeader display="flex" alignItems="center" justifyContent={"space-evenly"} ps={0}>
-          <img src="https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png" heigh={50} width={120} alt="library logo"/>Smart Chatbot
+          <ModalHeader
+            display="flex"
+            alignItems="center"
+            justifyContent={"space-evenly"}
+            ps={0}
+          >
+            <img
+              src="https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png"
+              heigh={50}
+              width={120}
+              alt="library logo"
+            />
+            Smart Chatbot
           </ModalHeader>
           <ModalCloseButton />
+          {step !== "initial" && (
+            <Button
+              leftIcon={<ArrowBackIcon />}
+              colorScheme="red"
+              variant="outline"
+              width="20%"
+              size="xs"
+              ml={"7%"}
+              onClick={() => setStep("initial")}
+            >
+              Back
+            </Button>
+          )}
           <ModalBody py={5}>
             {step === "initial" && (
               <VStack>
-                <Button onClick={handleServicesClick}>Library Chatbot</Button>
-                <Button onClick={handleLibrarianClick}>
+                <Button onClick={() => setStep("services")}>
+                  Library Chatbot
+                </Button>
+                <Button onClick={() => setStep("realLibrarian")}>
                   Talk to a human librarian
                 </Button>
-                <Button onClick={handleTicketClick}>
+                <Button onClick={() => setStep("ticket")}>
                   Create a ticket for offline help
                 </Button>
               </VStack>
@@ -208,14 +218,18 @@ const App = () => {
                         py={3}
                         rounded="md"
                         bg={message.sender === "user" ? "white" : "gray.200"}
-                        border = {message.sender === "user" ? "1px" : "0px"}
-                        borderColor= {message.sender === "user" ? "red.400" : " "}
+                        border={message.sender === "user" ? "1px" : "0px"}
+                        borderColor={
+                          message.sender === "user" ? "red.400" : " "
+                        }
                         alignSelf={
                           message.sender === "user" ? "flex-end" : "flex-start"
                         }
                       >
                         <Text
-                          color={message.sender === "user" ? "red.600" : "black"}
+                          color={
+                            message.sender === "user" ? "red.600" : "black"
+                          }
                         >
                           {typeof message.text === "object" ? (
                             <MessageComponents
@@ -265,6 +279,8 @@ const App = () => {
                 </form>
               </>
             )}
+
+            {step === "realLibrarian" && <RealLibrarianWidget />}
 
             {step === "ticket" && (
               <form onSubmit={handleTicketSubmit}>
