@@ -8,8 +8,12 @@ services:
       - '${FRONTEND_PORT}:${FRONTEND_PORT}'
     depends_on:
       - backend
-    env_file:
-      - .env
+    # env_file:
+    #   - .env
+    environment:
+      - REACT_APP_BACKEND_PORT=3602
+      - PORT=3601
+      - REACT_APP_BACKEND_URL=localhost
   backend:
     build: 
       context: ./

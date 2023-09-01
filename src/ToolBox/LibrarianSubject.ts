@@ -312,7 +312,11 @@ class LibrarianSubjectSearchTool implements Tool {
 
           const subjects = await prisma.subject.findMany();
           const subjectNames = subjects.map((subject) => subject.name);
-          const bestMatchSubject = instance.fuzzybestMatch(querySubjectName, subjectNames, 2)
+          let mainSubjectName = instance.synonymMapping.get(querySubjectName.toLowerCase().trim());
+          if (!mainSubjectName) {
+            mainSubjectName = querySubjectName; 
+          }
+          const bestMatchSubject = instance.fuzzybestMatch(mainSubjectName, subjectNames, 2)
                                   .map(match => match[1]); 
 
           const subjectsWithLibrarian = await prisma.subject.findMany({

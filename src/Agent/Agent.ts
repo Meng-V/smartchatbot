@@ -11,7 +11,7 @@ class Agent implements IAgent {
   memory: ConversationMemory | null;
 
   toolsMap: Map<string, Tool>;
-  LLMCallLimit: number = 3;
+  LLMCallLimit: number = 5;
 
   actions: Set<string> = new Set();
 
@@ -147,7 +147,8 @@ class Agent implements IAgent {
       .replace(/'/g, "") // Remove single quotes
       .replace(/\+/g, "") // Remove "+" signs
       .replace(/"(\w+)":\s*"([^"]*)"/g, '"$1": "$2"')
-      .toString(); // Keep double quotes for property names and values
+      .replace(/\n/g, '');
+    console.log(jsonString);
     const outputObj = JSON.parse(jsonString);
 
     function trim(text: string) {
