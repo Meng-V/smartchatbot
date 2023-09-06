@@ -5,20 +5,29 @@ import { retryWithMaxAttempts } from "../Utils/NetworkUtils";
 import { AxiosResponse } from "axios";
 
 type LLMModelSetting = {
-  modelName: string;
+  modelName: ModelName;
   temperature: number;
   top_p: number;
 };
 type LLMModelSettingString = string;
-
+type ModelName = "gpt-3.5-turbo" | "gpt-3.5-turbo-0613" | "gpt-3.5-turbo-0301" | "gpt-4-0613" | "gpt-4-0314" | "gpt-4";
+/**
+ * OpenAIModel would connect with OpenAI GPT3.5 or GPT4 ChatCompletion API and get the model response
+ */
 class OpenAIModel {
   private modelConfiguration: Configuration;
   private model: OpenAIApi;
   private static modelLookUp: Map<LLMModelSettingString, OpenAIModel> =
     new Map();
 
+  /**
+   * Private Constructor. Go to OpenAI API website to know more about these parameters
+   * @param modelName model  
+   * @param temperature
+   * @param top_p 
+   */
   private constructor(
-    private modelName: string,
+    private modelName: ModelName,
     private temperature: number,
     private top_p: number
   ) {
@@ -32,8 +41,15 @@ class OpenAIModel {
     this.top_p = top_p;
   }
 
+  /**
+   * Get or create new instance. Follow Singleton design pattern
+   * @param modelName 
+   * @param temperature 
+   * @param top_p 
+   * @returns 
+   */
   public static getInstance(
-    modelName: string,
+    modelName: ModelName,
     temperature: number = 0.0,
     top_p: number = 0.1
   ): OpenAIModel {

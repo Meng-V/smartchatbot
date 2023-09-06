@@ -5,6 +5,9 @@ import { OpenAIModel } from "../LLM/LLMModels";
 import { ConversationSummarizePrompt } from "./ConversationSummarizePrompt";
 import { TokenUsage } from "../Agent/IAgent";
 
+/**
+ * ModelPromptWithTools creates prompt to inform the LLM about the answer format instruction, avaiable tools, tools description, conversation context.
+ */
 class ModelPromptWithTools implements PromptTemplate {
   public modelDescription: string;
   public conversationMemory: ConversationMemory | null;
@@ -39,6 +42,11 @@ class ModelPromptWithTools implements PromptTemplate {
     this.modelScratchpad = "";
   }
 
+  /**
+   * This function construct the prompt based on the ReAct prompt model
+   * @param tools 
+   * @returns prompt
+   */
   private constructReActModelDescription(tools: Tool[]): string {
     const reActModelDescription: string = `Your job is to complete the scratchpad and use the previous scratchpad to guide yourself toward the answer.For the scratchpad,format your answer as in the JSON structure below.Format your response as a JSON string,with both keys and values enclosed in double quotes.Like this: "{\"key\":\"value\"}".\n\
     {
@@ -51,6 +59,12 @@ class ModelPromptWithTools implements PromptTemplate {
       }\n\n`;
     return reActModelDescription;
   }
+
+  /**
+   * Construct tool desciption for all the available tools
+   * @param tools 
+   * @returns 
+   */
   private constructToolsDescription(tools: Tool[]): string {
     if (tools.length === 0 || !this.toolsAreReadyToUse) return "";
     const toolsDescription = tools.reduce(
@@ -75,24 +89,43 @@ class ModelPromptWithTools implements PromptTemplate {
     return toolsDescription;
   }
 
+  /**
+   * Update the conversation memory object
+   * @param newConversationMemory 
+   */
   public updateConversationMemory(
     newConversationMemory: ConversationMemory | null,
   ): void {
     this.conversationMemory = newConversationMemory;
   }
 
+  /**
+   * Empty the scratchpad for the model
+   */
   public emptyScratchpad(): void {
     this.modelScratchpad = "";
   }
 
+  /**
+   * Update the scratch pad with new text
+   * @param inputScratch 
+   */
   public updateScratchpad(inputScratch: string): void {
     this.modelScratchpad += inputScratch;
   }
 
+  /**
+   * Get the model scratchpad
+   * @returns 
+   */
   public getScratchpad(): string {
     return this.modelScratchpad;
   }
 
+  /**
+   * Construct the ChatCompletion system description
+   * @returns 
+   */
   getSystemDescription(): string {
     const date = new Date();
     return (
@@ -104,6 +137,11 @@ class ModelPromptWithTools implements PromptTemplate {
       })}\n`
     );
   }
+
+  /**
+   * Get the prompt for the LLM and estimate the token usage when summarizing the prompt.
+   * @returns { prompt: string; tokenUsage: TokenUsage }
+   */
   async getPrompt(): Promise<{ prompt: string; tokenUsage: TokenUsage }> {
     return new Promise<{ prompt: string; tokenUsage: TokenUsage }>(
       async (resolve, reject) => {

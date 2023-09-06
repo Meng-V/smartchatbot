@@ -4,6 +4,9 @@ import { OpenAIModel } from "../LLM/LLMModels";
 import { Tool } from "../ToolBox/ToolTemplates";
 import { IAgent, AgentResponse, AgentOutput } from "./IAgent";
 
+/**
+ * Agent would allow the llmModel (GPT3.5 or GPT4) to use the tools as the user request. Conversation memory would be inside memory 
+ */
 class Agent implements IAgent {
   name: string;
   llmModel: OpenAIModel;
@@ -33,18 +36,20 @@ class Agent implements IAgent {
     this.name = name;
     this.llmModel = llmModel;
     this.memory = memory;
+
+    //base prompt would instruct the LLM how to use the tools and give the LLM the context of the conversation
     this.basePrompt = new ModelPromptWithTools(tools, this.memory, toolsAreReadyToUse);
     this.toolsMap = new Map<string, Tool>();
     tools.forEach((tool) => {
       this.toolsMap.set(tool.name, tool);
     });
   }
+
   /**
    * This function takes in message from user to feed to the LLM Agent. Return the message from the Agent
    * @param userInput
    * @returns message from the LLM Agent
    */
-
   async agentRun(userInput: string): Promise<AgentResponse> {
     return new Promise<AgentResponse>(async (resolve, reject) => {
       // const timeout = setTimeout(() => {
@@ -116,6 +121,12 @@ class Agent implements IAgent {
     });
   }
 
+  /**
+   * This function help the agent call the available tools with the appropriate parameters
+   * @param toolName name of the tool you would use
+   * @param toolInput { [paramName: string]: string } parameter and their value
+   * @returns the returned string from the tool
+   */
   private async accessToolBox(
     toolName: string,
     toolInput: { [key: string]: string },
@@ -142,6 +153,12 @@ class Agent implements IAgent {
     });
   }
 
+  /**
+   * This function parse the LLM output in the format:
+   * {Action: "", Action Input: "", Final Answer: ""}
+   * @param llmOutput the string output from the LLM
+   * @returns AgentOutput
+   */
   parseLLMOutput(llmOutput: string): AgentOutput {
     const jsonString = llmOutput
       .replace(/'/g, "") // Remove single quotes

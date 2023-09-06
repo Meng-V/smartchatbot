@@ -6,7 +6,7 @@ import axios, { AxiosResponse } from "axios";
 import { classifyResponse, cohereResponse } from "cohere-ai/dist/models";
 
 /**
- * This class would  coordinate the conversation to the appropriate expert agent. It would use Cohere Classify API to classify the conversation's most recent topic by pre-defined example
+ * CentralCoordinator would  coordinate the conversation to the appropriate expert agent. It would use Cohere Classify API to classify the conversation's most recent topic by pre-defined example
  */
 class CentralCoordinator {
   private labelToAgent: Map<string, IAgent>;
@@ -107,7 +107,11 @@ class CentralCoordinator {
     });
   }
 
-  async coordinateAgent(message: string): Promise<IAgent> {
+  /**
+   * Return the appropriate agent depends on the current conversation
+   * @returns IAgent that suits the current conversation
+   */
+  async coordinateAgent(): Promise<IAgent> {
     return new Promise<IAgent>(async (resolve, reject) => {
       try {
         let maximumContextWindow = 3;

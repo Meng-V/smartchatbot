@@ -5,6 +5,9 @@ import { TokenUsage } from "../Agent/IAgent";
 
 type Role = "AIAgent" | "Customer";
 
+/**
+ * ConversationMemory would store the information about the conversation. Too old message would be removed. Relevant message would be kept or converted to a conversation summary to save tokens.
+ */
 class ConversationMemory {
   private conversation: [Role | null, string][];
   //Maximum conversation line would be keep in the memory. Oldest conversation would be tossed if exceed maxContextWindow
@@ -25,7 +28,7 @@ class ConversationMemory {
   public messageNum: number = 0;
 
   /**
-   *
+   * Constructor
    * @param maxContextWindow Maximum conversation line would be keep in the memory. Oldest conversation would be tossed if exceed maxContextWindow
    * @param llmModel llmModel used for summarize the past conversation
    * @param conversationBufferSize Number of conversation line (most recent) that we would not summarize, allowing model to have the full context of most recent conversation
@@ -57,9 +60,14 @@ class ConversationMemory {
     this.curBufferOffset = this.minimumTimeBetweenSummarizations;
   }
 
-  addToConversation(role: Role, text: string) {
+  /**
+   * Add message to conversation.
+   * @param role role of the message sender
+   * @param message message
+   */
+  addToConversation(role: Role, message: string) {
     this.conversation.shift();
-    this.conversation.push([role, text]);
+    this.conversation.push([role, message]);
     this.curBufferOffset += 1;
     this.messageNum += 1;
   }
