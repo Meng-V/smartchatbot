@@ -3,20 +3,25 @@ import { Either, left, right } from "fp-ts/lib/Either";
 import { SearchResponse } from "./Record";
 import { getHeaders } from "./setupTokens";
 import * as dotenv from "dotenv";
+import {AuthSessionToken} from "./setupTokens";
+import * as t from "io-ts";
+
 dotenv.config();
 
 export async function performSearch(
-  sessionToken: string,
+  tokens: t.TypeOf<typeof AuthSessionToken>,
   query: string,
   numOfBooks: number,
 ): Promise<Either<Error, SearchResponse>> {
-    const url = `${process.env.SEARCH_URL}${encodeURIComponent(
+  const url = `${process.env.SEARCH_URL}${encodeURIComponent(
     query,
   )}&resultsperpage=${numOfBooks}&view=detailed`;
-      console.log(url);
+  
+  console.log(url);
+  
   try {
     const response = await axios.get<SearchResponse>(url, {
-      headers: getHeaders(sessionToken),
+      headers: getHeaders(tokens.SessionToken, tokens.AuthenticationToken),
     });
 
     return right(response.data);

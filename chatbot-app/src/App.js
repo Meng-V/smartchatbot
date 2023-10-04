@@ -264,11 +264,11 @@ const App = () => {
                             {typeof message.text === "object" ? (
                               <div className="half-line-height">
                                 <MessageComponents
-                                  message={adjustedMessage}
+                                  msg={adjustedMessage}
                                 />
                               </div>
                             ) : (
-                              <MessageComponents message={adjustedMessage} />
+                              <MessageComponents msg={adjustedMessage} />
                             )}
                           </Box>
                         </Box>

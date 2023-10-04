@@ -13,6 +13,8 @@ import { getEnvironmentVariables } from "./ebscoService";
 const he = require("he");
 import { JSDOM } from "jsdom";
 import striptags from "striptags";
+import {AuthSessionToken} from "./setupTokens";
+import * as t from "io-ts";
 
 function cleanHTMLTags(input: string): string {
   const dom = new JSDOM(input);
@@ -143,12 +145,12 @@ async function transformToDisplayRecord(
  */
 async function queryEbscoApi(
   query: string,
-  sessionToken: string,
+  tokens: t.TypeOf<typeof AuthSessionToken>,
   numOfBooks: number,
 ): Promise<Either<Error, DisplayRecord[]>> {
   const { userId, password, profile } = getEnvironmentVariables();
 
-  const responseResult = await performSearch(sessionToken, query, numOfBooks);
+  const responseResult = await performSearch(tokens, query, numOfBooks);
 
   if (isLeft(responseResult)) {
     return responseResult;
@@ -184,7 +186,7 @@ async function queryEbscoApi(
       return left(new Error("An unknown error occurred."));
     }
   }
-  await endSession(sessionToken);
+  await endSession(tokens);
 
   return right(data);
 }
@@ -203,11 +205,11 @@ async function queryEbscoApi(
  */
 export async function searchForBook(
   query: string,
-  sessionToken: string,
+  tokens: t.TypeOf<typeof AuthSessionToken>,
   numOfBooks: number,
 ): Promise<DisplayRecord[]> {
   try {
-    const dataResult = await queryEbscoApi(query, sessionToken, numOfBooks);
+    const dataResult = await queryEbscoApi(query, tokens, numOfBooks);
     console.log("searchForBook method:", dataResult);
 
     if (isLeft(dataResult)) {
@@ -228,4 +230,3 @@ export async function searchForBook(
     return [{ status: "fail", error: `An unexpected error occurred, please try again.` }];
   }
 }
-

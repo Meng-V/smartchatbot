@@ -2,7 +2,8 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown'
 import gfm from 'remark-gfm'
 
-const MessageComponents = ({ message }) => {
+const MessageComponents = ({ msg }) => {
+  const message = msg.replace(/\n\n+/g, '\n');
   return (
     <span className="chat-message-container">
       <ReactMarkdown
