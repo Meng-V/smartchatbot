@@ -13,6 +13,11 @@ const CreateSessionResponse = t.type({
   SessionToken: t.string,
 });
 
+export const AuthSessionToken = t.type({
+  SessionToken: t.string,
+  AuthenticationToken: t.string,
+});
+
 type AuthResponse = t.TypeOf<typeof AuthResponse>;
 type CreateSessionResponse = t.TypeOf<typeof CreateSessionResponse>;
 
@@ -23,6 +28,7 @@ async function authenticate(
   const params = {
     UserId: userId,
     Password: password,
+    InterfaceId: "edsapi"
   };
 
   const response: AxiosResponse = await axios.post(
@@ -62,7 +68,7 @@ async function setupTokens(
   userId: string,
   password: string,
   profile: string,
-): Promise<Either<Error, string>> {
+): Promise<Either<Error, t.TypeOf<typeof AuthSessionToken>>> {
   const authResult = await authenticate(userId, password);
   if (isLeft(authResult)) {
     return authResult;
@@ -79,16 +85,25 @@ async function setupTokens(
   const sessionResponse = sessionResult.right;
   const sessionToken = sessionResponse.SessionToken;
 
-  return right(sessionToken);
+  const tokens: t.TypeOf<typeof AuthSessionToken> = {
+    SessionToken: sessionToken,
+    AuthenticationToken: authToken,
+  };
+
+  return right(tokens);
 }
 
-async function endSession(sessionToken: string): Promise<Either<Error, void>> {
+async function endSession(tokens: t.TypeOf<typeof AuthSessionToken>): Promise<Either<Error, void>> {
   try {
+    const headers = getHeaders(tokens.SessionToken, tokens.AuthenticationToken);
+
     const config = {
+      headers,
       params: {
-        sessiontoken: sessionToken,
+        sessiontoken: tokens.SessionToken,
       },
     };
+    
     await axios.get(process.env.END_SESSION_URL || "", config);
 
     return right(undefined);
@@ -103,9 +118,11 @@ async function endSession(sessionToken: string): Promise<Either<Error, void>> {
   }
 }
 
-function getHeaders(sessionToken: string): Record<string, string> {
+
+function getHeaders(sessionToken: string, authenticationToken: string): Record<string, string> {
   return {
     "x-sessionToken": sessionToken,
+    "x-authenticationToken": authenticationToken,
   };
 }
 

@@ -162,9 +162,25 @@ class LibrarianSubjectSearchTool implements Tool {
       } catch (error) {
         console.error(error);
         reject(
-          "Sorry, there was an error fetching the librarian data. Please try again.",
+          ["Sorry, there was an error fetching the librarian data. Please try again."]
         );
       }
+
+      // const subjectToLibrarian: Map<string, { [key: string]: string }[]> =
+      //   new Map();
+      // for (let librarian of response.data) {
+      //   const name = `${librarian.first_name} ${librarian.last_name}`;
+      //   librarian.subjects.forEach(
+      //     (subject: { id: string; name: string; slug_id: string }) => {
+      //       if (!subjectToLibrarian.has(subject.name))
+      //         subjectToLibrarian.set(subject.name, []);
+      //       subjectToLibrarian.set(subject.name, [
+      //         ...subjectToLibrarian.get(subject.name)!,
+      //         { name: name, email: librarian.email },
+      //       ]);
+      //     }
+      //   );
+      // }
     });
   }
 
@@ -244,7 +260,7 @@ class LibrarianSubjectSearchTool implements Tool {
         }
         resolve(didUpdate);
       } catch (error) {
-        reject(error);
+        reject(false);
       }
     });
   }
@@ -321,7 +337,7 @@ class LibrarianSubjectSearchTool implements Tool {
 
           const subjectsWithLibrarian = await prisma.subject.findMany({
             where: {
-              name: { in: bestMatchSubject },
+              name: { in: bestMatchSubject.map((subjectData) => subjectData[1]) },
             },
             include: { assignedLibrarians: true },
           });
@@ -350,12 +366,14 @@ class LibrarianSubjectSearchTool implements Tool {
               error:
                 "Sorry, the requested subject has no match with our subject database. Please try another subject.",
             });
-            return;
+            // return;
           }
 
           resolve(resultObject);
-        } catch (error: any) {
-          reject(error);
+
+        } catch (error) {
+          console.error(error);
+          reject({ error: "Sorry, the requested subject has no match with our subject database. Please try another subject."})
         }
       },
     );

@@ -164,7 +164,7 @@ io.on("connection", async (socket) => {
         },
       });
       memory.addToConversation("Customer", userMessage);
-      const agent = await centralCoordinator.coordinateAgent(userMessage);
+      const agent = await centralCoordinator.coordinateAgent();
       console.log(`Coordinate to agent ${agent.name}`);
       let agentResponse: AgentResponse;
       try {

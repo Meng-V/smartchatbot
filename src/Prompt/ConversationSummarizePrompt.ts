@@ -1,15 +1,22 @@
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { PromptTemplate } from "./PromptTemplate";
 
+/**
+ * ConversationSummarizePrompt create prompt to ask the LLM to summarize the current conversation.
+ */
 class ConversationSummarizePrompt implements PromptTemplate {
   public modelDescription: string;
   public originalConversationString: string;
   constructor() {
     this.modelDescription =
-      "You are trying to shorten the following conversation by summarizing it. Include any vital details like email,name,code,date,etc in the summary and stress that the latest question is unanswered\n";
+      "You are trying to shorten the following conversation by summarizing it.Include any vital details like email,name,code,date,etc in the summary.\n";
     this.originalConversationString = "";
   }
 
+  /**
+   * Get the prompt to ask the LLM summarize the conversation
+   * @returns 
+   */
   async getPrompt(): Promise<{prompt: string}> {
     return new Promise<{prompt: string}>((resolve, reject) => {
       resolve({prompt: `${

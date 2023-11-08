@@ -58,7 +58,7 @@ class EBSCOBookSearchTool implements Tool {
         resolve("Sorry, no results were found for your query.");
       } else {
         resolve(
-          `Please interpret the best two choice from this JSON result to the customer in a markdown language output, including if there's value in the error field. ${JSON.stringify(
+          `Interpret the best two choice from this JSON result to the customer in a markdown language output,including if there's value in the error field.${JSON.stringify(
             response,
           )}`,
         );
