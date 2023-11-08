@@ -1,17 +1,18 @@
-import { reject } from "lodash";
 import { ConversationMemory } from "../Memory/ConversationMemory";
 import { IAgent } from "./IAgent";
 import cohere from "cohere-ai";
-import { start } from "repl";
+import { retryWithMaxAttempts } from "../Utils/NetworkUtils";
+import axios, { AxiosResponse } from "axios";
+import { classifyResponse, cohereResponse } from "cohere-ai/dist/models";
 
 /**
- * This class would  coordinate the conversation to the appropriate expert agent. It would use Cohere Classify API to classify the conversation's most recent topic by pre-defined example
+ * CentralCoordinator would  coordinate the conversation to the appropriate expert agent. It would use Cohere Classify API to classify the conversation's most recent topic by pre-defined example
  */
 class CentralCoordinator {
   private labelToAgent: Map<string, IAgent>;
   private exampleToLabel: { text: string; label: string }[];
   private conversationMemory: ConversationMemory;
-  private modelName: string = "embed-english-light-v2.0";
+  private modelName: string = "embed-english-v2.0";
   private defaultAgent: IAgent;
   private confidenceThreshold: number;
   /**
@@ -47,6 +48,10 @@ class CentralCoordinator {
     });
   }
 
+  getAgentNameIterable(): IterableIterator<string> {
+    return this.labelToAgent.keys();
+  }
+
   /**
    * This function return the match score of the input message with the current agent
    * @param message
@@ -54,14 +59,33 @@ class CentralCoordinator {
    */
   async classify(message: string): Promise<Map<IAgent, number>> {
     return new Promise<Map<IAgent, number>>(async (resolve, reject) => {
-      const response = await cohere.classify({
-        model: this.modelName,
-        inputs: [message],
-        examples: this.exampleToLabel,
-      });
-
+      let response;
+      try {
+        response = await retryWithMaxAttempts<cohereResponse<classifyResponse>>(
+          (): Promise<cohereResponse<classifyResponse>> => {
+            return new Promise<cohereResponse<classifyResponse>>(
+              async (resolve, reject) => {
+                try {
+                  const axiosResponse = await cohere.classify({
+                    model: this.modelName,
+                    inputs: [message],
+                    examples: this.exampleToLabel,
+                  });
+                  resolve(axiosResponse);
+                } catch (error: any) {
+                  reject(error);
+                }
+              }
+            );
+          }
+        );
+      } catch (error: any) {
+        reject(error);
+        return;
+      }
 
       if (!response.body || !response.body.classifications) {
+        console.log(response);
         reject("Error connecting to Cohere API");
         return;
       }
@@ -83,46 +107,58 @@ class CentralCoordinator {
     });
   }
 
-  async coordinateAgent(message: string): Promise<IAgent> {
+  /**
+   * Return the appropriate agent depends on the current conversation
+   * @returns IAgent that suits the current conversation
+   */
+  async coordinateAgent(): Promise<IAgent> {
     return new Promise<IAgent>(async (resolve, reject) => {
-      let maximumContextWindow = 6;
-      maximumContextWindow = Math.min(maximumContextWindow, this.conversationMemory.messageNum);
-      let bestAgent: IAgent | null = null;
-      for (let startIdx = -1; startIdx >= -maximumContextWindow; startIdx--) {
-        const conversationString = (
-          await this.conversationMemory.getConversationAsString(
-            startIdx,
-            -1,
-            false
-          )
-        ).conversationString;
-
-        const agentPredictionScores = this.classify(conversationString);
-
-        const agentPredictionScoresArray = Array.from(
-          (await agentPredictionScores).entries()
+      try {
+        let maximumContextWindow = 3;
+        maximumContextWindow = Math.min(
+          maximumContextWindow,
+          this.conversationMemory.messageNum
         );
+        let bestAgent: IAgent | null = null;
+        for (let startIdx = -1; startIdx >= -maximumContextWindow; startIdx--) {
+          const conversationString = (
+            await this.conversationMemory.getConversationAsString(
+              startIdx,
+              -1,
+              false
+            )
+          ).conversationString;
 
-        agentPredictionScoresArray.sort((a, b) => b[1] - a[1]);
-        if (agentPredictionScoresArray[0][1] >= this.confidenceThreshold)
-          bestAgent = agentPredictionScoresArray[0][0];
+          const agentPredictionScores = this.classify(conversationString);
 
-        //Compare two highest prediction scores
-        const threshold = 0.1;
-        if (
-          Math.abs(
-            agentPredictionScoresArray[0][1] - agentPredictionScoresArray[1][1]
-          ) > threshold &&
-          agentPredictionScoresArray[0][1] >= this.confidenceThreshold
-        ) {
-          break;
+          const agentPredictionScoresArray = Array.from(
+            (await agentPredictionScores).entries()
+          );
+
+          agentPredictionScoresArray.sort((a, b) => b[1] - a[1]);
+          if (agentPredictionScoresArray[0][1] >= this.confidenceThreshold)
+            bestAgent = agentPredictionScoresArray[0][0];
+
+          //Compare two highest prediction scores
+          const threshold = 0.1;
+          if (
+            Math.abs(
+              agentPredictionScoresArray[0][1] -
+                agentPredictionScoresArray[1][1]
+            ) > threshold &&
+            agentPredictionScoresArray[0][1] >= this.confidenceThreshold
+          ) {
+            break;
+          }
         }
+        if (bestAgent) {
+          resolve(bestAgent);
+          return;
+        }
+        resolve(this.defaultAgent);
+      } catch (error: any) {
+        reject(error);
       }
-      if (bestAgent) {
-        resolve(bestAgent);
-        return;
-      }
-      resolve(this.defaultAgent);
     });
   }
 }

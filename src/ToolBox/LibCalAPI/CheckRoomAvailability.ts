@@ -1,9 +1,7 @@
-import { string } from "io-ts";
-import { ToolInput } from "../ToolTemplates";
-import { LibCalAPIBaseTool } from "./LibCalAPI";
-import axios, { AxiosError, AxiosResponse } from "axios";
-import { match } from "assert";
-import { time } from "console";
+import { LibCalAPIBaseTool, Room } from "./LibCalAPI";
+import axios, { AxiosResponse } from "axios";
+import { retryWithMaxAttempts } from "../../Utils/NetworkUtils";
+import { Utils } from "./Utils";
 
 type Timestamp = {
   year: number;
@@ -25,11 +23,13 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
 
   public readonly name: string = "CheckRoomAvailabilityTool";
   public readonly description: string =
-    "This tool is for checking the available hours of a specific study room on one specific date.Use Final Answer instead if you don't have enough required parameters(roomID and date)yet.Don't include any single quotes in the paramter.The year is implicitly the current year";
+    "This tool is for checking the available hours of a study room on one specific date.Use Final Answer instead if you don't have enough required parameters(roomID and date)yet.Don't include any single quotes in the paramter.The year is implicitly the current year";
 
   public readonly parameters: { [parameterName: string]: string } = {
     date: "string [REQUIRED][format YYYY-MM-DD]",
-    roomID: "string [REQUIRED]",
+    roomCapacity:
+      "string|null[OPTIONAL][capacity(number of people)of the room you wish to reserve.]",
+    roomCodeName: "string|null[OPTIONAL][such as: 145, 211, 297A, 108C, etc.]",
   };
 
   constructor() {
@@ -71,7 +71,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
   private timestampStringtify(
     timestamp: Timestamp,
     verbose: boolean = false,
-    timezone: boolean = false,
+    timezone: boolean = false
   ): string {
     if (verbose) {
       const timezoneStr = timezone ? `with timezone ${timestamp.timezone}` : "";
@@ -108,7 +108,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
    * @param hours
    */
   private mergeHours(
-    hours: { from: Timestamp; to: Timestamp }[],
+    hours: { from: Timestamp; to: Timestamp }[]
   ): { from: Timestamp; to: Timestamp }[] {
     const intervals: [number, number][] = hours.map((time_block, idx) => {
       return [
@@ -128,7 +128,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
       else
         mergeIntervals[mergeIntervals.length - 1][1] = Math.max(
           end,
-          mergeIntervals[mergeIntervals.length - 1][1],
+          mergeIntervals[mergeIntervals.length - 1][1]
         );
     }
     const [year, month, date, timezone] =
@@ -180,7 +180,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
     startDate: string,
     startTime: string,
     endDate: string,
-    endTime: string,
+    endTime: string
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       //Parse the start and endTime
@@ -203,9 +203,15 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
         second: parseInt(endMatch![3], 10),
       };
 
-      const response = await CheckRoomAvailabilityTool.run(roomID, startDate);
-      if ("error" in response[0]) {
-        reject(response[0]!.error);
+      let response;
+      try {
+        response = await CheckRoomAvailabilityTool.run(roomID, startDate);
+        if ("error" in response[0]) {
+          reject(response[0]!.error);
+        }
+      } catch (error: any) {
+        reject(error);
+        return;
       }
 
       /**
@@ -216,7 +222,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
        */
       const compareTime = (
         time1: Timestamp | SimpleTimestamp,
-        time2: Timestamp | SimpleTimestamp,
+        time2: Timestamp | SimpleTimestamp
       ) => {
         if (time1.hour !== time2.hour) {
           return time1.hour > time2.hour ? 1 : -1;
@@ -244,58 +250,155 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
     });
   }
 
-  async toolRun(toolInput: ToolInput): Promise<string> {
-    const { roomID, date } = toolInput;
+  async toolRun(toolInput: {
+    date: string | null;
+    roomCodeName: string | null;
+    roomCapacity: string | null;
+  }): Promise<string> {
+    const { date, roomCodeName, roomCapacity } = toolInput;
 
     return new Promise<string>(async (resolve, reject) => {
-      let nullFields = [];
-      for (const param of Object.keys(toolInput)) {
-        if (
-          toolInput[param] === null ||
-          toolInput[param] === "null" ||
-          toolInput[param] === undefined ||
-          toolInput[param] === "undefined"
-        ) {
-          nullFields.push(param);
-        }
+      if (
+        date === null ||
+        date === undefined ||
+        date === "null" ||
+        date === "undefined"
+      ) {
+        const messageError = `Cannot check room availability because missing parameter date.Ask the customer to provide date to check room availability.`;
+        console.log(messageError);
+        resolve(messageError);
+        return;
       }
-      if (nullFields.length > 0) {
-        console.log(
-          `Cannot check room availability because missing parameter ${JSON.stringify(
-            nullFields
-          )}.Ask the customer to provide ${JSON.stringify(
-            nullFields
-          )} to check room availability.`
-        );
+      const instance = CheckRoomAvailabilityTool.getInstance();
+      instance.updateRoomInfoDatabase();
+
+      if (
+        (!roomCapacity ||
+          roomCapacity === "null" ||
+          roomCapacity === "undefined") &&
+        (!roomCodeName ||
+          roomCodeName === "null" ||
+          roomCodeName === "undefined")
+      ) {
         resolve(
-          `Cannot check room availability because missing parameter ${JSON.stringify(
-            nullFields
-          )}.Ask the customer to provide ${JSON.stringify(
-            nullFields
-          )} to check room availability.`
+          "Room capacity and room code name are both empty.Ask customer to specify one of them."
         );
         return;
-      }
+      } else if (
+        !roomCapacity ||
+        roomCapacity === "null" ||
+        roomCapacity === "undefined"
+      ) {
+        try {
+          let availableRoom: Room | null = await Utils.getRoomByCodeName(
+            roomCodeName as string
+          );
+          if (!availableRoom) {
+            resolve("No such room with the input code name.");
+            return;
+          }
+          try {
+            const response = await CheckRoomAvailabilityTool.run(
+              availableRoom.roomID as string,
+              date as string
+            );
+            if ("error" in response[0]) {
+              resolve(response[0]!.error);
+              return;
+            }
 
-      const response = await CheckRoomAvailabilityTool.run(
-        roomID as string,
-        date as string,
-      );
-      if ("error" in response[0]) {
-        resolve(response[0]!.error);
-        return;
-      }
+            const timeBlocksAsString: string = JSON.stringify(
+              response.map((timeBlock) => {
+                timeBlock = timeBlock as { from: Timestamp; to: Timestamp };
+                return {
+                  from: this.timestampStringtify(timeBlock.from, true, false),
+                  to: this.timestampStringtify(timeBlock.to, true, false),
+                };
+              })
+            );
+            resolve(
+              `Room ${availableRoom.roomID}'s available time:${timeBlocksAsString}`
+            );
+          } catch (error: any) {
+            reject(error);
+          }
+        } catch (error: any) {
+          reject(error);
+          return;
+        }
+      } else {
+        const potentialCapacityList =
+          await Utils.matchNumberOfPeopleToPotentialCapacity(
+            parseInt(roomCapacity, 10)
+          );
+        if (potentialCapacityList.length === 0) {
+          resolve(`No room can fit ${roomCapacity}.`);
+          return;
+        }
 
-      const responseAsString: string = JSON.stringify(
-        response.map((timeBlock) => {
-          timeBlock = timeBlock as { from: Timestamp; to: Timestamp };
-          return {
-            from: this.timestampStringtify(timeBlock.from, true, false),
-            to: this.timestampStringtify(timeBlock.to, true, false),
-          };
-        }),
-      );
-      resolve(`Room ${roomID}'s available time:${responseAsString}`);
+        for (let capacity of potentialCapacityList) {
+          const rooms = await Utils.getRoomByCapacity(capacity);
+          const roomToAvailability: Map<
+            Room,
+            { from: Timestamp; to: Timestamp }[]
+          > = new Map<Room, { from: Timestamp; to: Timestamp }[]>();
+          try {
+            for (let room of rooms) {
+              const availability = await CheckRoomAvailabilityTool.run(
+                room.roomID,
+                date
+              );
+              if (availability.length === 0) continue;
+              if ("error" in availability[0]) {
+                resolve(availability[0]!.error);
+                return;
+              }
+              roomToAvailability.set(
+                room,
+                availability as { from: Timestamp; to: Timestamp }[]
+              );
+            }
+            if (roomToAvailability.size === 0) continue;
+            //Find the room with most available hours
+            const bestRoom = Array.from(roomToAvailability.entries()).reduce(
+              (maxRoom, [room, availability]) => {
+                const totalHours = availability.reduce(
+                  (total, { from, to }) =>
+                    total + Math.abs(from.hour - to.hour),
+                  0
+                );
+
+                if (!maxRoom || totalHours > maxRoom.totalHours) {
+                  return { room, totalHours };
+                }
+
+                return maxRoom;
+              },
+              { room: null as Room | null, totalHours: 0 }
+            );
+            console.log(JSON.stringify(bestRoom));
+            const timeBlocksAsString: string = JSON.stringify(
+              roomToAvailability.get(bestRoom.room as Room)!.map((timeBlock) => {
+                timeBlock = timeBlock as { from: Timestamp; to: Timestamp };
+                return {
+                  from: this.timestampStringtify(timeBlock.from, true, false),
+                  to: this.timestampStringtify(timeBlock.to, true, false),
+                };
+              })
+            );
+            resolve(
+              `For ${roomCapacity} people,we have room ${
+                bestRoom.room?.roomName
+              } available at ${timeBlocksAsString}`
+            );
+            return;
+          } catch (error: any) {
+            reject(error);
+            return;
+          }
+        }
+        resolve(`No room can fit ${roomCapacity}`);
+      }
     });
   }
 
@@ -307,7 +410,7 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
    */
   static async run(
     roomID: string,
-    date: string,
+    date: string
   ): Promise<{ from: Timestamp; to: Timestamp }[] | { error: string }[]> {
     return new Promise<
       { from: Timestamp; to: Timestamp }[] | { error: string }[]
@@ -317,16 +420,27 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
       const header = {
         Authorization: `Bearer ${accessToken}`,
       };
-
+      let response;
       try {
-        let response = await axios({
-          method: "get",
-          headers: header,
-          url: `${instance.AVAILABLE_URL}/${roomID}`,
-          params: {
-            availability: date,
-          },
-        });
+        response = await retryWithMaxAttempts<AxiosResponse<any, any>>(
+          (): Promise<AxiosResponse<any, any>> => {
+            return new Promise<AxiosResponse<any, any>>((resolve, reject) => {
+              try {
+                const axiosResponse = axios({
+                  method: "get",
+                  headers: header,
+                  url: `${instance.AVAILABLE_URL}/${roomID}`,
+                  params: {
+                    availability: date,
+                  },
+                });
+                resolve(axiosResponse);
+              } catch (error: any) {
+                reject(error);
+              }
+            });
+          }
+        );
         if (
           response.data[0].error ===
             "item belongs to category of incorrect type" ||
@@ -336,31 +450,32 @@ class CheckRoomAvailabilityTool extends LibCalAPIBaseTool {
           resolve([{ error: "Unexisted room ID" }]);
           return;
         }
-        const hours: { from: string; to: string }[] =
-          response.data[0].availability;
-        const hoursTimestamp: { from: Timestamp; to: Timestamp }[] = hours.map(
-          (timeBlock) => {
-            return {
-              from: instance.parseTimestamp(timeBlock.from),
-              to: instance.parseTimestamp(timeBlock.to),
-            };
-          },
-        );
-        const mergedTimeBlock: { from: Timestamp; to: Timestamp }[] =
-          instance.mergeHours(hoursTimestamp);
-
-        resolve(
-          mergedTimeBlock.map((timeBlock) => {
-            return {
-              from: timeBlock.from,
-              to: timeBlock.to,
-            };
-          }),
-        );
-        return;
       } catch (error: any) {
-        console.log(error);
+        reject(error);
+        return;
       }
+      const hours: { from: string; to: string }[] =
+        response.data[0].availability;
+      const hoursTimestamp: { from: Timestamp; to: Timestamp }[] = hours.map(
+        (timeBlock) => {
+          return {
+            from: instance.parseTimestamp(timeBlock.from),
+            to: instance.parseTimestamp(timeBlock.to),
+          };
+        }
+      );
+      const mergedTimeBlock: { from: Timestamp; to: Timestamp }[] =
+        instance.mergeHours(hoursTimestamp);
+
+      resolve(
+        mergedTimeBlock.map((timeBlock) => {
+          return {
+            from: timeBlock.from,
+            to: timeBlock.to,
+          };
+        })
+      );
+      return;
     });
   }
 }

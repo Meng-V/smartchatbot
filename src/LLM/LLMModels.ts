@@ -1,27 +1,33 @@
-import {
-  Configuration,
-  CreateCompletionResponseUsage,
-  OpenAIApi,
-} from "openai";
+import { Configuration, CreateChatCompletionResponse, OpenAIApi } from "openai";
 import { PromptTemplate } from "../Prompt/PromptTemplate";
-import { ModelPromptWithTools } from "../Prompt/Prompts";
 import { TokenUsage } from "../Agent/IAgent";
+import { retryWithMaxAttempts } from "../Utils/NetworkUtils";
+import { AxiosResponse } from "axios";
 
 type LLMModelSetting = {
-  modelName: string;
+  modelName: ModelName;
   temperature: number;
   top_p: number;
 };
 type LLMModelSettingString = string;
-
+type ModelName = "gpt-3.5-turbo" | "gpt-3.5-turbo-0613" | "gpt-3.5-turbo-0301" | "gpt-4-0613" | "gpt-4-0314" | "gpt-4";
+/**
+ * OpenAIModel would connect with OpenAI GPT3.5 or GPT4 ChatCompletion API and get the model response
+ */
 class OpenAIModel {
   private modelConfiguration: Configuration;
   private model: OpenAIApi;
   private static modelLookUp: Map<LLMModelSettingString, OpenAIModel> =
     new Map();
 
+  /**
+   * Private Constructor. Go to OpenAI API website to know more about these parameters
+   * @param modelName model  
+   * @param temperature
+   * @param top_p 
+   */
   private constructor(
-    private modelName: string,
+    private modelName: ModelName,
     private temperature: number,
     private top_p: number
   ) {
@@ -35,8 +41,15 @@ class OpenAIModel {
     this.top_p = top_p;
   }
 
+  /**
+   * Get or create new instance. Follow Singleton design pattern
+   * @param modelName 
+   * @param temperature 
+   * @param top_p 
+   * @returns 
+   */
   public static getInstance(
-    modelName: string,
+    modelName: ModelName,
     temperature: number = 0.0,
     top_p: number = 0.1
   ): OpenAIModel {
@@ -72,9 +85,6 @@ class OpenAIModel {
         //   reject("Request Time Out");
         // }, 5000);
         const promptObjectResponse = await promptObject.getPrompt();
-        // console.log('----------------')
-        // console.log(promptObjectResponse.prompt);
-        // console.log('----------------')
 
         const usageInfo: TokenUsage = {
           totalTokens: 0,
@@ -88,16 +98,40 @@ class OpenAIModel {
           usageInfo.promptTokens +=
             promptObjectResponse.tokenUsage.promptTokens;
         }
-        console.log('Using LLM!');
-        const response = await this.model.createChatCompletion({
-          model: this.modelName,
-          temperature: this.temperature,
-          top_p: this.top_p,
-          messages: [
-            { role: "system", content: promptObject.getSystemDescription() },
-            { role: "user", content: promptObjectResponse.prompt },
-          ],
-        });
+
+        let response;
+        try {
+          response = await retryWithMaxAttempts<
+            AxiosResponse<CreateChatCompletionResponse, any>
+          >((): Promise<AxiosResponse<CreateChatCompletionResponse, any>> => {
+            return new Promise<
+              AxiosResponse<CreateChatCompletionResponse, any>
+            >((resolve, reject) => {
+              try {
+                console.log(promptObjectResponse.prompt)
+                const chatResponse = this.model.createChatCompletion({
+                  model: this.modelName,
+                  temperature: this.temperature,
+                  top_p: this.top_p,
+                  messages: [
+                    {
+                      role: "system",
+                      content: promptObject.getSystemDescription(),
+                    },
+                    { role: "user", content: promptObjectResponse.prompt },
+                  ],
+                }) as Promise<AxiosResponse<CreateChatCompletionResponse, any>>;
+                resolve(chatResponse);
+              } catch (error: any) {
+                reject(error);
+              }
+            });
+          });
+        } catch (error: any) {
+          reject(error);
+          return;
+        }
+
         if (response.data.choices[0].message?.content) {
           // Extract the usage information from the response
           usageInfo.totalTokens += response.data.usage!.total_tokens;
@@ -117,5 +151,4 @@ class OpenAIModel {
     );
   }
 }
-
 export { OpenAIModel };

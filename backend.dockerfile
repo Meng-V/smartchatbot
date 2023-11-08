@@ -1,11 +1,11 @@
 # Dockerfile
-FROM node:18.16-alpine
+FROM node:current-alpine
 ENV TZ="America/New_York"
 WORKDIR /app
 
 # Install bash
-RUN apk add --no-cache bash
 RUN apk add --no-cache python3 py3-pip make alpine-sdk python3-dev
+RUN apk add --no-cache bash
 RUN python3 --version && pip3 --version
 # Copy package.json and package-lock.json first
 COPY package*.json ./
@@ -28,6 +28,6 @@ RUN chmod +x /app/wait-for
 RUN npx prisma generate
 # RUN npx prisma migrate reset 
 
-CMD /app/wait-for db:5432 -t 30 -- npx prisma migrate deploy --preview-feature && npm start
+CMD /app/wait-for db:5432 -t 30 -- npx prisma migrate dev --preview-feature && npm start
 
 # CMD npx prisma migrate dev && npm start

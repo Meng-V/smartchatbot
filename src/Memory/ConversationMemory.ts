@@ -5,6 +5,9 @@ import { TokenUsage } from "../Agent/IAgent";
 
 type Role = "AIAgent" | "Customer";
 
+/**
+ * ConversationMemory would store the information about the conversation. Too old message would be removed. Relevant message would be kept or converted to a conversation summary to save tokens.
+ */
 class ConversationMemory {
   private conversation: [Role | null, string][];
   //Maximum conversation line would be keep in the memory. Oldest conversation would be tossed if exceed maxContextWindow
@@ -17,7 +20,6 @@ class ConversationMemory {
   private conversationSummarizePrompt: ConversationSummarizePrompt | null =
     null;
 
-
   //This to prevent OpenAI API is called continuously to summarize the past conversation.
   private minimumTimeBetweenSummarizations: number = 1;
   private curBufferOffset: number;
@@ -26,7 +28,7 @@ class ConversationMemory {
   public messageNum: number = 0;
 
   /**
-   *
+   * Constructor
    * @param maxContextWindow Maximum conversation line would be keep in the memory. Oldest conversation would be tossed if exceed maxContextWindow
    * @param llmModel llmModel used for summarize the past conversation
    * @param conversationBufferSize Number of conversation line (most recent) that we would not summarize, allowing model to have the full context of most recent conversation
@@ -58,9 +60,14 @@ class ConversationMemory {
     this.curBufferOffset = this.minimumTimeBetweenSummarizations;
   }
 
-  addToConversation(role: Role, text: string) {
+  /**
+   * Add message to conversation.
+   * @param role role of the message sender
+   * @param message message
+   */
+  addToConversation(role: Role, message: string) {
     this.conversation.shift();
-    this.conversation.push([role, text]);
+    this.conversation.push([role, message]);
     this.curBufferOffset += 1;
     this.messageNum += 1;
   }
@@ -104,12 +111,9 @@ class ConversationMemory {
       }
 
       let conversationString = this.conversation
-        .slice(
-          start,
-          end+1
-        )
+        .slice(start, end + 1)
         .reduce((prevString, curLine) => {
-          if (!curLine[0])  return prevString;
+          if (!curLine[0]) return prevString;
           return prevString + `${curLine[0]}: ${curLine[1]}\n`;
         }, "");
       if (!summary) {
@@ -123,16 +127,14 @@ class ConversationMemory {
         reject("If summary = true, end index must be at the newest message.");
         return;
       }
-      
+
       const conversationToBeSummarized = (
         await this.getConversationAsString(
           start,
-          -this.conversationBufferSize-1,
+          -this.conversationBufferSize - 1,
           false
         )
       ).conversationString;
-      console.log(`Estimate length: ${conversationToBeSummarized.length}`);
-      console.log(`Estimate token: ${conversationToBeSummarized.length / 4}`);
       if (
         this.conversationTokenLimit &&
         conversationToBeSummarized.length / 4.0 >=
@@ -147,9 +149,15 @@ class ConversationMemory {
             conversationToBeSummarized
           );
 
-          const llmSummaryResponse = await this.llmModel.getModelResponse(
-            this.conversationSummarizePrompt
-          );
+          let llmSummaryResponse;
+          try {
+            llmSummaryResponse = await this.llmModel.getModelResponse(
+              this.conversationSummarizePrompt
+            );
+          } catch (error: any) {
+            reject(error);
+            return;
+          }
           this.curConversationSummary = llmSummaryResponse.response;
           //Update token usage
           tokenUsage.completionTokens +=
@@ -157,13 +165,17 @@ class ConversationMemory {
           tokenUsage.promptTokens += llmSummaryResponse.usage.promptTokens;
           tokenUsage.totalTokens += llmSummaryResponse.usage.totalTokens;
 
-          let conversationBuffer = await this.getConversationAsString(
-            this.conversation.length -
-              this.conversationBufferSize +
-              start,
-            -1,
-            false
-          );
+          let conversationBuffer;
+          try {
+            conversationBuffer = await this.getConversationAsString(
+              this.conversation.length - this.conversationBufferSize + start,
+              -1,
+              false
+            );
+          } catch (error: any) {
+            reject(error);
+            return;
+          }
 
           resolve({
             conversationString: `${this.curConversationSummary}\n${conversationBuffer.conversationString}`,
@@ -173,13 +185,19 @@ class ConversationMemory {
         }
 
         //Use the past summarization
-        let conversationBuffer = await this.getConversationAsString(
-          this.conversation.length -
-            this.conversationBufferSize -
-            this.curBufferOffset -
-            start,
-          -1
-        );
+        let conversationBuffer;
+        try {
+          conversationBuffer = await this.getConversationAsString(
+            this.conversation.length -
+              this.conversationBufferSize -
+              this.curBufferOffset -
+              start,
+            -1
+          );
+        } catch (error: any) {
+          reject(error);
+          return;
+        }
 
         resolve({
           conversationString: `${this.curConversationSummary}\n${conversationBuffer.conversationString}`,

@@ -28,6 +28,9 @@ type AgentResponse = {
   tokenUsage: TokenUsage;
 };
 
+/**
+ * Interface for Agent
+ */
 interface IAgent {
   name: string;
   llmModel: OpenAIModel;
