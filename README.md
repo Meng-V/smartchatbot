@@ -50,6 +50,3 @@ To start the server, simply run:
 ```
 #### Features
 [Google Docs](https://docs.google.com/document/d/17Af0IU_I-qEDjC10JIlbL2NL9pvP6YVyVbcXHDNmgFE/edit?usp=sharing)
-
-## Team Notes
-+ Merge working branches in every Tue and Thu 1:00pm.
