@@ -13,7 +13,8 @@ services:
     environment:
       - REACT_APP_BACKEND_PORT=3602
       - PORT=3601
-      - REACT_APP_BACKEND_URL=http://ulblwebt03.lib.miamioh.edu
+      #- REACT_APP_BACKEND_URL=http://ulblwebt03.lib.miamioh.edu
+      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
     restart: unless-stopped
   backend:
     build: 
@@ -31,10 +32,12 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:12
-    restart: unless-stopped
+    image: postgres:16
+    restart: always
     env_file:
       - .env
+    ports:
+      - '${POSTGRES_PORT}:${POSTGRES_PORT}'
     volumes:
       - postgres_data:/var/lib/postgresql/data/
 
