@@ -31,8 +31,13 @@ services:
     restart: unless-stopped
 
   db:
+<<<<<<< Updated upstream
     image: postgres:12
     restart: unless-stopped
+=======
+    image: postgres:16
+    restart: always
+>>>>>>> Stashed changes
     env_file:
       - .env
     volumes:
