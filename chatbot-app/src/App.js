@@ -22,6 +22,9 @@ import { ArrowBackIcon, ChatIcon } from "@chakra-ui/icons";
 import "./App.css";
 import MessageComponents from "./components/ParseLinks";
 import RealLibrarianWidget from "./components/RealLibrarianWidget";
+
+import { useToast } from "@chakra-ui/react";
+
 const App = () => {
   const chatRef = useRef();
   const [messages, setMessages] = useState([]);
@@ -36,6 +39,9 @@ const App = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [welcomeMessageShown, setWelcomeMessageShown] = useState(false);
   const socketRef = useRef();
+  const toast = useToast();
+  const [attemptedConnection, setAttemptedConnection] = useState(false); // To track if the connection has been attempted
+
 
   useEffect(() => {
     const storedMessages =
@@ -47,6 +53,7 @@ const App = () => {
   
     socketIo.on("connect", () => {
       setIsConnected(true);
+      setAttemptedConnection(true);
       if (!welcomeMessageShown) {
         const welcomeMessage = {
           text: "Hi this is the Library Smart Chatbot. How may I help you?",
@@ -68,6 +75,18 @@ const App = () => {
 
     socketIo.on("disconnect", function () {
       setIsConnected(false);
+      setAttemptedConnection(true);
+    });
+
+    socketIo.on("connect_error", (error) => {
+      console.error("Connection Error:", error);
+      setIsConnected(false);
+      setAttemptedConnection(true);
+    });
+    
+    socketIo.on("connect_timeout", (timeout) => {
+      console.error("Connection Timeout:", timeout);
+      setIsConnected(false);
     });
 
     socketRef.current = socketIo;
@@ -75,6 +94,8 @@ const App = () => {
     return () => {
       socketIo.off("message");
       socketIo.off("disconnect");
+      socketIo.off("connect_error");
+      socketIo.off("connect_timeout");
     };
   }, [welcomeMessageShown, setMessages]);
 
@@ -94,6 +115,21 @@ const App = () => {
       return updatedMessages;
     });
   };
+  
+  useEffect(() => {
+    // Only show the toast if the connection has been attempted and the connection is not established
+    if (!isConnected && attemptedConnection) {
+      // Display the toast
+      toast({
+        title: "Connection Error",
+        description: "The backend service is currently not available. Please try again later.",
+        status: "error",
+        duration: 9000,
+        isClosable: true,
+        position: "bottom-left",
+      });
+    }
+  }, [isConnected, attemptedConnection, toast]);
   
   
 
@@ -132,6 +168,10 @@ const App = () => {
     // do any additional setup for this step
   };
 
+  /**
+   * Function to handle the ticket submission
+   * @param {*} e 
+   */
   const handleTicketSubmit = (e) => {
     e.preventDefault();
     if (socketRef.current) {
@@ -152,6 +192,11 @@ const App = () => {
     }
   };
 
+  /****************************************************************************************/
+  /****************************************************************************************/
+  /**************************** RETURN INTERFACE FROM HERE ********************************/
+  /****************************************************************************************/
+  /****************************************************************************************/
   return (
     <>
       <IconButton
