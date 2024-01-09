@@ -122,7 +122,7 @@ const App = () => {
       // Display the toast
       toast({
         title: "Connection Error",
-        description: "The backend service is currently not available. Please try again later.",
+        description: "The Smart Chatbot is currently not available. Please talk to a human librarian or create a ticket for further help.",
         status: "error",
         duration: 9000,
         isClosable: true,
