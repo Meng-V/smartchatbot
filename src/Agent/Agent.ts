@@ -60,8 +60,9 @@ class Agent implements IAgent {
         let promptTokens: number = 0;
         let totalTokens: number = 0;
 
-        
+        // Empty the scratchpad for a new conversation
         this.basePrompt.emptyScratchpad();
+        // Get the response from the LLM OpenAIModel
         let llmResponseObj = await this.llmModel.getModelResponse(
           this.basePrompt,
         );
@@ -71,11 +72,11 @@ class Agent implements IAgent {
         promptTokens += llmResponseObj.usage.promptTokens;
         completionTokens += llmResponseObj.usage.completionTokens;
 
-        console.log(llmResponse)
+        console.log("Here is the LLM response:", llmResponse);
         let outputParsed = this.parseLLMOutput(llmResponse);
         let llmCallNum = 1;
 
-        //Handle cases when model doesn't output either actions and final answer
+        // Handle cases when model doesn't output either actions and final answer
         while (outputParsed.outputType !== "final") {
           if (llmCallNum > this.LLMCallLimit) {
             reject("Too many LMM Call. Possible inifinity loop");
