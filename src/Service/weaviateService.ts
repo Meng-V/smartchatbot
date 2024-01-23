@@ -6,6 +6,7 @@ dotenv.config();
 class WeaviateService {
   private static instance: WeaviateService;
   private client: WeaviateClient;
+  // Conversation Class object for weaviate with 2 properties: userInput and agentResponse using text2vec-openai vectorizer
   private classObj = {
     class: "Conversation",
     vectorizer: "text2vec-openai",
@@ -75,7 +76,13 @@ class WeaviateService {
     return { satisfactory, answer };
   }
 
+  /**
+   * Function to save the conversation to weaviate
+   * @param userInput - User input
+   * @param agentResponse - Chatbot response
+   */
   public async saveToWeaviate(userInput: string, agentResponse: string) {
+    // Create a new data object in conversation class
     const result = await this.client.data
       .creator()
       .withClassName("Conversation")
