@@ -387,7 +387,7 @@ const App = () => {
                       <Box
                         maxW="350px"
                         px={5}
-                        py={3}
+                        py={1}
                         rounded="md"
                         bg={"gray.200"}
                         alignSelf={"flex-start"}
@@ -457,7 +457,7 @@ const App = () => {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </FormControl>
-                <Button type="submit">Submit</Button>
+                <Button type="submit" mt={2}>Submit</Button>
               </form>
             )}
           </ModalBody>

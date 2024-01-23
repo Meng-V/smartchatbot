@@ -24,7 +24,7 @@ const UserInfoForm = ({ onFormSubmit }) => {
           onChange={(e) => setName(e.target.value)}
         />
       </FormControl>
-      <FormControl>
+      <FormControl mt={2}>
         <FormLabel>Email</FormLabel>
         <Input
           placeholder="Enter your email..."
@@ -32,7 +32,7 @@ const UserInfoForm = ({ onFormSubmit }) => {
           onChange={(e) => setEmail(e.target.value)}
         />
       </FormControl>
-      <Button type="submit">Submit</Button>
+      <Button type="submit" mt={2}>Submit</Button>
     </form>
     );
   };
