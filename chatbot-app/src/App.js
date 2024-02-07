@@ -143,8 +143,6 @@ const App = () => {
    * @param {*} sender 
    */
   const addMessage = (message, sender) => {
-    console.log("Received message:", message); // To understand the structure of the received message
-    console.log("Current messages:", messages); // To analyze the current messages array
     const messageText = typeof message === "object" && message.response ? message.response.join("\n") : message;
     // Add the new message
     setMessages(prevMessages => {
@@ -199,23 +197,6 @@ const App = () => {
     setStep("initial");
     setWelcomeMessageShown(false);
     onClose();
-  };
-
-  const handleServicesClick = () => {
-    setStep("services");
-    // do any additional setup for this step
-  };
-
-  const handleLibrarianClick = () => {
-    window.open(
-      " https://www.lib.miamioh.edu/research/research-support/ask/",
-      "_blank",
-    );
-  };
-
-  const handleTicketClick = () => {
-    setStep("ticket");
-    // do any additional setup for this step
   };
 
   /**
