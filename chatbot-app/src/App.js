@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import io from "socket.io-client";  // Socket client to communicate with the backend
+import io from "socket.io-client"; // Socket client to communicate with the backend
 import {
   HStack,
   Input,
@@ -17,13 +17,14 @@ import {
   IconButton,
   FormControl,
   FormLabel,
-} from "@chakra-ui/react";  // Chakra UI components
+} from "@chakra-ui/react"; // Chakra UI components
 import { ArrowBackIcon, ChatIcon } from "@chakra-ui/icons";
-import MessageComponents from "./components/ParseLinks";  // Component to parse links in the chat messages
+import MessageComponents from "./components/ParseLinks"; // Component to parse links in the chat messages
 import RealLibrarianWidget from "./components/RealLibrarianWidget"; // Component to display the real librarian widget
 import { useToast } from "@chakra-ui/react"; // Component to display the toast message
 // Styles
 import "./App.css";
+import { getEnvVariable } from "./services/GetEnvVariable";
 
 /**
  * Main App component
@@ -57,7 +58,6 @@ const App = () => {
   // To track if the connection has been attempted
   const [attemptedConnection, setAttemptedConnection] = useState(false);
 
-
   /**
    * Hook to connect to the socket and listen for messages
    */
@@ -66,12 +66,14 @@ const App = () => {
     const storedMessages =
       JSON.parse(sessionStorage.getItem("chat_messages")) || [];
     setMessages(storedMessages);
-  
+
     // Set up URL from environment variables
-    const url = `${process.env.REACT_APP_BACKEND_URL}:${process.env.REACT_APP_BACKEND_PORT}`;
+    const url = `${getEnvVariable("REACT_APP_BACKEND_URL")}:${getEnvVariable(
+      "REACT_APP_BACKEND_PORT"
+    )}`;
     // Connect to the socket server with option to use websocket and disable upgrade
     const socketIo = io(url, { transports: ["websocket"], upgrade: false });
-  
+
     socketIo.on("connect", () => {
       setIsConnected(true); // Update the state to indicate that the connection is established
       setAttemptedConnection(true); // Update the state to indicate that the connection has been attempted
@@ -84,7 +86,10 @@ const App = () => {
         setMessages((prevMessages) => {
           const updatedMessages = [...prevMessages, welcomeMessage];
           // Store the messages in the session storage
-          sessionStorage.setItem("chat_messages", JSON.stringify(updatedMessages));
+          sessionStorage.setItem(
+            "chat_messages",
+            JSON.stringify(updatedMessages)
+          );
           return updatedMessages;
         });
         setWelcomeMessageShown(true); // Update the state to ensure the welcome message is shown only once
@@ -108,7 +113,7 @@ const App = () => {
       setIsConnected(false);
       setAttemptedConnection(true);
     });
-    
+
     socketIo.on("connect_timeout", (timeout) => {
       console.error("Connection Timeout:", timeout);
       setIsConnected(false);
@@ -126,7 +131,6 @@ const App = () => {
     };
   }, [welcomeMessageShown, setMessages]);
 
-
   /**
    * Hook to scroll to the bottom of the chat window
    */
@@ -136,22 +140,23 @@ const App = () => {
     }
   }, [messages]);
 
-
   /**
    * Function to add the message to the messages array
-   * @param {*} message 
-   * @param {*} sender 
+   * @param {*} message
+   * @param {*} sender
    */
   const addMessage = (message, sender) => {
-    const messageText = typeof message === "object" && message.response ? message.response.join("\n") : message;
+    const messageText =
+      typeof message === "object" && message.response
+        ? message.response.join("\n")
+        : message;
     // Add the new message
-    setMessages(prevMessages => {
+    setMessages((prevMessages) => {
       const updatedMessages = [...prevMessages, { text: messageText, sender }];
       sessionStorage.setItem("chat_messages", JSON.stringify(updatedMessages));
       return updatedMessages;
     });
   };
-
 
   /**
    * Hook to display the toast message when the connection is not established
@@ -162,7 +167,8 @@ const App = () => {
       // Display the toast
       toast({
         title: "Connection Error",
-        description: "The Smart Chatbot is currently not available. Please talk to a human librarian or create a ticket for further help.",
+        description:
+          "The Smart Chatbot is currently not available. Please talk to a human librarian or create a ticket for further help.",
         status: "error",
         duration: 9000,
         isClosable: true,
@@ -170,7 +176,6 @@ const App = () => {
       });
     }
   }, [isConnected, attemptedConnection, toast]);
-
 
   /**
    * Function to handle the user message submission
@@ -180,15 +185,14 @@ const App = () => {
     e.preventDefault();
     if (inputMessage && socketRef.current) {
       addMessage(inputMessage, "user");
-      setInputMessage("");  // Clear the input message
-      setIsTyping(true);  // Chatbot is typing
+      setInputMessage(""); // Clear the input message
+      setIsTyping(true); // Chatbot is typing
       // Send the message to the server
       socketRef.current.emit("message", inputMessage, (response) => {
         console.log(response);
       });
     }
   };
-
 
   /**
    * Function to handle the modal close
@@ -201,7 +205,7 @@ const App = () => {
 
   /**
    * Function to handle the ticket submission
-   * @param {*} e 
+   * @param {*} e
    */
   const handleTicketSubmit = (e) => {
     e.preventDefault();
@@ -244,7 +248,7 @@ const App = () => {
 
       {/* Modal starts here. If icon above is clicked */}
       <Modal isOpen={isOpen} onClose={handleClose}>
-        <ModalOverlay />  {/* Overlay to dim the background */}
+        <ModalOverlay /> {/* Overlay to dim the background */}
         <ModalContent
           maxW="350px"
           position="fixed"
@@ -319,12 +323,15 @@ const App = () => {
                       >
                         <Text color={"black"}>Connecting to the chatbot</Text>
                       </Box>
-                    )}  
+                    )}
                     {/* Display the messages */}
                     {messages.map((message, index) => {
                       // console.log("Message Sender:", message.sender); // Log the sender
                       // console.log("Message Text:", message.text); // Log the text
-                      const adjustedMessage = typeof message.text === "object" ? message.text.response.join("") : message.text;
+                      const adjustedMessage =
+                        typeof message.text === "object"
+                          ? message.text.response.join("")
+                          : message.text;
                       return (
                         <Box
                           key={index}
@@ -351,9 +358,7 @@ const App = () => {
                           >
                             {typeof message.text === "object" ? (
                               <div className="half-line-height">
-                                <MessageComponents
-                                  msg={adjustedMessage}
-                                />
+                                <MessageComponents msg={adjustedMessage} />
                               </div>
                             ) : (
                               <MessageComponents msg={adjustedMessage} />
@@ -438,7 +443,9 @@ const App = () => {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </FormControl>
-                <Button type="submit" mt={2}>Submit</Button>
+                <Button type="submit" mt={2}>
+                  Submit
+                </Button>
               </form>
             )}
           </ModalBody>
