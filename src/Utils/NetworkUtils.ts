@@ -16,6 +16,7 @@ async function retryWithMaxAttempts<T>(
     let retries = 0;
     let response;
     let error: any;
+    // Retry until the function succeeds or the maximum number of attempts is reached
     while (!response && retries < maxAttemps) {
       try {
         response = await axiosFunc();
@@ -24,6 +25,9 @@ async function retryWithMaxAttempts<T>(
       }
       retries++;
     }
+
+    // If the function succeeded, resolve with the result
+    // Otherwise, reject with the error
     if (response) {
       resolve(response);
     } else {

@@ -145,6 +145,7 @@ class ModelPromptWithTools implements PromptTemplate {
   async getPrompt(): Promise<{ prompt: string; tokenUsage: TokenUsage }> {
     return new Promise<{ prompt: string; tokenUsage: TokenUsage }>(
       async (resolve, reject) => {
+        // Get the conversation summary string
         const conversationStringObject =
           await this.conversationMemory?.getConversationAsString(0, -1, true);
         const wholePrompt: string =

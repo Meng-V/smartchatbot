@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import io from "socket.io-client";
+import io from "socket.io-client";  // Socket client to communicate with the backend
 import {
   HStack,
   Input,
@@ -17,50 +17,73 @@ import {
   IconButton,
   FormControl,
   FormLabel,
-} from "@chakra-ui/react";
+} from "@chakra-ui/react";  // Chakra UI components
 import { ArrowBackIcon, ChatIcon } from "@chakra-ui/icons";
+import MessageComponents from "./components/ParseLinks";  // Component to parse links in the chat messages
+import RealLibrarianWidget from "./components/RealLibrarianWidget"; // Component to display the real librarian widget
+import { useToast } from "@chakra-ui/react"; // Component to display the toast message
+// Styles
 import "./App.css";
-import MessageComponents from "./components/ParseLinks";
-import RealLibrarianWidget from "./components/RealLibrarianWidget";
 
-import { useToast } from "@chakra-ui/react";
-
+/**
+ * Main App component
+ */
 const App = () => {
+  // To scroll to the bottom of the chat window
   const chatRef = useRef();
+  // To store the messages on both user and chatbot sides
   const [messages, setMessages] = useState([]);
+  // To control the modal
   const { isOpen, onOpen, onClose } = useDisclosure();
+  // To store the input message
   const [inputMessage, setInputMessage] = useState("");
+  // To store the current step
   const [step, setStep] = useState("initial");
+  // To store the ticket details
   const [question, setQuestion] = useState("");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [details, setDetails] = useState("");
+  // To track the connection status
   const [isConnected, setIsConnected] = useState(false);
+  // To track if the chatbot is typing
   const [isTyping, setIsTyping] = useState(false);
+  // To track if the welcome message has been shown
   const [welcomeMessageShown, setWelcomeMessageShown] = useState(false);
+  // To store the socket reference
   const socketRef = useRef();
+  // To display the toast
   const toast = useToast();
-  const [attemptedConnection, setAttemptedConnection] = useState(false); // To track if the connection has been attempted
+  // To track if the connection has been attempted
+  const [attemptedConnection, setAttemptedConnection] = useState(false);
 
 
+  /**
+   * Hook to connect to the socket and listen for messages
+   */
   useEffect(() => {
+    // Will return empty array if there are no messages in the session storage
     const storedMessages =
       JSON.parse(sessionStorage.getItem("chat_messages")) || [];
     setMessages(storedMessages);
   
+    // Set up URL from environment variables
     const url = `${process.env.REACT_APP_BACKEND_URL}:${process.env.REACT_APP_BACKEND_PORT}`;
+    // Connect to the socket server with option to use websocket and disable upgrade
     const socketIo = io(url, { transports: ["websocket"], upgrade: false });
   
     socketIo.on("connect", () => {
-      setIsConnected(true);
-      setAttemptedConnection(true);
+      setIsConnected(true); // Update the state to indicate that the connection is established
+      setAttemptedConnection(true); // Update the state to indicate that the connection has been attempted
       if (!welcomeMessageShown) {
+        // Send the welcome message only once per session
         const welcomeMessage = {
           text: "Hi this is the Library Smart Chatbot. How may I help you?",
           sender: "chatbot",
         };
         setMessages((prevMessages) => {
           const updatedMessages = [...prevMessages, welcomeMessage];
+          // Store the messages in the session storage
           sessionStorage.setItem("chat_messages", JSON.stringify(updatedMessages));
           return updatedMessages;
         });
@@ -68,6 +91,8 @@ const App = () => {
       }
       setIsTyping(false);
     });
+
+    // Listen from the server
     socketIo.on("message", function (message) {
       setIsTyping(false);
       addMessage(message, "chatbot");
@@ -87,8 +112,10 @@ const App = () => {
     socketIo.on("connect_timeout", (timeout) => {
       console.error("Connection Timeout:", timeout);
       setIsConnected(false);
+      setAttemptedConnection(true);
     });
 
+    // Refer the current socket client to WebSocket connection
     socketRef.current = socketIo;
 
     return () => {
@@ -99,23 +126,38 @@ const App = () => {
     };
   }, [welcomeMessageShown, setMessages]);
 
+
+  /**
+   * Hook to scroll to the bottom of the chat window
+   */
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [messages]);
 
+
+  /**
+   * Function to add the message to the messages array
+   * @param {*} message 
+   * @param {*} sender 
+   */
   const addMessage = (message, sender) => {
     console.log("Received message:", message); // To understand the structure of the received message
     console.log("Current messages:", messages); // To analyze the current messages array
     const messageText = typeof message === "object" && message.response ? message.response.join("\n") : message;
+    // Add the new message
     setMessages(prevMessages => {
       const updatedMessages = [...prevMessages, { text: messageText, sender }];
       sessionStorage.setItem("chat_messages", JSON.stringify(updatedMessages));
       return updatedMessages;
     });
   };
-  
+
+
+  /**
+   * Hook to display the toast message when the connection is not established
+   */
   useEffect(() => {
     // Only show the toast if the connection has been attempted and the connection is not established
     if (!isConnected && attemptedConnection) {
@@ -130,21 +172,29 @@ const App = () => {
       });
     }
   }, [isConnected, attemptedConnection, toast]);
-  
-  
 
+
+  /**
+   * Function to handle the user message submission
+   * @param {*} e event
+   */
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (inputMessage && socketRef.current) {
       addMessage(inputMessage, "user");
-      setInputMessage("");
-      setIsTyping(true);
+      setInputMessage("");  // Clear the input message
+      setIsTyping(true);  // Chatbot is typing
+      // Send the message to the server
       socketRef.current.emit("message", inputMessage, (response) => {
         console.log(response);
       });
     }
   };
 
+
+  /**
+   * Function to handle the modal close
+   */
   const handleClose = () => {
     setStep("initial");
     setWelcomeMessageShown(false);
@@ -199,6 +249,7 @@ const App = () => {
   /****************************************************************************************/
   return (
     <>
+      {/* Chat icon starts here */}
       <IconButton
         boxSize={6}
         onClick={onOpen}
@@ -210,8 +261,9 @@ const App = () => {
         height={30}
       />
 
+      {/* Modal starts here. If icon above is clicked */}
       <Modal isOpen={isOpen} onClose={handleClose}>
-        <ModalOverlay />
+        <ModalOverlay />  {/* Overlay to dim the background */}
         <ModalContent
           maxW="350px"
           position="fixed"
@@ -234,6 +286,8 @@ const App = () => {
             Smart Chatbot
           </ModalHeader>
           <ModalCloseButton />
+
+          {/* Modal body starts here */}
           {step !== "initial" && (
             <Button
               leftIcon={<ArrowBackIcon />}
@@ -247,6 +301,8 @@ const App = () => {
               Back
             </Button>
           )}
+
+          {/* 3 options */}
           <ModalBody py={5}>
             {step === "initial" && (
               <VStack>
@@ -262,10 +318,15 @@ const App = () => {
               </VStack>
             )}
 
+            {/* Option #1: Chatbot */}
             {step === "services" && (
               <>
+                {/* Chat window */}
                 <Box ref={chatRef} className="chat">
                   <VStack align="start" spacing={4}>
+                    {/* Display the connecting message and grey out the chat window
+                        if the connection is not established
+                      */}
                     {!isConnected && (
                       <Box
                         maxW="350px"
@@ -277,7 +338,8 @@ const App = () => {
                       >
                         <Text color={"black"}>Connecting to the chatbot</Text>
                       </Box>
-                    )}
+                    )}  
+                    {/* Display the messages */}
                     {messages.map((message, index) => {
                       // console.log("Message Sender:", message.sender); // Log the sender
                       // console.log("Message Text:", message.text); // Log the text
@@ -320,11 +382,12 @@ const App = () => {
                       );
                     })}
 
+                    {/* Display the chatbot is typing message */}
                     {isTyping && (
                       <Box
                         maxW="350px"
                         px={5}
-                        py={3}
+                        py={1}
                         rounded="md"
                         bg={"gray.200"}
                         alignSelf={"flex-start"}
@@ -356,8 +419,10 @@ const App = () => {
               </>
             )}
 
+            {/* Option #2: Real Librarian */}
             {step === "realLibrarian" && <RealLibrarianWidget />}
 
+            {/* Option #3: Ticket */}
             {step === "ticket" && (
               <form onSubmit={handleTicketSubmit}>
                 <FormControl>
@@ -392,7 +457,7 @@ const App = () => {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </FormControl>
-                <Button type="submit">Submit</Button>
+                <Button type="submit" mt={2}>Submit</Button>
               </form>
             )}
           </ModalBody>

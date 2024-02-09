@@ -10,21 +10,21 @@ type Role = "AIAgent" | "Customer";
  */
 class ConversationMemory {
   private conversation: [Role | null, string][];
-  //Maximum conversation line would be keep in the memory. Oldest conversation would be tossed if exceed maxContextWindow
+  // Maximum conversation line would be keep in the memory. Oldest conversation would be tossed if exceed maxContextWindow
   private maxContextWindow: number | null;
-  //Number of conversation line (most recent) that we would not summarize, allowing model to have the full context of most recent conversation
+  // Number of conversation line (most recent) that we would not summarize, allowing model to have the full context of most recent conversation
   private conversationBufferSize: number;
-  //Token Limit spent for conversation memory
+  // Token Limit spent for conversation memory
   private conversationTokenLimit: number | null = null;
   private llmModel: OpenAIModel | null = null;
   private conversationSummarizePrompt: ConversationSummarizePrompt | null =
     null;
 
-  //This to prevent OpenAI API is called continuously to summarize the past conversation.
+  // This to prevent OpenAI API is called continuously to summarize the past conversation.
   private minimumTimeBetweenSummarizations: number = 1;
   private curBufferOffset: number;
   private curConversationSummary: string = "";
-
+  // Number of message in the conversation
   public messageNum: number = 0;
 
   /**
@@ -46,9 +46,11 @@ class ConversationMemory {
 
     this.maxContextWindow = maxContextWindow;
 
+    //Initialize the conversation memory with empty string
     this.conversation = Array(
       this.maxContextWindow ? this.maxContextWindow : 10
     ).fill([null, ""]);
+
     if (conversationTokenLimit) {
       this.conversationTokenLimit = conversationTokenLimit;
       this.llmModel = llmModel;
@@ -66,10 +68,10 @@ class ConversationMemory {
    * @param message message
    */
   addToConversation(role: Role, message: string) {
-    this.conversation.shift();
-    this.conversation.push([role, message]);
-    this.curBufferOffset += 1;
-    this.messageNum += 1;
+    this.conversation.shift();  // Remove the oldest message
+    this.conversation.push([role, message]);  // Add the new message to the end of the conversation
+    this.curBufferOffset += 1;  // Update the buffer offset
+    this.messageNum += 1; // Update the number of message in the conversation
   }
 
   /**
@@ -100,6 +102,7 @@ class ConversationMemory {
         completionTokens: 0,
       };
 
+      // Check if start and end are still in bound
       if (
         start < -this.conversation.length ||
         start >= this.conversation.length ||
@@ -110,12 +113,17 @@ class ConversationMemory {
         return;
       }
 
+      
+      // Extract the conversation a portion of the conversation array
       let conversationString = this.conversation
-        .slice(start, end + 1)
+        .slice(start, end + 1)  // Include end index in the extracted portion
         .reduce((prevString, curLine) => {
-          if (!curLine[0]) return prevString;
+          if (!curLine[0]) return prevString; // If the role is null, it is not a valid conversation line
           return prevString + `${curLine[0]}: ${curLine[1]}\n`;
         }, "");
+
+      // If summary is true, summarize the conversation
+      // Otherwise, return the conversation as is
       if (!summary) {
         resolve({
           conversationString: conversationString,
@@ -159,7 +167,7 @@ class ConversationMemory {
             return;
           }
           this.curConversationSummary = llmSummaryResponse.response;
-          //Update token usage
+          // Update token usage
           tokenUsage.completionTokens +=
             llmSummaryResponse.usage.completionTokens;
           tokenUsage.promptTokens += llmSummaryResponse.usage.promptTokens;
@@ -184,7 +192,7 @@ class ConversationMemory {
           return;
         }
 
-        //Use the past summarization
+        // Use the past summarization
         let conversationBuffer;
         try {
           conversationBuffer = await this.getConversationAsString(
