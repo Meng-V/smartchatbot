@@ -3,7 +3,7 @@ import { Tool, ToolInput } from "./ToolTemplates";
 import prisma from "../../prisma/prisma";
 import { exists } from "fp-ts/lib/Option";
 import { Prisma } from "@prisma/client";
-import * as synonymJSON from '../../synonyms.json';
+import * as synonymJSON from "../../synonyms.json";
 
 type SubjectLibrarianMap = {
   [subject: string]: { name: string; email: string }[];
@@ -25,7 +25,7 @@ class LibrarianSubjectSearchTool implements Tool {
     subjectName: "string[REQUIRED]",
   };
 
-  private synonymMapping: Map<string, string> = new Map<string, string>;
+  private synonymMapping: Map<string, string> = new Map<string, string>();
 
   protected readonly OAUTH_URL = process.env["LIBAPPS_OAUTH_URL"]!;
   protected readonly CLIENT_ID = process.env["LIBAPPS_CLIENT_ID"]!;
@@ -62,51 +62,62 @@ class LibrarianSubjectSearchTool implements Tool {
 
     return LibrarianSubjectSearchTool.instance;
   }
-  
+
   private initializeChoices() {
     for (let choice in synonymsData) {
-      if (Array.isArray(synonymsData[choice]) && synonymsData[choice].length > 0) {
+      if (
+        Array.isArray(synonymsData[choice]) &&
+        synonymsData[choice].length > 0
+      ) {
         synonymsData[choice].forEach((synonym: string) => {
-          this.synonymMapping.set(synonym.toLowerCase().trim(), choice.toLowerCase().trim());
+          this.synonymMapping.set(
+            synonym.toLowerCase().trim(),
+            choice.toLowerCase().trim()
+          );
         });
       }
     }
   }
-  
 
   private levenshteinDistance(text1: string, text2: string): number {
     text1 = text1.trim().toLowerCase();
     text2 = text2.trim().toLowerCase();
-  
+
     const m = text1.length;
     const n = text2.length;
-  
-    let dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
-  
+
+    let dp: number[][] = Array.from({ length: n + 1 }, () =>
+      new Array(m + 1).fill(0)
+    );
+
     for (let i = 0; i <= m; i++) {
       dp[0][i] = i;
     }
     for (let i = 0; i <= n; i++) {
       dp[i][0] = i;
     }
-  
+
     for (let i = 1; i <= n; i++) {
       for (let j = 1; j <= m; j++) {
         if (text1[j - 1] === text2[i - 1]) {
           dp[i][j] = dp[i - 1][j - 1];
         } else {
           dp[i][j] = Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]) + 1;
-  
-          if (i > 1 && j > 1 && text1[j - 1] === text2[i - 2] && text1[j - 2] === text2[i - 1]) {
+
+          if (
+            i > 1 &&
+            j > 1 &&
+            text1[j - 1] === text2[i - 2] &&
+            text1[j - 2] === text2[i - 1]
+          ) {
             dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1);
           }
         }
       }
     }
-  
+
     return dp[n][m];
   }
-  
 
   private fuzzybestMatch(
     query: string,
@@ -118,9 +129,9 @@ class LibrarianSubjectSearchTool implements Tool {
     query = query.toLowerCase().trim();
     // Check for exact matches first
     if (this.synonymMapping.has(query)) {
-      return [[1, this.synonymMapping.get(query)!]]
+      return [[1, this.synonymMapping.get(query)!]];
     }
-  
+
     // Fallback to fuzzy matching using Levenshtein distance
     for (let choice of choices) {
       const matchScore = Math.max(
@@ -129,19 +140,21 @@ class LibrarianSubjectSearchTool implements Tool {
             Math.max(query.length, choice.length),
         this.synonymMapping.has(choice)
           ? 1 -
-              this.levenshteinDistance(query, this.synonymMapping.get(choice)!.toLocaleLowerCase().trim()) /
+              this.levenshteinDistance(
+                query,
+                this.synonymMapping.get(choice)!.toLocaleLowerCase().trim()
+              ) /
                 Math.max(query.length, this.synonymMapping.get(choice)!.length)
-          : 0,
+          : 0
       );
       if (matchScore < threshold) continue;
       result.push([matchScore, choice]);
       result.sort((a, b) => b[0] - a[0]);
       if (result.length > numberOfResult) result.pop();
     }
-  
+
     return result;
   }
-  
 
   private async fetchLibrarianSubjectData(): Promise<any[]> {
     return new Promise<any[]>(async (resolve, reject) => {
@@ -161,26 +174,10 @@ class LibrarianSubjectSearchTool implements Tool {
         resolve(response.data);
       } catch (error) {
         console.error(error);
-        reject(
-          ["Sorry, there was an error fetching the librarian data. Please try again."]
-        );
+        reject([
+          "Sorry, there was an error fetching the librarian data. Please try again.",
+        ]);
       }
-
-      // const subjectToLibrarian: Map<string, { [key: string]: string }[]> =
-      //   new Map();
-      // for (let librarian of response.data) {
-      //   const name = `${librarian.first_name} ${librarian.last_name}`;
-      //   librarian.subjects.forEach(
-      //     (subject: { id: string; name: string; slug_id: string }) => {
-      //       if (!subjectToLibrarian.has(subject.name))
-      //         subjectToLibrarian.set(subject.name, []);
-      //       subjectToLibrarian.set(subject.name, [
-      //         ...subjectToLibrarian.get(subject.name)!,
-      //         { name: name, email: librarian.email },
-      //       ]);
-      //     }
-      //   );
-      // }
     });
   }
 
@@ -190,7 +187,7 @@ class LibrarianSubjectSearchTool implements Tool {
    * @returns True if it performs update, False otherwise
    */
   private async updateLibrarianSubjectDatabase(
-    updateDuration: number,
+    updateDuration: number
   ): Promise<boolean> {
     return new Promise<boolean>(async (resolve, reject) => {
       try {
@@ -225,7 +222,7 @@ class LibrarianSubjectSearchTool implements Tool {
                           },
                           update: {},
                           create: { id: subject.id, name: subject.name },
-                        }),
+                        })
                       ),
                 },
               },
@@ -251,7 +248,7 @@ class LibrarianSubjectSearchTool implements Tool {
                               name: subject.name,
                             },
                           };
-                        },
+                        }
                       ),
                 },
               },
@@ -282,33 +279,35 @@ class LibrarianSubjectSearchTool implements Tool {
         if (nullFields.length > 0) {
           console.log(
             `Cannot search for librarian because missing parameter ${JSON.stringify(
-              nullFields,
+              nullFields
             )}. Ask the customer to provide ${JSON.stringify(
-              nullFields,
-            )} to search for librarian.`,
+              nullFields
+            )} to search for librarian.`
           );
           resolve(
             `Cannot search for librarian because missing parameter ${JSON.stringify(
-              nullFields,
+              nullFields
             )}. Ask the customer to provide ${JSON.stringify(
-              nullFields,
-            )} to search for librarian.`,
+              nullFields
+            )} to search for librarian.`
           );
           return;
         }
 
         const { subjectName } = toolInput;
         const response = await LibrarianSubjectSearchTool.run(
-          subjectName as string,
+          subjectName as string
         );
-  
+
         if ("error" in response) {
           resolve(`Error: ${response.error}`);
           return;
         }
-  
+
         resolve(
-          `These are the librarians that can help you with the requested subject: ${JSON.stringify(response)}`
+          `These are the librarians that can help you with the requested subject: ${JSON.stringify(
+            response
+          )}`
         );
       } catch (error) {
         console.error(error);
@@ -317,8 +316,8 @@ class LibrarianSubjectSearchTool implements Tool {
     });
   }
 
-  static async run(
-    querySubjectName: string,
+  public static async run(
+    querySubjectName: string
   ): Promise<SubjectLibrarianMap | { error: string }> {
     return new Promise<SubjectLibrarianMap | { error: string }>(
       async (resolve, reject) => {
@@ -328,16 +327,21 @@ class LibrarianSubjectSearchTool implements Tool {
 
           const subjects = await prisma.subject.findMany();
           const subjectNames = subjects.map((subject) => subject.name);
-          let mainSubjectName = instance.synonymMapping.get(querySubjectName.toLowerCase().trim());
+          let mainSubjectName = instance.synonymMapping.get(
+            querySubjectName.toLowerCase().trim()
+          );
           if (!mainSubjectName) {
-            mainSubjectName = querySubjectName; 
+            mainSubjectName = querySubjectName;
           }
-          const bestMatchSubject = instance.fuzzybestMatch(mainSubjectName, subjectNames, 2)
-                                  .map(match => match[1]); 
+          const bestMatchSubject = instance
+            .fuzzybestMatch(mainSubjectName, subjectNames, 2)
+            .map((match) => match[1]);
 
           const subjectsWithLibrarian = await prisma.subject.findMany({
             where: {
-              name: { in: bestMatchSubject.map((subjectData) => subjectData[1]) },
+              name: {
+                in: bestMatchSubject.map((subjectData) => subjectData[1]),
+              },
             },
             include: { assignedLibrarians: true },
           });
@@ -353,12 +357,12 @@ class LibrarianSubjectSearchTool implements Tool {
                         name: `${librarian.firstName} ${librarian.lastName}`,
                         email: librarian.email,
                       };
-                    },
+                    }
                   ),
                 },
               };
             },
-            {},
+            {}
           );
           // console.log(JSON.stringify(resultObject));
           if (Object.keys(resultObject).length === 0) {
@@ -370,12 +374,14 @@ class LibrarianSubjectSearchTool implements Tool {
           }
 
           resolve(resultObject);
-
         } catch (error) {
           console.error(error);
-          reject({ error: "Sorry, the requested subject has no match with our subject database. Please try another subject."})
+          reject({
+            error:
+              "Sorry, the requested subject has no match with our subject database. Please try another subject.",
+          });
         }
-      },
+      }
     );
   }
 }

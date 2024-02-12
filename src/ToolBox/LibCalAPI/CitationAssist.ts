@@ -23,12 +23,12 @@ type CitationReference = {
   Handbook?: string;
 };
 
-class CitationAssistTool extends LibCalAPIBaseTool {
+export default class CitationAssistTool extends LibCalAPIBaseTool {
   private static instance: CitationAssistTool;
 
   public readonly name: string = "CitationAssistTool";
   public readonly description: string =
-    "This tool is for assisting with citation instruction.";
+    "This tool is for providing resources for citation.Student can consider using CitationManager:Zotero,Mendeley,EndNote for ease.Read more:https://libguides.lib.miamioh.edu/CitationManagers";
 
   public readonly parameters: { [parameterName: string]: string } = {
     citationType: `string[REQUIRE][only choose among APA,MLA,Chicago,Turbian]`,

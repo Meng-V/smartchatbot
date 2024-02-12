@@ -20,6 +20,7 @@ import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
 import { SearchEngine } from "./ToolBox/SearchEngine";
 import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { LibrarianSubjectSearchTool } from "./ToolBox/LibrarianSubject";
+import CitationAssistTool from "./ToolBox/LibCalAPI/CitationAssist";
 
 import helmet from "helmet"; // Helmet for security
 import session from "express-session"; // Express session for socket.io
@@ -102,6 +103,7 @@ io.on("connection", async (socket) => {
   const checkOpenHourTool = CheckOpenHourTool.getInstance();
   const searchLibrarianWithSubjectTool =
     LibrarianSubjectSearchTool.getInstance();
+  const citationAssistTool = CitationAssistTool.getInstance();
 
   //------------------------------------------------------------------------------------------------------------------//
   //-------------------------------------------- Initialize the AI AGENTS --------------------------------------------//
@@ -119,7 +121,7 @@ io.on("connection", async (socket) => {
   const academicSupportAgent = new Agent(
     "AcademicSupportAgent",
     gpt4Model,
-    [ebscoBookSearchTool, searchLibrarianWithSubjectTool],
+    [ebscoBookSearchTool, searchLibrarianWithSubjectTool, citationAssistTool],
     memory
   );
 
