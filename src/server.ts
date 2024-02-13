@@ -40,8 +40,8 @@ const URL = `http://localhost:${PORT}`;
 
 // Create a new session middleware
 const sessionMiddleware = session({
-  secret: "changeit", // Change it to your own secret
-  resave: false, // Don't save session if unmodified
+  secret: `${process.env.CLIENT_SECRET}`, // Change it to your own secret
+  resave: false,  // Don't save session if unmodified
   saveUninitialized: false, // Don't create session until something stored
 });
 
