@@ -1,9 +1,9 @@
-import express from "express";  // Express server
-import { createServer } from "http";  // HTTP server
+import express from "express"; // Express server
+import { createServer } from "http"; // HTTP server
 import { Server } from "socket.io"; // Socket.io server
 import bodyParser from "body-parser"; // Body parser for Express to parse JSON body
 import * as fs from "fs"; // File system
-import prisma from "../prisma/prisma";  // Prisma ORM
+import prisma from "../prisma/prisma"; // Prisma ORM
 
 import { Agent } from "./Agent/Agent";
 import { CentralCoordinator } from "./Agent/CentralCoordinator";
@@ -20,18 +20,22 @@ import { CancelReservationTool } from "./ToolBox/LibCalAPI/CancelReservation";
 import { SearchEngine } from "./ToolBox/SearchEngine";
 import { EBSCOBookSearchTool } from "./ToolBox/EBSCO/EBSCOBookSearch";
 import { LibrarianSubjectSearchTool } from "./ToolBox/LibrarianSubject";
+import CitationAssistTool from "./ToolBox/LibCalAPI/CitationAssist";
 
-import helmet from "helmet";  // Helmet for security
-import session from "express-session";  // Express session for socket.io
+import helmet from "helmet"; // Helmet for security
+import session from "express-session"; // Express session for socket.io
 import * as dotenv from "dotenv"; // Dotenv for environment variables
-import axios from "axios";  // Axios for HTTP requests
-import qs from "qs";  // qs for query string parsing
+import axios from "axios"; // Axios for HTTP requests
+import qs from "qs"; // qs for query string parsing
 
 // Load environment variables
 dotenv.config();
 
 // Set up the server
 const PORT = process.env.BACKEND_PORT;
+if (PORT === undefined) {
+  console.error("Error: PORT is undefined in the .env file");
+}
 const URL = `http://localhost:${PORT}`;
 
 // Create a new session middleware
@@ -50,7 +54,7 @@ const io = new Server(httpServer, {
   },
 });
 
-app.use(express.static("public"));  // Serve the static files from the public folder
+app.use(express.static("public")); // Serve the static files from the public folder
 app.use(express.static(__dirname)); // Serve the static files from the root directory
 app.use(bodyParser.json());
 
@@ -69,10 +73,10 @@ app.use(
         "connect-src": ["'self'", "http://localhost:3000"],
       },
     },
-  }),
+  })
 );
 
-// Then, add session middleware to Socket server 
+// Then, add session middleware to Socket server
 io.engine.use(sessionMiddleware);
 
 // Read the classify example JSON file synchronously and parse it
@@ -99,6 +103,7 @@ io.on("connection", async (socket) => {
   const checkOpenHourTool = CheckOpenHourTool.getInstance();
   const searchLibrarianWithSubjectTool =
     LibrarianSubjectSearchTool.getInstance();
+  const citationAssistTool = CitationAssistTool.getInstance();
 
   //------------------------------------------------------------------------------------------------------------------//
   //-------------------------------------------- Initialize the AI AGENTS --------------------------------------------//
@@ -106,7 +111,7 @@ io.on("connection", async (socket) => {
 
   /**
    * The agent that handles academic support questions (e.g., book search, librarian search)
-   * 
+   *
    * @type {Agent}
    * @property {string} name The name of the agent
    * @property {OpenAIModel} model The OpenAI model used by the agent
@@ -116,13 +121,13 @@ io.on("connection", async (socket) => {
   const academicSupportAgent = new Agent(
     "AcademicSupportAgent",
     gpt4Model,
-    [ebscoBookSearchTool, searchLibrarianWithSubjectTool,],
+    [ebscoBookSearchTool, searchLibrarianWithSubjectTool, citationAssistTool],
     memory
   );
 
   /**
    * The agent that handles room reservation questions (e.g., check room availability, reserve room, cancel reservation)
-   * 
+   *
    * @type {Agent}
    * @property {string} name The name of the agent
    * @property {OpenAIModel} model The OpenAI model used by the agent
@@ -132,13 +137,13 @@ io.on("connection", async (socket) => {
   const roomReservationAgent = new Agent(
     "RoomReservationAgent",
     gpt4Model,
-    [reservationTool, cancelReservationTool, checkRoomAvailabilityTool,],
+    [reservationTool, cancelReservationTool, checkRoomAvailabilityTool],
     memory
   );
 
   /**
    * The agent that handles building information questions (e.g., check open hours)
-   * 
+   *
    * @type {Agent}
    * @property {string} name The name of the agent
    * @property {OpenAIModel} model The OpenAI model used by the agent
@@ -148,7 +153,7 @@ io.on("connection", async (socket) => {
   const buildingInformationAgent = new Agent(
     "BuildingInformationAgent",
     gpt4Model,
-    [checkOpenHourTool,],
+    [checkOpenHourTool],
     memory
   );
 
@@ -161,7 +166,7 @@ io.on("connection", async (socket) => {
 
   /**
    * The general purpose agent that handles general questions
-   * 
+   *
    * @type {Agent}
    * @property {string} name The name of the agent
    * @property {OpenAIModel} model The OpenAI model used by the agent
@@ -182,7 +187,7 @@ io.on("connection", async (socket) => {
     ],
     memory
   );
-  
+
   /**
    * Initialize the Central Coordinator to coordinate the agent
    * The default agent is the general purpose agent
@@ -195,12 +200,15 @@ io.on("connection", async (socket) => {
   const centralCoordinator = new CentralCoordinator(
     memory,
     generalPurposeAgent,
-    [academicSupportAgent, roomReservationAgent, buildingInformationAgent,
-    // googleSearchAgent,
+    [
+      academicSupportAgent,
+      roomReservationAgent,
+      buildingInformationAgent,
+      // googleSearchAgent,
     ],
-    0.91,
+    0.91
   );
-  
+
   for (let agentName of centralCoordinator.getAgentNameIterable()) {
     centralCoordinator.addAgent(agentName, classifyExample[agentName]);
   }
@@ -248,12 +256,11 @@ io.on("connection", async (socket) => {
         // 1. The response from the agent
         // 2. The token usage information
         agentResponse = await agent.agentRun(userMessage);
-        memory.addToConversation("AIAgent", agentResponse.response.join('\n'));
+        memory.addToConversation("AIAgent", agentResponse.response.join("\n"));
       } catch (error: any) {
         console.error(error);
         return;
       }
-
 
       await prisma.message.create({
         data: {
@@ -325,7 +332,7 @@ io.on("connection", async (socket) => {
           client_id: process.env.LIB_ANS_CLIENT_ID, // use your actual client_id and client_secret
           client_secret: process.env.LIB_ANS_CLIENT_SECRET,
           grant_type: "client_credentials",
-        },
+        }
       );
       const { access_token } = authResponse.data;
 
@@ -350,7 +357,7 @@ io.on("connection", async (socket) => {
             "Content-Type": "application/x-www-form-urlencoded",
             Authorization: `Bearer ${access_token}`,
           },
-        },
+        }
       );
 
       console.log(ticketResponse);

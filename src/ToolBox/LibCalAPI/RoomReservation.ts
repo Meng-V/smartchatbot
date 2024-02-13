@@ -40,7 +40,6 @@ class RoomReservationTool extends LibCalAPIBaseTool {
     return RoomReservationTool.instance;
   }
 
-
   /**
    * Select an available room from the input room IDs list based on the requested time. This assumes startDate is as same as endDate
    * @param roomIDs
