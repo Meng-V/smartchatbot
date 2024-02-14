@@ -2,7 +2,6 @@
 node_modules/
 
 # Ignore compiled JavaScript and TypeScript files
-*.js
 *.js.map
 *.d.ts
 
