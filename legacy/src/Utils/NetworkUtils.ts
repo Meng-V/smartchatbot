@@ -1,5 +1,3 @@
-import { AxiosResponse } from "axios";
-
 /**
  * Retries executing the given asynchronous function until it succeeds or the maximum number of attempts is reached.
  * @param func The asynchronous function to be retried.
