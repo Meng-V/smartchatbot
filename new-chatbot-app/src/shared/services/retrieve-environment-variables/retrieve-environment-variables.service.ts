@@ -1,14 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class RetrieveEnvironmentVariablesService {
+  private readonly logger = new Logger(RetrieveEnvironmentVariablesService.name);
+
   constructor(private configService: ConfigService) {}
 
   retrieve<T>(variableName: string): T {
     const variable: T | undefined = this.configService.get<T>(variableName);
     if (variable === undefined) {
-      throw new Error(`Variable ${variableName} is not defined in .env`);
+      const errorMessage =`Variable ${variableName} is not defined in .env`; 
+      this.logger.error(errorMessage)
+      throw new Error(errorMessage);
     }
 
     return variable;
