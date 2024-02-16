@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
-import { RetrieveEnvironmentVariablesService } from './services/retrieve-environment-variables/retrieve-environment-variables.service';
+import { RetrieveEnvironmentVariablesService } from './shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
 
 @Controller()
 export class AppController {
