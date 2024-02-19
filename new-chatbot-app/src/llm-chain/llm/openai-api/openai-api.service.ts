@@ -3,16 +3,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Configuration, CreateChatCompletionResponse, OpenAIApi } from 'openai';
 import { AxiosResponse } from 'axios';
 
-import { LlmModelSetting } from './llm.module';
-import { PromptTemplate, PromptModule } from '../prompt/prompt.module';
+import { PromptInterface } from '../../prompt/prompt.interface';
 import { NetworkService } from 'src/shared/services/network/network.service';
-import { ConfigService } from '@nestjs/config';
-import { RetrieveEnvironmentVariablesService } from '../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
-import { TokenUsageService } from '../../shared/services/token-usage/token-usage.service';
+import { RetrieveEnvironmentVariablesService } from '../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
+import { TokenUsageService } from '../../../shared/services/token-usage/token-usage.service';
+import { LlmInterface } from '../llm.interface';
 
 @Injectable()
-export class LlmService {
-  private readonly logger = new Logger(LlmService.name);
+export class OpenaiApiService implements LlmInterface {
+  private readonly logger = new Logger(OpenaiApiService.name);
   private readonly model: OpenAIApi;
 
   constructor(
@@ -31,7 +30,8 @@ export class LlmService {
   }
 
   async getModelResponse(
-    promptObject: PromptTemplate,
+    systemPrompt: string,
+    userPrompt: string,
     modelName: ModelName = 'gpt-4',
     temperature: number = 0.0,
     top_p: number = 0.1,
@@ -39,7 +39,6 @@ export class LlmService {
     return new Promise<{ response: string; tokenUsage: TokenUsage }>(
       async (resolve, reject) => {
         // Get the prompt from the prompt object
-        const promptObjectResponse = await promptObject.getPrompt();
         let response; // The response from the model, as a result to be returned
         try {
           response = await this.networkService.retryWithMaxAttempts<
@@ -56,9 +55,9 @@ export class LlmService {
                   messages: [
                     {
                       role: 'system',
-                      content: promptObject.getSystemDescription(),
+                      content: systemPrompt,
                     },
-                    { role: 'user', content: promptObjectResponse.prompt },
+                    { role: 'user', content: userPrompt },
                   ],
                 }) as Promise<AxiosResponse<CreateChatCompletionResponse, any>>;
                 resolve(chatResponse);
@@ -78,17 +77,12 @@ export class LlmService {
             this.tokenUsageService.getTokenUsageFromOpenAiApiResponse(response);
           resolve({
             response: response.data.choices[0].message?.content,
-            tokenUsage: this.tokenUsageService.combineTokenUsage(
-              promptObjectResponse.tokenUsage,
-              openAiApiTokenUsage,
-            ),
+            tokenUsage: openAiApiTokenUsage,
           });
         } else {
           const errorMsg = 'Error: No response from the model';
           this.logger.error(errorMsg);
-          reject({
-            response: errorMsg,
-          });
+          throw new Error(errorMsg);
         }
       },
     );
