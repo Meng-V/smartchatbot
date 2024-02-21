@@ -28,8 +28,8 @@ export class LlmService {
 
   /**
    * Get the LLM Model from input model name
-   * @param modelName 
-   * @returns 
+   * @param modelName
+   * @returns
    */
   private getModel(modelName: ModelName): LlmInterface {
     if (this.openaiModelNameList.includes(modelName)) {
@@ -44,10 +44,10 @@ export class LlmService {
   /**
    * Get LLM model response with the total number of tokens used
    * @param promptObject input prompt
-   * @param modelName 
-   * @param temperature 
-   * @param top_p 
-   * @returns 
+   * @param modelName
+   * @param temperature
+   * @param top_p
+   * @returns
    */
   async getModelResponse(
     promptObject: PromptInterface,

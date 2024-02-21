@@ -8,11 +8,10 @@ import { CreateChatCompletionResponse } from 'openai';
 @Injectable()
 @Global()
 export class TokenUsageService {
-
   /**
    * Extract token usage from the response from OpenAI API
-   * @param openaiApiResponse 
-   * @returns 
+   * @param openaiApiResponse
+   * @returns
    */
   getTokenUsageFromOpenAiApiResponse(
     openaiApiResponse: AxiosResponse<CreateChatCompletionResponse, any>,

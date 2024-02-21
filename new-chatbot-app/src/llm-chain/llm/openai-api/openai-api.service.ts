@@ -37,8 +37,8 @@ export class OpenaiApiService implements LlmInterface {
    * @param userPrompt prompt for user role
    * @param modelName openai llm name
    * @param temperature temperature for model
-   * @param top_p 
-   * @returns 
+   * @param top_p
+   * @returns
    */
   async getModelResponse(
     systemPrompt: string,
