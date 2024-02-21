@@ -2,11 +2,6 @@ import { Global, Injectable } from '@nestjs/common';
 import { AxiosResponse } from 'axios';
 import { CreateChatCompletionResponse } from 'openai';
 
-<<<<<<< HEAD
-@Injectable()
-@Global()
-export class TokenUsageService {
-=======
 /**
  * Service used for everything TokenUsage related
  */
@@ -19,7 +14,6 @@ export class TokenUsageService {
    * @param openaiApiResponse 
    * @returns 
    */
->>>>>>> dev
   getTokenUsageFromOpenAiApiResponse(
     openaiApiResponse: AxiosResponse<CreateChatCompletionResponse, any>,
   ): TokenUsage {
