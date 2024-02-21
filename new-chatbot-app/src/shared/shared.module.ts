@@ -5,7 +5,16 @@ import { RetrieveEnvironmentVariablesService } from './services/retrieve-environ
 import { ConfigService } from '@nestjs/config';
 
 @Module({
-  providers: [NetworkService, TokenUsageService, RetrieveEnvironmentVariablesService, ConfigService],
-  exports: [NetworkService, TokenUsageService, RetrieveEnvironmentVariablesService],
+  providers: [
+    NetworkService,
+    TokenUsageService,
+    RetrieveEnvironmentVariablesService,
+    ConfigService,
+  ],
+  exports: [
+    NetworkService,
+    TokenUsageService,
+    RetrieveEnvironmentVariablesService,
+  ],
 })
 export class SharedModule {}

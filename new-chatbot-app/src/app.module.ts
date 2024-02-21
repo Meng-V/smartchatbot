@@ -10,6 +10,11 @@ import { TokenUsageService } from './shared/services/token-usage/token-usage.ser
 
 @Module({
   imports: [ConfigModule.forRoot(), LlmChainModule, LibraryApiModule],
-  providers: [RetrieveEnvironmentVariablesService, ChatGateway, NetworkService, TokenUsageService],
+  providers: [
+    RetrieveEnvironmentVariablesService,
+    ChatGateway,
+    NetworkService,
+    TokenUsageService,
+  ],
 })
 export class AppModule {}
