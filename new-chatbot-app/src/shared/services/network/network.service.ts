@@ -31,8 +31,6 @@ export class NetworkService {
         retries++;
       }
 
-      // If the function succeeded, resolve with the result
-      // Otherwise, reject with the error
       if (response) {
         resolve(response);
       } else {

@@ -6,7 +6,6 @@ type ModelName =
   | 'gpt-4-0314'
   | 'gpt-4';
 
-//Fix TokenUsage so it have token numbers for each type of model
 type ModelTokenUsage = {
   totalTokens: number;
   promptTokens: number;
