@@ -8,6 +8,9 @@ import { RetrieveEnvironmentVariablesService } from '../../../shared/services/re
 import { TokenUsageService } from '../../../shared/services/token-usage/token-usage.service';
 import { LlmInterface } from '../llm.interface';
 
+/**
+ * Service for getting response from OpenAI LLM
+ */
 @Injectable()
 export class OpenaiApiService implements LlmInterface {
   private readonly logger = new Logger(OpenaiApiService.name);
@@ -28,6 +31,15 @@ export class OpenaiApiService implements LlmInterface {
     this.model = new OpenAIApi(modelConfiguration);
   }
 
+  /**
+   * Get LLM response from OpenAI API with input message and configuration
+   * @param systemPrompt prompt for the system
+   * @param userPrompt prompt for user role
+   * @param modelName openai llm name
+   * @param temperature temperature for model
+   * @param top_p 
+   * @returns 
+   */
   async getModelResponse(
     systemPrompt: string,
     userPrompt: string,

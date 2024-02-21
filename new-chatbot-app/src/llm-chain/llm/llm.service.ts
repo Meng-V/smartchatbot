@@ -5,6 +5,9 @@ import { TokenUsageService } from '../../shared/services/token-usage/token-usage
 import { LlmInterface } from './llm.interface';
 import { OpenaiApiService } from './openai-api/openai-api.service';
 
+/**
+ * Service for getting response from different LLM model and number of token used
+ */
 @Injectable()
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
@@ -23,16 +26,29 @@ export class LlmService {
     private openaiApiService: OpenaiApiService,
   ) {}
 
-  private getModel(modelName: string): LlmInterface {
-    if (this.openaiModelNameList.includes(modelName as ModelName)) {
+  /**
+   * Get the LLM Model from input model name
+   * @param modelName 
+   * @returns 
+   */
+  private getModel(modelName: ModelName): LlmInterface {
+    if (this.openaiModelNameList.includes(modelName)) {
       return this.openaiApiService;
     } else {
-      const errorMsg = `No model name ${modelName as ModelName}`;
+      const errorMsg = `No model name ${modelName}`;
       this.logger.error(errorMsg);
       throw new Error(errorMsg);
     }
   }
 
+  /**
+   * Get LLM model response with the total number of tokens used
+   * @param promptObject input prompt
+   * @param modelName 
+   * @param temperature 
+   * @param top_p 
+   * @returns 
+   */
   async getModelResponse(
     promptObject: PromptInterface,
     modelName: ModelName = 'gpt-4',
