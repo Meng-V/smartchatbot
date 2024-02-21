@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Global, Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
+@Global()
 export class NetworkService {
   private readonly logger = new Logger(NetworkService.name);
 

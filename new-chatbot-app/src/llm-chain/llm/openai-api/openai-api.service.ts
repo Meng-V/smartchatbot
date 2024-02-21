@@ -3,8 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Configuration, CreateChatCompletionResponse, OpenAIApi } from 'openai';
 import { AxiosResponse } from 'axios';
 
-import { PromptInterface } from '../../prompt/prompt.interface';
-import { NetworkService } from 'src/shared/services/network/network.service';
+import { NetworkService } from '../../../shared/services/network/network.service';
 import { RetrieveEnvironmentVariablesService } from '../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
 import { TokenUsageService } from '../../../shared/services/token-usage/token-usage.service';
 import { LlmInterface } from '../llm.interface';

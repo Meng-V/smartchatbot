@@ -1,16 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Global, Injectable } from '@nestjs/common';
 import { AxiosResponse } from 'axios';
 import { CreateChatCompletionResponse } from 'openai';
 
 @Injectable()
+@Global()
 export class TokenUsageService {
   getTokenUsageFromOpenAiApiResponse(
-    openAIApiResponse: AxiosResponse<CreateChatCompletionResponse, any>,
+    openaiApiResponse: AxiosResponse<CreateChatCompletionResponse, any>,
   ): TokenUsage {
     const tokenUsage: TokenUsage = {};
-    if (openAIApiResponse.data.choices[0].message?.content) {
-      // Extract the usage information from the openAIApiResponse
-      const openAIModelName: ModelName = openAIApiResponse.data
+    if (openaiApiResponse.data && openaiApiResponse.data.usage) {
+      // Extract the usage information from the openaiApiResponse
+      const openAIModelName: ModelName = openaiApiResponse.data
         .model as ModelName;
       tokenUsage[openAIModelName] = {
         totalTokens: 0,
@@ -18,11 +19,11 @@ export class TokenUsageService {
         completionTokens: 0,
       };
       tokenUsage[openAIModelName]!.totalTokens +=
-        openAIApiResponse.data.usage!.total_tokens;
+        openaiApiResponse.data.usage!.total_tokens;
       tokenUsage[openAIModelName]!.completionTokens +=
-        openAIApiResponse.data.usage!.completion_tokens;
+        openaiApiResponse.data.usage!.completion_tokens;
       tokenUsage[openAIModelName]!.promptTokens +=
-        openAIApiResponse.data.usage!.prompt_tokens;
+        openaiApiResponse.data.usage!.prompt_tokens;
     }
     return tokenUsage;
   }
@@ -37,10 +38,15 @@ export class TokenUsageService {
     tokenUsage2: TokenUsage,
   ): TokenUsage {
     const returnedTokenUsage: TokenUsage = {};
-    let modelNames: ModelName[] = Object.keys(tokenUsage1) as ModelName[];
-    modelNames = modelNames.concat(Object.keys(tokenUsage2) as ModelName[]);
+    const uniqueModelNames: ModelName[] = (() => {
+      let modelNames = Object.keys(tokenUsage1) as ModelName[];
+      modelNames = [
+        ...new Set(modelNames.concat(Object.keys(tokenUsage2) as ModelName[])),
+      ];
+      return modelNames;
+    })();
 
-    for (const modelName of modelNames) {
+    for (const modelName of uniqueModelNames) {
       const modelTokenUsage1: ModelTokenUsage =
         tokenUsage1[modelName] !== undefined
           ? tokenUsage1[modelName]!

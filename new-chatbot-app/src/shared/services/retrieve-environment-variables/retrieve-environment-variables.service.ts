@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Global, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
+@Global()
 export class RetrieveEnvironmentVariablesService {
   private readonly logger = new Logger(RetrieveEnvironmentVariablesService.name);
 

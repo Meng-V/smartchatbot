@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { LlmInterface } from './llm.interface';
 import { LlmService } from './llm.service';
 import { OpenaiApiService } from './openai-api/openai-api.service';
+
+import { SharedModule } from 'src/shared/shared.module';
 
 export type LlmModelSetting = {
   modelName: ModelName;
@@ -10,9 +11,7 @@ export type LlmModelSetting = {
 };
 
 @Module({
-  "providers": [{
-    provide: "LlmInterface",
-    useClass: OpenaiApiService,
-  }, LlmService],
+  imports: [SharedModule],
+  providers: [LlmService, OpenaiApiService],
 })
 export class LlmModule {}

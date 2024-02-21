@@ -1,13 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { Configuration, CreateChatCompletionResponse, OpenAIApi } from 'openai';
-import { AxiosResponse } from 'axios';
-
 import { PromptInterface } from '../prompt/prompt.interface';
-import { NetworkService } from 'src/shared/services/network/network.service';
-import { RetrieveEnvironmentVariablesService } from '../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
 import { TokenUsageService } from '../../shared/services/token-usage/token-usage.service';
 import { LlmInterface } from './llm.interface';
+import { OpenaiApiService } from './openai-api/openai-api.service';
 
 @Injectable()
 export class LlmService {
@@ -24,14 +20,14 @@ export class LlmService {
 
   constructor(
     private tokenUsageService: TokenUsageService,
-    private openaiApiService: LlmInterface,
+    private openaiApiService: OpenaiApiService,
   ) {}
 
-  getModel(modelName: string): LlmInterface {
-    if (modelName in this.openaiModelNameList) {
+  private getModel(modelName: string): LlmInterface {
+    if (this.openaiModelNameList.includes(modelName as ModelName)) {
       return this.openaiApiService;
     } else {
-      const errorMsg = `No model name ${modelName}`;
+      const errorMsg = `No model name ${modelName as ModelName}`;
       this.logger.error(errorMsg);
       throw new Error(errorMsg);
     }
