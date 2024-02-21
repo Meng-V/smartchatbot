@@ -1,4 +1,17 @@
 import { Module } from '@nestjs/common';
+import { LlmService } from './llm.service';
+import { OpenaiApiService } from './openai-api/openai-api.service';
 
-@Module({})
+import { SharedModule } from 'src/shared/shared.module';
+
+export type LlmModelSetting = {
+  modelName: ModelName;
+  temperature: number;
+  top_p: number;
+};
+
+@Module({
+  imports: [SharedModule],
+  providers: [LlmService, OpenaiApiService],
+})
 export class LlmModule {}
