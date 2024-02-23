@@ -17,6 +17,7 @@ export class RetrieveEnvironmentVariablesService {
    * Retrieve variable from environment. Will throw error if cannot find the desired variable
    * @param variableName
    * @returns
+   * @throws throw error if the input variable name doesn't exist in the evironment variable
    */
   retrieve<T>(variableName: string): T {
     const variable: T | undefined = this.configService.get<T>(variableName);

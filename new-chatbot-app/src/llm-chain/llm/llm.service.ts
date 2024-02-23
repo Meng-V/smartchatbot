@@ -29,7 +29,8 @@ export class LlmService {
   /**
    * Get the LLM Model from input model name
    * @param modelName
-   * @returns
+   * @returns the requested LLM model
+   * @throws {Error} Throw an error if the input model name doesn't match any correct name
    */
   private getModel(modelName: ModelName): LlmInterface {
     if (this.openaiModelNameList.includes(modelName)) {

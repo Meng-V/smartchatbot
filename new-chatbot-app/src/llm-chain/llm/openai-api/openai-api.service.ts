@@ -39,6 +39,7 @@ export class OpenaiApiService implements LlmInterface {
    * @param temperature temperature for model
    * @param top_p
    * @returns
+   * @throws Throw error if doesn't receive any message from the OpenAI API
    */
   async getModelResponse(
     systemPrompt: string,
