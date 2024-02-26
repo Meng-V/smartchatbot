@@ -196,7 +196,7 @@ class LibrarianSubjectSearchTool implements Tool {
   async toolRun(toolInput: ToolInput): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       try {
-        let nullFields = [];
+        let nullFields: string[] = [];
         for (const param of Object.keys(toolInput)) {
           if (
             toolInput[param] === null ||
@@ -242,7 +242,7 @@ class LibrarianSubjectSearchTool implements Tool {
         );
       } catch (error) {
         console.error(error);
-        reject("Sorry, there was aAPIResponsen error. Please try again.");
+        reject("Sorry, there was an APIResponse error. Please try again.");
       }
     });
   }
