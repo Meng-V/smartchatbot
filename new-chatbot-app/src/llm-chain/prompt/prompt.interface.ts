@@ -1,4 +1,4 @@
-export interface PromptInterface {
+export interface Prompt {
   modelDescription: string; // Description of the model
   /**
    * Get the description of the system

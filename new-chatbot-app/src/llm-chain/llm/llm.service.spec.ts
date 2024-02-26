@@ -3,13 +3,13 @@ import { LlmService } from './llm.service';
 import { LlmInterface } from './llm.interface';
 import { OpenAIApi } from 'openai';
 import { OpenaiApiService } from './openai-api/openai-api.service';
-import { PromptInterface } from '../prompt/prompt.interface';
+import { Prompt } from '../prompt/prompt.interface';
 import { TokenUsageService } from '../../shared/services/token-usage/token-usage.service';
 
 describe('LlmService', () => {
   let service: LlmService;
   let openaiServiceMock: jest.Mocked<OpenaiApiService>;
-  let promptMock: jest.Mocked<PromptInterface>;
+  let promptMock: jest.Mocked<Prompt>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

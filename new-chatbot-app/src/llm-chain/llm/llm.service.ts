@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { PromptInterface } from '../prompt/prompt.interface';
+import { Prompt } from '../prompt/prompt.interface';
 import { TokenUsageService } from '../../shared/services/token-usage/token-usage.service';
 import { LlmInterface } from './llm.interface';
 import { OpenaiApiService } from './openai-api/openai-api.service';
@@ -51,7 +51,7 @@ export class LlmService {
    * @returns
    */
   async getModelResponse(
-    promptObject: PromptInterface,
+    promptObject: Prompt,
     modelName: ModelName = 'gpt-4',
     temperature: number = 0.0,
     top_p: number = 0.1,
