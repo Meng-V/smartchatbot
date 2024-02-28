@@ -12,14 +12,7 @@ import { OpenaiApiService } from './openai-api/openai-api.service';
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
 
-  private openaiModelNameList: ModelName[] = [
-    'gpt-3.5-turbo',
-    'gpt-3.5-turbo-0613',
-    'gpt-3.5-turbo-0301',
-    'gpt-4-0613',
-    'gpt-4-0314',
-    'gpt-4',
-  ];
+  private openaiModelNameList: string[] = Object.values(OpenAiModelType);
 
   constructor(
     private tokenUsageService: TokenUsageService,
@@ -32,7 +25,7 @@ export class LlmService {
    * @returns the requested LLM model
    * @throws {Error} Throw an error if the input model name doesn't match any correct name
    */
-  private getModel(modelName: ModelName): LlmInterface {
+  private getModel(modelName: OpenAiModelType): LlmInterface {
     if (this.openaiModelNameList.includes(modelName)) {
       return this.openaiApiService;
     } else {
@@ -52,7 +45,7 @@ export class LlmService {
    */
   async getModelResponse(
     promptObject: Prompt,
-    modelName: ModelName = 'gpt-4',
+    modelName: OpenAiModelType = OpenAiModelType.GPT_4,
     temperature: number = 0.0,
     top_p: number = 0.1,
   ): Promise<{ response: string; tokenUsage: TokenUsage }> {
@@ -64,6 +57,9 @@ export class LlmService {
         // Get the prompt from the prompt object
         const { prompt, tokenUsage: promptTokenUsage } =
           await promptObject.getPrompt();
+        const promptTokenUsageWithModel: TokenUsage = {};
+        promptTokenUsageWithModel[modelName] = promptTokenUsage;
+
         const { response, tokenUsage: responseTokenUsage } =
           await model.getModelResponse(
             prompt,
@@ -75,7 +71,7 @@ export class LlmService {
         resolve({
           response: response,
           tokenUsage: this.tokenUsageService.combineTokenUsage(
-            promptTokenUsage,
+            promptTokenUsageWithModel,
             responseTokenUsage,
           ),
         });

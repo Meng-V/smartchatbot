@@ -44,7 +44,7 @@ export class OpenaiApiService implements LlmInterface {
   async getModelResponse(
     systemPrompt: string,
     userPrompt: string,
-    modelName: ModelName = 'gpt-4',
+    modelName: OpenAiModelType = OpenAiModelType.GPT_4,
     temperature: number = 0.0,
     top_p: number = 0.1,
   ): Promise<{ response: string; tokenUsage: TokenUsage }> {

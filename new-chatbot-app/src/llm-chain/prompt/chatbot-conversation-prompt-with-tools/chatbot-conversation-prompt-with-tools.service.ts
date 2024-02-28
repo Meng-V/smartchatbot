@@ -10,14 +10,15 @@ import { LlmTool } from 'src/llm-chain/llm-toolbox/llm-tool.interface';
  */
 @Injectable({ scope: Scope.REQUEST })
 export class ChatbotConversationPromptWithToolsService implements Prompt {
-  public modelDescription: string;
-  public conversationMemory: ConversationMemory | undefined;
-  public toolsAreReadyToUse: boolean;
+  private modelDescription: string;
+  private conversationMemory: ConversationMemory | undefined;
 
   //Context
-  private tools: LlmTool[];
-  private toolsDesription: string;
-  private reActModelDescription: string;
+  private tools: LlmTool[] = [];
+  private toolsAreReadyToUse: boolean = true;
+
+  private toolsDesription: string = '';
+  private reActModelDescription: string = '';
   private modelScratchpad: string;
 
   /**
@@ -26,16 +27,9 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
    * @param conversationMemory Conversation Memory to keep track of the current conversation context
    * @param toolsAreReadyToUse if true, the agent can use the input tools. if false, the agent can only provide the tools information.
    */
-  constructor(
-    
-  ) {
+  constructor() {
     this.modelDescription =
       "You are a helpful assistant.You should try your best to answer the question.Unfortunately,you don't know anything about the library,books,and articles so you have to always rely on the tool or the given context for  library-related,book-related,or article-related questions.\n";
-
-    
-    this.toolsDesription = this.constructToolsDescription(this.tools);
-
-    this.reActModelDescription = this.constructReActModelDescription(tools);
     this.modelScratchpad = '';
   }
 
@@ -87,13 +81,41 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
   }
 
   /**
+   * Set the tool that the LLM can use. These tool will be listed inside the prompt for the LLM
+   * @param tools
+   * @param toolsAreReadyToUse
+   */
+  public setTools(tools: LlmTool[], toolsAreReadyToUse: boolean = true): void {
+    this.tools = tools;
+    this.toolsDesription = this.constructToolsDescription(tools);
+    this.reActModelDescription = this.constructReActModelDescription(tools);
+
+    this.toolsAreReadyToUse = toolsAreReadyToUse;
+  }
+
+  /**
+   * Get the tools that is currently listed inside the prompt
+   */
+  public getTools(): LlmTool[] {
+    return this.tools;
+  }
+
+  /**
    * Update the conversation memory object
    * @param newConversationMemory
    */
-  public updateConversationMemory(
+  public setConversationMemory(
     newConversationMemory: ConversationMemory,
   ): void {
     this.conversationMemory = newConversationMemory;
+  }
+
+  /**
+   * Get the conversation memory of the prompt
+   * @returns conversation memory if exist, undefined if not
+   */
+  public getConversationMemory(): ConversationMemory | undefined {
+    return this.conversationMemory;
   }
 
   /**
@@ -136,11 +158,11 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
   }
 
   /**
-   * Get the prompt for the LLM and estimate the token unullsage when summarizing the prompt.
-   * @returns { prompt: string; tokenUsage: TokenUsage }
+   * Get the prompt for the LLM and estimate the token usage when summarizing the prompt (if spicified).
+   * @returns { prompt: string; tokenUsage: ModelTokenUsage }
    */
-  async getPrompt(): Promise<{ prompt: string; tokenUsage: TokenUsage }> {
-    return new Promise<{ prompt: string; tokenUsage: TokenUsage }>(
+  async getPrompt(): Promise<{ prompt: string; tokenUsage?: ModelTokenUsage}> {
+    return new Promise<{ prompt: string; tokenUsage?: ModelTokenUsage }>(
       async (resolve, reject) => {
         // Get the conversation summary string
         const conversationStringObject =
@@ -150,7 +172,6 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
           `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;
         resolve({
           prompt: wholePrompt,
-          tokenUsage: { totalTokens: 0, completionTokens: 0, promptTokens: 0 },
         });
       },
     );

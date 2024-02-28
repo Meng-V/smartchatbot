@@ -5,7 +5,7 @@ import { OpenaiApiService } from './openai-api/openai-api.service';
 import { SharedModule } from 'src/shared/shared.module';
 
 export type LlmModelSetting = {
-  modelName: ModelName;
+  modelName: OpenAiModelType;
   temperature: number;
   top_p: number;
 };
