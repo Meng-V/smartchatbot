@@ -1,5 +1,4 @@
-export interface PromptInterface {
-  modelDescription: string; // Description of the model
+export interface Prompt {
   /**
    * Get the description of the system
    */
@@ -7,5 +6,5 @@ export interface PromptInterface {
   /**
    * Get the prompt
    */
-  getPrompt(): Promise<{ prompt: string; tokenUsage: TokenUsage }>;
+  getPrompt(): Promise<string>;
 }
