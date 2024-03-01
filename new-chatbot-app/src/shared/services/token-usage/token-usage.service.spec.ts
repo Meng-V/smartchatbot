@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TokenUsageService } from './token-usage.service';
+import { TokenUsage, TokenUsageService } from './token-usage.service';
 import { AxiosResponse } from 'axios';
 import { CreateChatCompletionResponse } from 'openai';
 

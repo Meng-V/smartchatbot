@@ -6,5 +6,5 @@ export interface Prompt {
   /**
    * Get the prompt
    */
-  getPrompt(): Promise<{ prompt: string; tokenUsage?: ModelTokenUsage}>;
+  getPrompt(): Promise<string>;
 }

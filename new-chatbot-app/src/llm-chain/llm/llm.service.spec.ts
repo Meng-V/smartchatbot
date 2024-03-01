@@ -1,9 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LlmService } from './llm.service';
 import { LlmInterface } from './llm.interface';
-import { OpenaiApiService } from './openai-api/openai-api.service';
+import {
+  OpenaiApiService,
+  OpenAiModelType,
+} from './openai-api/openai-api.service';
 import { Prompt } from '../prompt/prompt.interface';
-import { TokenUsageService } from '../../shared/services/token-usage/token-usage.service';
+import {
+  TokenUsage,
+  TokenUsageService,
+} from '../../shared/services/token-usage/token-usage.service';
 
 describe('LlmService', () => {
   let service: LlmService;
@@ -29,8 +35,8 @@ describe('LlmService', () => {
       OpenaiApiService,
     ) as jest.Mocked<OpenaiApiService>;
     promptMock = {
-      getSystemDescription: jest.fn(), // Mocked method
-      getPrompt: jest.fn(), // Mocked method
+      getSystemDescription: jest.fn(),
+      getPrompt: jest.fn(),
     };
   });
 
@@ -39,14 +45,7 @@ describe('LlmService', () => {
   });
 
   it('should return correct llm response and token usage', async () => {
-    promptMock.getPrompt.mockResolvedValue({
-      prompt: 'Mocked Prompt',
-      tokenUsage:{
-          totalTokens: 70,
-          promptTokens: 50,
-          completionTokens: 20,
-      },
-    });
+    promptMock.getPrompt.mockResolvedValue('Mocked Prompt');
     const mockOpenaiResponse: { response: string; tokenUsage: TokenUsage } = {
       response: 'This is LLM response',
       tokenUsage: {
@@ -64,11 +63,6 @@ describe('LlmService', () => {
           totalTokens: 100,
           promptTokens: 70,
           completionTokens: 30,
-        },
-        'gpt-3.5-turbo': {
-          totalTokens: 70,
-          promptTokens: 50,
-          completionTokens: 20,
         },
       },
     };

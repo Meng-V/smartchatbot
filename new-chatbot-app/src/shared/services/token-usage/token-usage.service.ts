@@ -2,6 +2,14 @@ import { Global, Injectable } from '@nestjs/common';
 import { AxiosResponse } from 'axios';
 import { CreateChatCompletionResponse } from 'openai';
 
+export type ModelTokenUsage = {
+  totalTokens: number;
+  promptTokens: number;
+  completionTokens: number;
+};
+
+export type TokenUsage = Partial<Record<OpenAiModelType, ModelTokenUsage>>;
+
 /**
  * Service used for everything TokenUsage related
  */
@@ -49,7 +57,9 @@ export class TokenUsageService {
     const uniqueModelNames: OpenAiModelType[] = (() => {
       let modelNames = Object.keys(tokenUsage1) as OpenAiModelType[];
       modelNames = [
-        ...new Set(modelNames.concat(Object.keys(tokenUsage2) as OpenAiModelType[])),
+        ...new Set(
+          modelNames.concat(Object.keys(tokenUsage2) as OpenAiModelType[]),
+        ),
       ];
       return modelNames;
     })();

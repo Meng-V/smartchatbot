@@ -1,12 +1,24 @@
+import { TokenUsage } from 'src/shared/services/token-usage/token-usage.service';
+
 export enum Role {
-  AIAgent = "AIAgent",
-  Customer = "Customer",
+  AIAgent = 'AIAgent',
+  Customer = 'Customer',
 }
 
 /**
  * This memory and all the relevant indices act as a queue
  */
 export interface ConversationMemory {
+  /**
+   * Set whether or not the object should summarize the conversation
+   */
+  setConversationSummarizationMode(shouldSummarize: boolean): void;
+
+  /**
+   * Get whether or not the object should summarize the conversation
+   */
+  getConversationSummarizationMode(): boolean;
+
   /**
    * Add message to conversation.
    * @param role role of the message sender
@@ -22,4 +34,9 @@ export interface ConversationMemory {
    * @throws Error if start and end indices are not appropriate
    */
   getConversationAsString(start: number, end: number): Promise<string>;
+
+  /**
+   * Get the total token usage for the whole memory (in case when we use LLM inside this object to summarize the conversation)
+   */
+  getTokenUsage(): TokenUsage;
 }
