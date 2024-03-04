@@ -2,7 +2,7 @@ import { Injectable, Scope } from '@nestjs/common';
 import { Prompt } from '../prompt.interface';
 import { ConversationMemory } from 'src/llm-chain/memory/memory.interface';
 import { LlmTool } from 'src/llm-chain/llm-toolbox/llm-tool.interface';
-import { ConfigService } from '@nestjs/config';
+import { RetrieveEnvironmentVariablesService } from '../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
 
 /**
  * This service is for getting prompt for sending to LLM model. This prompt is aware of conversation history, context, and which tools are available to use.
@@ -22,7 +22,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
   private reActModelDescription: string = '';
   private modelScratchpad: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(private retrieveEnvironmentVariablesService: RetrieveEnvironmentVariablesService) {
     const date = new Date();
 
     this.modelDescription =
@@ -207,7 +207,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
    * @param newScratchpad
    */
   public _testSetScratchpad(newScratchpad: string): void {
-    if (this.configService.get('NODE_ENV') !== 'test') {
+    if (this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !== 'test') {
       throw new Error('This method is for testing purposes only');
     }
     this.modelScratchpad = newScratchpad;
@@ -218,21 +218,21 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
    * @param newScratchpad
    */
   public _testGetScratchpad(): string {
-    if (this.configService.get('NODE_ENV') !== 'test') {
+    if (this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !== 'test') {
       throw new Error('This method is for testing purposes only');
     }
     return this.modelScratchpad;
   }
 
   public _testSetModelDescription(modelDescription: string): void {
-    if (this.configService.get('NODE_ENV') !== 'test') {
+    if (this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !== 'test') {
       throw new Error('This method is for testing purposes only');
     }
     this.modelDescription = modelDescription;
   }
 
   public _testSetReActModelDescription(reActModelDescription: string): void {
-    if (this.configService.get('NODE_ENV') !== 'test') {
+    if (this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !== 'test') {
       throw new Error('This method is for testing purposes only');
     }
 
@@ -240,7 +240,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
   }
 
   public _testSetToolsDescription(toolsDescription: string): void {
-    if (this.configService.get('NODE_ENV') !== 'test') {
+    if (this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !== 'test') {
       throw new Error('This method is for testing purposes only');
     }
 
