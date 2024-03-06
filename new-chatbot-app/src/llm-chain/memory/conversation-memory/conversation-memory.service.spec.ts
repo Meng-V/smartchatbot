@@ -10,7 +10,6 @@ import { ConversationSummarizationPromptService } from '../../../llm-chain/promp
 import { LlmModule } from '../../../llm-chain/llm/llm.module';
 
 import {
-  TokenUsage,
   TokenUsageService,
 } from '../../../shared/services/token-usage/token-usage.service';
 
@@ -29,8 +28,8 @@ describe('ConversationMemoryService', () => {
       ],
     }).compile();
 
-    service = module.get<ConversationMemoryService>(ConversationMemoryService);
-    llmServiceMock = module.get<LlmService>(LlmService);
+    service = await module.resolve<ConversationMemoryService>(ConversationMemoryService);
+    llmServiceMock = await module.resolve<LlmService>(LlmService);
   });
   it('should be defined', () => {
     expect(service).toBeDefined();

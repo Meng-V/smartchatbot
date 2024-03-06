@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Scope } from '@nestjs/common';
 import { ConversationMemory, Role } from '../memory.interface';
 import { CustomQueue } from '../../../shared/custom-data-structures/custome-queue/custom-queue';
 import {
@@ -9,7 +9,7 @@ import { ConversationSummarizationPromptService } from '../../prompt/conversatio
 import { LlmService } from '../../../llm-chain/llm/llm.service';
 import { OpenAiModelType } from '../../../llm-chain/llm/openai-api/openai-api.service';
 
-@Injectable()
+@Injectable({scope: Scope.REQUEST})
 export class ConversationMemoryService implements ConversationMemory {
   private conversationQueue: CustomQueue<[Role | null, string]> =
     new CustomQueue<[Role | null, string]>();
