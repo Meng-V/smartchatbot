@@ -46,7 +46,7 @@ export class LlmService {
    * @param top_p
    * @returns
    */
-  async getModelResponse(
+  public async getModelResponse(
     prompt: Prompt,
     modelType: LlmModelType,
     temperature: number = 0.0,

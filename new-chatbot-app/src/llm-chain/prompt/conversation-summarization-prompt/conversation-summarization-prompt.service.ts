@@ -9,7 +9,12 @@ export class ConversationSummarizationPromptService implements Prompt {
     this.modelDescription =
       'You are trying to shorten the following conversation by summarizing it.Include any vital details like email,name,code,date,etc in the summary.\n';
   }
-  getSystemDescription(): string {
+
+  public setSystemDescription(systemDescription: string) {
+    this.modelDescription = systemDescription;
+  }
+
+  public getSystemDescription(): string {
     return this.modelDescription;
   }
 
@@ -17,11 +22,11 @@ export class ConversationSummarizationPromptService implements Prompt {
    * The conversation you wish to summarize
    * @param conversationString
    */
-  setConversation(conversationString: string) {
+  public setConversation(conversationString: string) {
     this.conversation = conversationString;
   }
 
-  getPrompt(): string {
+  public getPrompt(): string {
     return this.conversation;
   }
 }

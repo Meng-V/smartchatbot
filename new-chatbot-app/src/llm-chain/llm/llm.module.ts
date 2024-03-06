@@ -23,6 +23,6 @@ export type LlmModelSetting = {
 @Module({
   imports: [SharedModule],
   providers: [LlmService, OpenaiApiService],
-  exports: [LlmService],
+  exports: [LlmService, OpenaiApiService],
 })
 export class LlmModule {}

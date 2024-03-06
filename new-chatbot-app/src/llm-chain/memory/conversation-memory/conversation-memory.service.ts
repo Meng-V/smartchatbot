@@ -22,6 +22,10 @@ export class ConversationMemoryService implements ConversationMemory {
    * Number of conversation line (most recent) that we would not summarize, allowing model to have the full context of most recent conversation
    */
   private conversationBufferSize: number | undefined;
+
+  /**
+   * True: will summarize the conversation based on maxContextWindow and conversationBufferSize. False: will not summarize
+   */
   private conversationSummarizationMode: boolean = false;
   private tokenUsage: TokenUsage = {};
 
@@ -39,21 +43,59 @@ export class ConversationMemoryService implements ConversationMemory {
     return this.conversationSummarizationMode;
   }
 
+  /**
+   * Set max context window for the memory
+   * @param contextWindowSize
+   * @throw Error in case contextWindowSize < conversation buffer size (if defined)
+   */
   public setMaxContextWindow(contextWindowSize: number | undefined) {
+    if (
+      contextWindowSize !== undefined &&
+      this.conversationBufferSize !== undefined &&
+      contextWindowSize < this.conversationBufferSize
+    ) {
+      throw new Error(
+        'Context window size cannot be smaller than conversation buffer size',
+      );
+    }
+
     this.maxContextWindow = contextWindowSize;
     this.conversationQueue.setMaxSize(this.maxContextWindow);
+  }
+
+  public getMaxContextWindow(): number | undefined {
+    return this.maxContextWindow;
   }
 
   public addToConversation(role: Role, message: string): void {
     this.conversationQueue.enqueue([role, message]);
   }
 
+  /**
+   *
+   * @param bufferSize
+   * @throws Error in case bufferSize is larger than this.maxContextWindow(if defined)
+   */
   public setConversationBufferSize(bufferSize: number | undefined) {
+    if (
+      bufferSize !== undefined &&
+      this.maxContextWindow !== undefined &&
+      bufferSize > this.maxContextWindow
+    ) {
+      throw new Error(
+        'Conversation Buffer size cannot be larger than max context window',
+      );
+    }
+
     this.conversationBufferSize = bufferSize;
   }
 
   public getConversationBufferSize(): number | undefined {
     return this.conversationBufferSize;
+  }
+
+  private setTokenUsage(tokenUsage: TokenUsage) {
+    this.tokenUsage = tokenUsage;
   }
 
   /**
@@ -100,15 +142,27 @@ export class ConversationMemoryService implements ConversationMemory {
       );
 
       //Update TokenUsage information
-      this.tokenUsage = this.tokenUsageService.combineTokenUsage(
-        tokenUsageFromSummarization,
-        this.tokenUsage,
+      this.setTokenUsage(
+        this.tokenUsageService.combineTokenUsage(
+          tokenUsageFromSummarization,
+          this.getTokenUsage(),
+        ),
       );
-      resolve(this.stringifyConversation(conversation));
+
+      resolve(conversationSummary);
     });
   }
+  /**
+   * get 
+   * @param start The beginning index of the specified portion of the array. If start is undefined, then the slice begins at index 0.
 
-  public getConversationAsString(start: number, end: number): Promise<string> {
+    * @param end The end index of the specified portion of the array. This is exclusive of the element at the index 'end'. If end is undefined, then the slice extends to the end of the array.
+   * @returns 
+   */
+  public async getConversationAsString(
+    start: number = 0,
+    end?: number,
+  ): Promise<string> {
     return new Promise<string>(async (resolve, rejects) => {
       const slicedConversation = this.conversationQueue.slice(start, end);
 
@@ -125,9 +179,9 @@ export class ConversationMemoryService implements ConversationMemory {
             )
           : [];
 
-      const conversationSummary = this.summarizeConversation(
-        conversationToSummarize,
-      );
+      const conversationSummary = this.conversationSummarizationMode
+        ? await this.summarizeConversation(conversationToSummarize)
+        : this.stringifyConversation(conversationToSummarize);
 
       resolve(
         `${conversationSummary}\n${this.stringifyConversation(conversationToUnchange)}`,
@@ -136,12 +190,6 @@ export class ConversationMemoryService implements ConversationMemory {
   }
 
   public getTokenUsage(): TokenUsage {
-    return {
-      'gpt-4-0314': {
-        totalTokens: 0,
-        completionTokens: 0,
-        promptTokens: 0,
-      },
-    };
+    return this.tokenUsage;
   }
 }

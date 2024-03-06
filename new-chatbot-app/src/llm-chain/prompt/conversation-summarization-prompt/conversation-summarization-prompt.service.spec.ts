@@ -11,10 +11,26 @@ describe('ConversationSummarizationPromptService', () => {
       providers: [ConversationSummarizationPromptService],
     }).compile();
 
-    service = module.get<ConversationSummarizationPromptService>(ConversationSummarizationPromptService);
+    service = module.get<ConversationSummarizationPromptService>(
+      ConversationSummarizationPromptService,
+    );
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  it('should set and get the correct system description', () => {
+    const expectedSystemDescription = 'Mocked System Description';
+    service.setSystemDescription(expectedSystemDescription);
+
+    expect(service.getSystemDescription()).toEqual(expectedSystemDescription);
+  });
+
+  it('should set and get correct conversation', () => {
+    const expectedConversation = 'Mocked conversation';
+
+    service.setConversation(expectedConversation);
+    expect(service.getPrompt()).toEqual(expectedConversation);
   });
 });
