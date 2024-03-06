@@ -1,9 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { Prompt } from '../prompt/prompt.interface';
-import {
-  TokenUsage,
-} from '../../shared/services/token-usage/token-usage.service';
+import { TokenUsage } from '../../shared/services/token-usage/token-usage.service';
 import { LlmInterface } from './llm.interface';
 import {
   OpenaiApiService,
@@ -18,9 +16,7 @@ import { LlmModelType } from './llm.module';
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
 
-  constructor(
-    private openaiApiService: OpenaiApiService,
-  ) {}
+  constructor(private openaiApiService: OpenaiApiService) {}
 
   /**
    * Get the LLM Model from input model name

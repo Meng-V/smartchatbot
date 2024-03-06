@@ -6,9 +6,7 @@ import { SharedModule } from '../../shared/shared.module';
 
 @Module({
   imports: [PromptModule, LlmModule, SharedModule],
-  providers: [
-    ConversationMemoryService,
-  ],
+  providers: [ConversationMemoryService],
   exports: [ConversationMemoryService],
 })
 export class MemoryModule {}

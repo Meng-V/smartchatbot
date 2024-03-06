@@ -6,12 +6,7 @@ import { LlmChainService } from './llm-chain.service';
 import { LlmModule } from './llm/llm.module';
 
 @Module({
-  imports: [
-    LlmModule,
-    LlmToolboxModule,
-    MemoryModule,
-    PromptModule,
-  ],
+  imports: [LlmModule, LlmToolboxModule, MemoryModule, PromptModule],
   providers: [LlmChainService],
   exports: [LlmChainService],
 })

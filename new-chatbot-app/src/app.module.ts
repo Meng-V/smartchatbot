@@ -6,9 +6,6 @@ import { SharedModule } from './shared/shared.module';
 
 @Module({
   imports: [LlmChainModule, LibraryApiModule, SharedModule],
-  providers: [
-    ChatGateway,
-  ],
+  providers: [ChatGateway],
 })
-
 export class AppModule {}

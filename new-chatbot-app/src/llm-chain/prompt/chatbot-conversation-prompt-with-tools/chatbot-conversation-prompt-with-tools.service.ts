@@ -22,7 +22,9 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
   private reActModelDescription: string = '';
   private modelScratchpad: string;
 
-  constructor(private retrieveEnvironmentVariablesService: RetrieveEnvironmentVariablesService) {
+  constructor(
+    private retrieveEnvironmentVariablesService: RetrieveEnvironmentVariablesService,
+  ) {
     const date = new Date();
 
     this.modelDescription =
@@ -207,7 +209,10 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
    * @param newScratchpad
    */
   public _testSetScratchpad(newScratchpad: string): void {
-    if (this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !== 'test') {
+    if (
+      this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !==
+      'test'
+    ) {
       throw new Error('This method is for testing purposes only');
     }
     this.modelScratchpad = newScratchpad;
@@ -218,21 +223,30 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
    * @param newScratchpad
    */
   public _testGetScratchpad(): string {
-    if (this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !== 'test') {
+    if (
+      this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !==
+      'test'
+    ) {
       throw new Error('This method is for testing purposes only');
     }
     return this.modelScratchpad;
   }
 
   public _testSetModelDescription(modelDescription: string): void {
-    if (this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !== 'test') {
+    if (
+      this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !==
+      'test'
+    ) {
       throw new Error('This method is for testing purposes only');
     }
     this.modelDescription = modelDescription;
   }
 
   public _testSetReActModelDescription(reActModelDescription: string): void {
-    if (this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !== 'test') {
+    if (
+      this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !==
+      'test'
+    ) {
       throw new Error('This method is for testing purposes only');
     }
 
@@ -240,7 +254,10 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
   }
 
   public _testSetToolsDescription(toolsDescription: string): void {
-    if (this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !== 'test') {
+    if (
+      this.retrieveEnvironmentVariablesService.retrieve<string>('NODE_ENV') !==
+      'test'
+    ) {
       throw new Error('This method is for testing purposes only');
     }
 

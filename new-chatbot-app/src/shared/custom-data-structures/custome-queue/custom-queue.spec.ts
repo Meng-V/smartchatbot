@@ -40,7 +40,7 @@ describe('CustomQueue', () => {
 
   it('should update maximum size and dequeue excess items', () => {
     queue.setMaxSize(5);
-    
+
     queue.enqueue(1);
     queue.enqueue(2);
     queue.enqueue(3);
