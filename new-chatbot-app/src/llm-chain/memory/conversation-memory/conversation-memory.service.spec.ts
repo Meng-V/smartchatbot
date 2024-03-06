@@ -9,9 +9,7 @@ import { Role } from '../memory.interface';
 import { ConversationSummarizationPromptService } from '../../../llm-chain/prompt/conversation-summarization-prompt/conversation-summarization-prompt.service';
 import { LlmModule } from '../../../llm-chain/llm/llm.module';
 
-import {
-  TokenUsageService,
-} from '../../../shared/services/token-usage/token-usage.service';
+import { TokenUsageService } from '../../../shared/services/token-usage/token-usage.service';
 
 describe('ConversationMemoryService', () => {
   let service: ConversationMemoryService;
@@ -28,7 +26,9 @@ describe('ConversationMemoryService', () => {
       ],
     }).compile();
 
-    service = await module.resolve<ConversationMemoryService>(ConversationMemoryService);
+    service = await module.resolve<ConversationMemoryService>(
+      ConversationMemoryService,
+    );
     llmServiceMock = await module.resolve<LlmService>(LlmService);
   });
   it('should be defined', () => {
