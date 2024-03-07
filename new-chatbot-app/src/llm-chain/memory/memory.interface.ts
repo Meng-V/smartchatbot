@@ -1,4 +1,4 @@
-import { TokenUsage } from 'src/shared/services/token-usage/token-usage.service';
+import { TokenUsage } from '../../shared/services/token-usage/token-usage.service';
 
 export enum Role {
   AIAgent = 'AIAgent',

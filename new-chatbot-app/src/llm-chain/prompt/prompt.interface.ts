@@ -6,5 +6,5 @@ export interface Prompt {
   /**
    * Get the prompt
    */
-  getPrompt(): Promise<string>;
+  getPrompt(): Promise<string> | string;
 }

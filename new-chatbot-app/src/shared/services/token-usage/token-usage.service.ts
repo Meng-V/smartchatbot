@@ -1,6 +1,7 @@
 import { Global, Injectable } from '@nestjs/common';
 import { AxiosResponse } from 'axios';
 import { CreateChatCompletionResponse } from 'openai';
+import { OpenAiModelType } from 'src/llm-chain/llm/openai-api/openai-api.service';
 
 export type ModelTokenUsage = {
   totalTokens: number;
