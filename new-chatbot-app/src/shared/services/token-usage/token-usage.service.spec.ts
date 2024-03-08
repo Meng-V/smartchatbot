@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TokenUsageService } from './token-usage.service';
+import { TokenUsage, TokenUsageService } from './token-usage.service';
 import { AxiosResponse } from 'axios';
 import { CreateChatCompletionResponse } from 'openai';
 
@@ -121,6 +121,27 @@ describe('TokenUsageService', () => {
         totalTokens: 100,
         promptTokens: 50,
         completionTokens: 50,
+      },
+    };
+    expect(service.combineTokenUsage(mockTokenUsage1, mockTokenUsage2)).toEqual(
+      expectedTokenUsageResult,
+    );
+
+    //Should be able to deal with empty object
+    mockTokenUsage1 = {};
+    mockTokenUsage2 = {
+      'gpt-4-0314': {
+        totalTokens: 140,
+        promptTokens: 110,
+        completionTokens: 30,
+      },
+    };
+
+    expectedTokenUsageResult = {
+      'gpt-4-0314': {
+        totalTokens: 140,
+        promptTokens: 110,
+        completionTokens: 30,
       },
     };
     expect(service.combineTokenUsage(mockTokenUsage1, mockTokenUsage2)).toEqual(

@@ -1,6 +1,15 @@
 import { Global, Injectable } from '@nestjs/common';
 import { AxiosResponse } from 'axios';
 import { CreateChatCompletionResponse } from 'openai';
+import { OpenAiModelType } from 'src/llm-chain/llm/openai-api/openai-api.service';
+
+export type ModelTokenUsage = {
+  totalTokens: number;
+  promptTokens: number;
+  completionTokens: number;
+};
+
+export type TokenUsage = Partial<Record<OpenAiModelType, ModelTokenUsage>>;
 
 /**
  * Service used for everything TokenUsage related
@@ -19,18 +28,18 @@ export class TokenUsageService {
     const tokenUsage: TokenUsage = {};
     if (openaiApiResponse.data && openaiApiResponse.data.usage) {
       // Extract the usage information from the openaiApiResponse
-      const openAIModelName: ModelName = openaiApiResponse.data
-        .model as ModelName;
-      tokenUsage[openAIModelName] = {
+      const openAIModelType: OpenAiModelType = openaiApiResponse.data
+        .model as OpenAiModelType;
+      tokenUsage[openAIModelType] = {
         totalTokens: 0,
         promptTokens: 0,
         completionTokens: 0,
       };
-      tokenUsage[openAIModelName]!.totalTokens +=
+      tokenUsage[openAIModelType]!.totalTokens +=
         openaiApiResponse.data.usage!.total_tokens;
-      tokenUsage[openAIModelName]!.completionTokens +=
+      tokenUsage[openAIModelType]!.completionTokens +=
         openaiApiResponse.data.usage!.completion_tokens;
-      tokenUsage[openAIModelName]!.promptTokens +=
+      tokenUsage[openAIModelType]!.promptTokens +=
         openaiApiResponse.data.usage!.prompt_tokens;
     }
     return tokenUsage;
@@ -46,10 +55,12 @@ export class TokenUsageService {
     tokenUsage2: TokenUsage,
   ): TokenUsage {
     const returnedTokenUsage: TokenUsage = {};
-    const uniqueModelNames: ModelName[] = (() => {
-      let modelNames = Object.keys(tokenUsage1) as ModelName[];
+    const uniqueModelNames: OpenAiModelType[] = (() => {
+      let modelNames = Object.keys(tokenUsage1) as OpenAiModelType[];
       modelNames = [
-        ...new Set(modelNames.concat(Object.keys(tokenUsage2) as ModelName[])),
+        ...new Set(
+          modelNames.concat(Object.keys(tokenUsage2) as OpenAiModelType[]),
+        ),
       ];
       return modelNames;
     })();
