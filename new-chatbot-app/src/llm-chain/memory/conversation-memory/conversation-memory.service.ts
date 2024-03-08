@@ -9,7 +9,7 @@ import { ConversationSummarizationPromptService } from '../../prompt/conversatio
 import { LlmService } from '../../../llm-chain/llm/llm.service';
 import { OpenAiModelType } from '../../../llm-chain/llm/openai-api/openai-api.service';
 
-@Injectable({ scope: Scope.REQUEST })
+@Injectable({ scope: Scope.TRANSIENT })
 export class ConversationMemoryService implements ConversationMemory {
   private conversationQueue: CustomQueue<[Role | null, string]> =
     new CustomQueue<[Role | null, string]>();
@@ -189,6 +189,10 @@ export class ConversationMemoryService implements ConversationMemory {
     });
   }
 
+  /**
+   * Get the total token usage used for this memory so far
+   * @returns 
+   */
   public getTokenUsage(): TokenUsage {
     return this.tokenUsage;
   }

@@ -9,7 +9,7 @@ import { RetrieveEnvironmentVariablesService } from '../../../shared/services/re
  *
  * Scope: Request
  */
-@Injectable({ scope: Scope.REQUEST })
+@Injectable({ scope: Scope.TRANSIENT })
 export class ChatbotConversationPromptWithToolsService implements Prompt {
   private modelDescription: string;
   private conversationMemory: ConversationMemory | undefined = undefined;

@@ -1,6 +1,5 @@
 import { Global, Injectable } from '@nestjs/common';
-import { AxiosResponse } from 'axios';
-import { CreateChatCompletionResponse } from 'openai';
+import { ChatCompletion } from 'openai/resources';
 import { OpenAiModelType } from 'src/llm-chain/llm/openai-api/openai-api.service';
 
 export type ModelTokenUsage = {
@@ -23,24 +22,24 @@ export class TokenUsageService {
    * @returns
    */
   getTokenUsageFromOpenAiApiResponse(
-    openaiApiResponse: AxiosResponse<CreateChatCompletionResponse, any>,
+    openaiApiResponse: ChatCompletion,
   ): TokenUsage {
     const tokenUsage: TokenUsage = {};
-    if (openaiApiResponse.data && openaiApiResponse.data.usage) {
+    if (openaiApiResponse && openaiApiResponse.usage) {
       // Extract the usage information from the openaiApiResponse
-      const openAIModelType: OpenAiModelType = openaiApiResponse.data
-        .model as OpenAiModelType;
+      const openAIModelType: OpenAiModelType =
+        openaiApiResponse.model as OpenAiModelType;
       tokenUsage[openAIModelType] = {
         totalTokens: 0,
         promptTokens: 0,
         completionTokens: 0,
       };
       tokenUsage[openAIModelType]!.totalTokens +=
-        openaiApiResponse.data.usage!.total_tokens;
+        openaiApiResponse.usage.total_tokens;
       tokenUsage[openAIModelType]!.completionTokens +=
-        openaiApiResponse.data.usage!.completion_tokens;
+        openaiApiResponse.usage.completion_tokens;
       tokenUsage[openAIModelType]!.promptTokens +=
-        openaiApiResponse.data.usage!.prompt_tokens;
+        openaiApiResponse.usage.prompt_tokens;
     }
     return tokenUsage;
   }

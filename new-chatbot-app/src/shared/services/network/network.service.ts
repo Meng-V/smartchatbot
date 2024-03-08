@@ -35,7 +35,7 @@ export class NetworkService {
         resolve(response);
       } else {
         const errorMessage =
-          'Cannot establish connection with the target network.';
+          'Cannot establish connection with the target network.\n' + error.message;
         this.logger.error(errorMessage);
         throw new Error(errorMessage);
       }

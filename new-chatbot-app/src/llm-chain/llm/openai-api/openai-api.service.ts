@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { Configuration, CreateChatCompletionResponse, OpenAIApi } from 'openai';
-import { AxiosResponse } from 'axios';
+import OpenAI from 'openai';
 
 import { NetworkService } from '../../../shared/services/network/network.service';
 import { RetrieveEnvironmentVariablesService } from '../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
@@ -10,6 +9,7 @@ import {
   TokenUsageService,
 } from '../../../shared/services/token-usage/token-usage.service';
 import { LlmInterface } from '../llm.interface';
+import { ChatCompletion } from 'openai/resources';
 
 export enum OpenAiModelType {
   GPT_3_5_TURBO = 'gpt-3.5-turbo',
@@ -26,21 +26,20 @@ export enum OpenAiModelType {
 @Injectable()
 export class OpenaiApiService implements LlmInterface {
   private readonly logger = new Logger(OpenaiApiService.name);
-  private readonly model: OpenAIApi;
+  private readonly openai: OpenAI;
 
   constructor(
     private networkService: NetworkService,
     private retrieveEnvironmentVariablesService: RetrieveEnvironmentVariablesService,
     private tokenUsageService: TokenUsageService,
   ) {
-    const modelConfiguration = new Configuration({
+    this.openai = new OpenAI({
       organization: this.retrieveEnvironmentVariablesService.retrieve<string>(
         'OPENAI_ORGANIZATION_ID',
       ),
       apiKey:
         this.retrieveEnvironmentVariablesService.retrieve('OPENAI_API_KEY'),
     });
-    this.model = new OpenAIApi(modelConfiguration);
   }
 
   /**
@@ -56,59 +55,51 @@ export class OpenaiApiService implements LlmInterface {
   async getModelResponse(
     systemPrompt: string,
     userPrompt: string,
-    modelName: OpenAiModelType = OpenAiModelType.GPT_4,
+    model: OpenAiModelType = OpenAiModelType.GPT_4,
     temperature: number = 0.0,
     top_p: number = 0.1,
   ): Promise<{ response: string; tokenUsage: TokenUsage }> {
-    return new Promise<{ response: string; tokenUsage: TokenUsage }>(
-      async (resolve, reject) => {
-        // Get the prompt from the prompt object
-        let response; // The response from the model, as a result to be returned
-        try {
-          response = await this.networkService.retryWithMaxAttempts<
-            AxiosResponse<CreateChatCompletionResponse, any>
-          >((): Promise<AxiosResponse<CreateChatCompletionResponse, any>> => {
-            return new Promise<
-              AxiosResponse<CreateChatCompletionResponse, any>
-            >((resolve, reject) => {
-              try {
-                const chatResponse = this.model.createChatCompletion({
-                  model: modelName,
-                  temperature: temperature,
-                  top_p: top_p,
-                  messages: [
-                    {
-                      role: 'system',
-                      content: systemPrompt,
-                    },
-                    { role: 'user', content: userPrompt },
-                  ],
-                }) as Promise<AxiosResponse<CreateChatCompletionResponse, any>>;
-                resolve(chatResponse);
-              } catch (error: any) {
-                reject(error);
-              }
-            });
-          });
-        } catch (error: any) {
-          reject(error);
-          return;
-        }
+    const modelName: string = model as string;
 
-        if (response.data.choices[0].message?.content) {
-          // Extract the usage information from the response
-          const openAiApiTokenUsage: TokenUsage =
-            this.tokenUsageService.getTokenUsageFromOpenAiApiResponse(response);
-          resolve({
-            response: response.data.choices[0].message?.content,
-            tokenUsage: openAiApiTokenUsage,
+    // Get the prompt from the prompt object
+    let response; // The response from the model, as a result to be returned
+
+    try {
+      response = await this.networkService.retryWithMaxAttempts<ChatCompletion>(
+        async (): Promise<ChatCompletion> => {
+          const chatResponse = await this.openai.chat.completions.create({
+            model: modelName as string,
+            temperature: temperature,
+            top_p: top_p,
+            messages: [
+              {
+                role: 'system',
+                content: systemPrompt,
+              },
+              { role: 'user', content: userPrompt },
+            ],
           });
-        } else {
-          const errorMsg = 'Error: No response from the model';
-          this.logger.error(errorMsg);
-          throw new Error(errorMsg);
-        }
-      },
-    );
+          return chatResponse;
+        },
+        5,
+      );
+    } catch (error: any) {
+      console.log(error);
+      throw error;
+    }
+
+    if (response.choices[0].message?.content) {
+      // Extract the usage information from the response
+      const openAiApiTokenUsage: TokenUsage =
+        this.tokenUsageService.getTokenUsageFromOpenAiApiResponse(response);
+      return {
+        response: response.choices[0].message?.content,
+        tokenUsage: openAiApiTokenUsage,
+      };
+    } else {
+      const errorMsg = 'Error: No response from the model';
+      this.logger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
   }
 }

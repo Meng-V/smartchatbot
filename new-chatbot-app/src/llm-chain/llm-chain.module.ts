@@ -4,9 +4,10 @@ import { MemoryModule } from './memory/memory.module';
 import { PromptModule } from './prompt/prompt.module';
 import { LlmChainService } from './llm-chain.service';
 import { LlmModule } from './llm/llm.module';
+import { SharedModule } from '../shared/shared.module';
 
 @Module({
-  imports: [LlmModule, LlmToolboxModule, MemoryModule, PromptModule],
+  imports: [LlmModule, LlmToolboxModule, MemoryModule, PromptModule, SharedModule],
   providers: [LlmChainService],
   exports: [LlmChainService],
 })
