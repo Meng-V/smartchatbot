@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import io from 'socket.io-client'; // Socket client to communicate with the backend
+import io from 'socket.io-client';
 import {
   HStack,
   Input,
@@ -15,47 +15,28 @@ import {
   ModalCloseButton,
   ModalBody,
   IconButton,
-  FormControl,
-  FormLabel,
-} from '@chakra-ui/react'; // Chakra UI components
+} from '@chakra-ui/react';
 import { ArrowBackIcon, ChatIcon } from '@chakra-ui/icons';
-import MessageComponents from './components/ParseLinks'; // Component to parse links in the chat messages
-import RealLibrarianWidget from './components/RealLibrarianWidget'; // Component to display the real librarian widget
-import { useToast } from '@chakra-ui/react'; // Component to display the toast message
-// Styles
+import MessageComponents from './components/ParseLinks';
+import RealLibrarianWidget from './components/RealLibrarianWidget';
+import OfflineTicketWidget from './components/OfflineTicketWidget';
+import { useToast } from '@chakra-ui/react';
+
 import './App.css';
 import { retrieveEnvironmentVariable } from './services/RetrieveEnvironmentVariable';
 
-/**
- * Main App component
- */
 const App = () => {
-  // To scroll to the bottom of the chat window
+
   const chatRef = useRef();
-  // To store the messages on both user and chatbot sides
   const [messages, setMessages] = useState([]);
-  // To control the modal
   const { isOpen, onOpen, onClose } = useDisclosure();
-  // To store the input message
   const [inputMessage, setInputMessage] = useState('');
-  // To store the current step
   const [step, setStep] = useState('initial');
-  // To store the ticket details
-  const [question, setQuestion] = useState('');
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [details, setDetails] = useState('');
-  // To track the connection status
   const [isConnected, setIsConnected] = useState(false);
-  // To track if the chatbot is typing
   const [isTyping, setIsTyping] = useState(false);
-  // To track if the welcome message has been shown
   const [welcomeMessageShown, setWelcomeMessageShown] = useState(false);
-  // To store the socket reference
   const socketRef = useRef();
-  // To display the toast
   const toast = useToast();
-  // To track if the connection has been attempted
   const [attemptedConnection, setAttemptedConnection] = useState(false);
 
   /**
@@ -188,7 +169,7 @@ const App = () => {
       setInputMessage(''); // Clear the input message
       setIsTyping(true); // Chatbot is typing
       // Send the message to the server
-      socketRef.current.emit('message', inputMessage, () => {});
+      socketRef.current.emit('message', inputMessage, () => { });
     }
   };
 
@@ -201,34 +182,6 @@ const App = () => {
     onClose();
   };
 
-  /**
-   * Function to handle the ticket submission
-   * @param {*} e
-   */
-  const handleTicketSubmit = (e) => {
-    e.preventDefault();
-    if (socketRef.current) {
-      socketRef.current.emit(
-        'createTicket',
-        {
-          question: question,
-          email: email,
-          name: name,
-          details: details,
-          ua: navigator.userAgent,
-        },
-        () => {
-          setStep('initial');
-        },
-      );
-    }
-  };
-
-  /****************************************************************************************/
-  /****************************************************************************************/
-  /**************************** RETURN INTERFACE FROM HERE ********************************/
-  /****************************************************************************************/
-  /****************************************************************************************/
   return (
     <>
       {/* Chat icon starts here */}
@@ -406,45 +359,7 @@ const App = () => {
             {step === 'realLibrarian' && <RealLibrarianWidget />}
 
             {/* Option #3: Ticket */}
-            {step === 'ticket' && (
-              <form onSubmit={handleTicketSubmit}>
-                <FormControl>
-                  <FormLabel>Name</FormLabel>
-                  <Input
-                    placeholder="Enter your name..."
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Question</FormLabel>
-                  <Input
-                    placeholder="Enter your question..."
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                  />
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Details</FormLabel>
-                  <Input
-                    placeholder="Enter details about your question..."
-                    value={details}
-                    onChange={(e) => setDetails(e.target.value)}
-                  />
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Email</FormLabel>
-                  <Input
-                    placeholder="Enter your email..."
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </FormControl>
-                <Button type="submit" mt={2}>
-                  Submit
-                </Button>
-              </form>
-            )}
+            {step === 'ticket' && <OfflineTicketWidget />}
           </ModalBody>
         </ModalContent>
       </Modal>
