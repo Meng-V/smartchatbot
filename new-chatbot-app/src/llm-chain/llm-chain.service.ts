@@ -32,7 +32,7 @@ export class LlmChainService {
     this.memoryService.addToConversation(Role.Customer, userMessage);
     const { response, tokenUsage } = await this.llmService.getModelResponse(
       this.promptService,
-      OpenAiModelType.GPT_4,
+      OpenAiModelType.GPT_4_TURBO,
     );
     
     //Update total llm token usage

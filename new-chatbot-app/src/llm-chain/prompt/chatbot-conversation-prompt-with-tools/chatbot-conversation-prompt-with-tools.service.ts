@@ -31,7 +31,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
       "You are a helpful assistant.You should try your best to answer the question.Unfortunately,you don't know anything about the library,books,and articles so you have to always rely on the tool or the given context for  library-related,book-related,or article-related questions.\n" +
       `For context,the current time is ${date.toLocaleString('en-US', {
         timeZone: 'America/New_York',
-      })}\n`;
+      })}\nONLY include your answer in your final answer`;
     this.modelScratchpad = '';
   }
 
@@ -185,7 +185,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
     return new Promise<string>(async (resolve, reject) => {
       // Get the conversation summary string
       const conversationString =
-        await this.conversationMemory?.getConversationAsString(0, 0);
+        await this.conversationMemory?.getConversationAsString(0);
 
       const wholePrompt: string =
         `\nThis is the conversation so far(delimited by the triple dashes)\n---\n${conversationString}\n---\n` +
