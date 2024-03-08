@@ -123,34 +123,31 @@ export class ConversationMemoryService implements ConversationMemory {
   private async summarizeConversation(
     conversation: [Role | null, string][],
   ): Promise<string> {
-    return new Promise<string>(async (resolve, rejects) => {
-      if (conversation.length === 0) {
-        resolve('');
-        return;
-      }
+    if (conversation.length === 0) {
+      return '';
+    }
 
-      const conversationString = this.stringifyConversation(conversation);
-      this.conversationSummarizationPromptService.setConversation(
-        conversationString,
-      );
-      const {
-        response: conversationSummary,
-        tokenUsage: tokenUsageFromSummarization,
-      } = await this.llmService.getModelResponse(
-        this.conversationSummarizationPromptService,
-        OpenAiModelType.GPT_3_5_TURBO,
-      );
+    const conversationString = this.stringifyConversation(conversation);
+    this.conversationSummarizationPromptService.setConversation(
+      conversationString,
+    );
+    const {
+      response: conversationSummary,
+      tokenUsage: tokenUsageFromSummarization,
+    } = await this.llmService.getModelResponse(
+      this.conversationSummarizationPromptService,
+      OpenAiModelType.GPT_3_5_TURBO,
+    );
 
-      //Update TokenUsage information
-      this.setTokenUsage(
-        this.tokenUsageService.combineTokenUsage(
-          tokenUsageFromSummarization,
-          this.getTokenUsage(),
-        ),
-      );
+    //Update TokenUsage information
+    this.setTokenUsage(
+      this.tokenUsageService.combineTokenUsage(
+        tokenUsageFromSummarization,
+        this.getTokenUsage(),
+      ),
+    );
 
-      resolve(conversationSummary);
-    });
+    return conversationSummary;
   }
   /**
    * get 
@@ -163,35 +160,31 @@ export class ConversationMemoryService implements ConversationMemory {
     start: number = 0,
     end?: number,
   ): Promise<string> {
-    return new Promise<string>(async (resolve, rejects) => {
-      const slicedConversation = this.conversationQueue.slice(start, end);
+    const slicedConversation = this.conversationQueue.slice(start, end);
 
-      //If bufferSize is undefined, we don't summarize anything
-      const conversationToUnchange =
-        this.conversationBufferSize !== undefined
-          ? slicedConversation.slice((start = -this.conversationBufferSize))
-          : slicedConversation;
-      const conversationToSummarize =
-        this.conversationBufferSize !== undefined
-          ? slicedConversation.slice(
-              (start = 0),
-              (end = -this.conversationBufferSize),
-            )
-          : [];
+    //If bufferSize is undefined, we don't summarize anything
+    const conversationToUnchange =
+      this.conversationBufferSize !== undefined
+        ? slicedConversation.slice((start = -this.conversationBufferSize))
+        : slicedConversation;
+    const conversationToSummarize =
+      this.conversationBufferSize !== undefined
+        ? slicedConversation.slice(
+            (start = 0),
+            (end = -this.conversationBufferSize),
+          )
+        : [];
 
-      const conversationSummary = this.conversationSummarizationMode
-        ? await this.summarizeConversation(conversationToSummarize)
-        : this.stringifyConversation(conversationToSummarize);
+    const conversationSummary = this.conversationSummarizationMode
+      ? await this.summarizeConversation(conversationToSummarize)
+      : this.stringifyConversation(conversationToSummarize);
 
-      resolve(
-        `${conversationSummary}\n${this.stringifyConversation(conversationToUnchange)}`,
-      );
-    });
+    return `${conversationSummary}\n${this.stringifyConversation(conversationToUnchange)}`;
   }
 
   /**
    * Get the total token usage used for this memory so far
-   * @returns 
+   * @returns
    */
   public getTokenUsage(): TokenUsage {
     return this.tokenUsage;

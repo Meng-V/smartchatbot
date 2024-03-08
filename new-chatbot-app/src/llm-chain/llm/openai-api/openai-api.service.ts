@@ -54,51 +54,52 @@ export class OpenaiApiService implements LlmInterface {
    * @throws Throw error if doesn't receive any message from the OpenAI API
    */
   async getModelResponse(
-    systemPrompt: string,
     userPrompt: string,
-    model: OpenAiModelType = OpenAiModelType.GPT_4,
+    systemPrompt?: string,
+    modelName: OpenAiModelType = OpenAiModelType.GPT_4,
     temperature: number = 0.0,
     top_p: number = 0.1,
   ): Promise<{ response: string; tokenUsage: TokenUsage }> {
-    const modelName: string = model as string;
-
-    // Get the prompt from the prompt object
-    let response; // The response from the model, as a result to be returned
-
+    let modelResponse;
     try {
-      response = await this.networkService.retryWithMaxAttempts<ChatCompletion>(
-        async (): Promise<ChatCompletion> => {
-          const chatResponse = await this.openai.chat.completions.create({
-            model: modelName as string,
-            temperature: temperature,
-            top_p: top_p,
-            messages: [
-              {
-                role: 'system',
-                content: systemPrompt,
-              },
-              { role: 'user', content: userPrompt },
-            ],
-          });
-          return chatResponse;
-        },
-        5,
-      );
+      modelResponse =
+        await this.networkService.retryWithMaxAttempts<ChatCompletion>(
+          async (): Promise<ChatCompletion> => {
+            console.log(systemPrompt);
+            console.log(userPrompt);
+            const chatResponse = await this.openai.chat.completions.create({
+              model: modelName as string,
+              temperature: temperature,
+              top_p: top_p,
+              messages: [
+                {
+                  role: 'system',
+                  content: systemPrompt !== undefined ? systemPrompt : '',
+                },
+                { role: 'user', content: userPrompt },
+              ],
+            });
+            return chatResponse;
+          },
+          5,
+        );
     } catch (error: any) {
       console.log(error);
       throw error;
     }
 
-    if (response.choices[0].message?.content) {
-      // Extract the usage information from the response
+    if (modelResponse.choices[0].message?.content) {
+      // Extract the usage information from the modelResponse
       const openAiApiTokenUsage: TokenUsage =
-        this.tokenUsageService.getTokenUsageFromOpenAiApiResponse(response);
+        this.tokenUsageService.getTokenUsageFromOpenAiApiResponse(
+          modelResponse,
+        );
       return {
-        response: response.choices[0].message?.content,
+        response: modelResponse.choices[0].message?.content,
         tokenUsage: openAiApiTokenUsage,
       };
     } else {
-      const errorMsg = 'Error: No response from the model';
+      const errorMsg = 'Error: No modelResponse from the model';
       this.logger.error(errorMsg);
       throw new Error(errorMsg);
     }
