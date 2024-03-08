@@ -8,27 +8,8 @@ const OfflineTicketWidget = () => {
   const [name, setName] = useState('');
   const [details, setDetails] = useState('');
 
-  const handleTicketSubmit = (e) => {
-    e.preventDefault();
-    // if (socketRef.current) {
-    //   socketRef.current.emit(
-    //     'createTicket',
-    //     {
-    //       question: question,
-    //       email: email,
-    //       name: name,
-    //       details: details,
-    //       ua: navigator.userAgent,
-    //     },
-    //     () => {
-    //       setStep('initial');
-    //     },
-    //   );
-    // }
-  };
-
   return (
-    <form onSubmit={handleTicketSubmit}>
+    <form>
       <FormControl>
         <FormLabel>Name</FormLabel>
         <Input

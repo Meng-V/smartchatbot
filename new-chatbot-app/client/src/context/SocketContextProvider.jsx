@@ -1,11 +1,11 @@
+import { retrieveEnvironmentVariable } from '../services/RetrieveEnvironmentVariable';
 import { createContext, useEffect, useState, useRef } from "react";
-import io from "../socket";
+import { io } from 'socket.io-client';
 
 const SocketContext = createContext();
 
 const SocketContextProvider = (props) => {
 
-  const [messages, setMessages] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
 
   // Set up URL from environment variables
@@ -38,11 +38,6 @@ const SocketContextProvider = (props) => {
         console.error('Connection Timeout:', timeout);
         setIsConnected(false);
       });
-
-      socketIo.on('message', function (message) {
-        setIsTyping(false);
-        addMessage(message, 'chatbot');
-      });
     }
 
     return () => {
@@ -51,6 +46,12 @@ const SocketContextProvider = (props) => {
       }
     };
   }, []);
+
+  return (
+    <SocketContext.Provider value={socketIo.current}>
+      {props.children}
+    </SocketContext.Provider>
+  )
 
 }
 
