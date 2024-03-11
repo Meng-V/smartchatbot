@@ -7,7 +7,13 @@ import { LlmModule } from './llm/llm.module';
 import { SharedModule } from '../shared/shared.module';
 
 @Module({
-  imports: [LlmModule, LlmToolboxModule, MemoryModule, PromptModule, SharedModule],
+  imports: [
+    LlmModule,
+    LlmToolboxModule,
+    MemoryModule,
+    PromptModule,
+    SharedModule,
+  ],
   providers: [LlmChainService],
   exports: [LlmChainService],
 })

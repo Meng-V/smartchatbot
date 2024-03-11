@@ -5,11 +5,6 @@ import { SharedModule } from './shared/shared.module';
 import { GatewayModule } from './gateway/gateway.module';
 
 @Module({
-  imports: [
-    LlmChainModule,
-    LibraryApiModule,
-    SharedModule,
-    GatewayModule,
-  ],
+  imports: [LlmChainModule, LibraryApiModule, SharedModule, GatewayModule],
 })
 export class AppModule {}

@@ -36,7 +36,6 @@ describe('LlmChainService', () => {
     llmChainService = await moduleRef.resolve<LlmChainService>(LlmChainService);
 
     mockedLlmService = await moduleRef.resolve<LlmService>(LlmService);
-    
   });
 
   it('should be defined', () => {

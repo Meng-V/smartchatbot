@@ -24,7 +24,9 @@ export class LlmConnectionGateway {
       this.socketContextIdMapping.set(socket, contextId);
     }
     const contextId: ContextId = this.socketContextIdMapping.get(socket)!;
-    return this.moduleRef.resolve(LlmChainService, contextId, {strict: false});
+    return this.moduleRef.resolve(LlmChainService, contextId, {
+      strict: false,
+    });
   }
 
   public closeLlmChainForCurrentSocket(socket: Socket) {

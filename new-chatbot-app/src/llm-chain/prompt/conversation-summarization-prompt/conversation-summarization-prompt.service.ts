@@ -1,7 +1,7 @@
 import { Injectable, Scope } from '@nestjs/common';
 import { Prompt } from '../prompt.interface';
 
-@Injectable({scope: Scope.TRANSIENT})
+@Injectable({ scope: Scope.TRANSIENT })
 export class ConversationSummarizationPromptService implements Prompt {
   private modelDescription: string;
   private conversation: string = '';

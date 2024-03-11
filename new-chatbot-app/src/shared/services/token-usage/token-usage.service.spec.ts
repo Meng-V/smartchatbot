@@ -37,7 +37,7 @@ describe('TokenUsageService', () => {
         prompt_tokens: 40,
       },
       id: 'someID',
-      object: "chat.completion",
+      object: 'chat.completion',
       created: 1,
     };
     const expectedTokenUsageResult: TokenUsage = {

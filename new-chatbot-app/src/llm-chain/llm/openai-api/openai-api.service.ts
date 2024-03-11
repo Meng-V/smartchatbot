@@ -65,7 +65,6 @@ export class OpenaiApiService implements LlmInterface {
       modelResponse =
         await this.networkService.retryWithMaxAttempts<ChatCompletion>(
           async (): Promise<ChatCompletion> => {
-            
             const chatResponse = await this.openai.chat.completions.create({
               model: modelName as string,
               temperature: temperature,

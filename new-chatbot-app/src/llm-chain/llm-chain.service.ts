@@ -52,7 +52,7 @@ export class LlmChainService {
   }
 
   public getTokenUsage(): TokenUsage {
-    const totalTokenUsageFromMemory = this.memoryService.getTokenUsage()
+    const totalTokenUsageFromMemory = this.memoryService.getTokenUsage();
     const totalTokenUsage = this.tokenUsageService.combineTokenUsage(
       this.totalLlmTokenUsage,
       totalTokenUsageFromMemory,
