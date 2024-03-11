@@ -48,6 +48,7 @@ export class TokenUsageService {
    * Combine 2 tokenUsage object
    * @param tokenUsage1
    * @param tokenUsage2
+   * @returns the combine Token Usage
    */
   combineTokenUsage(
     tokenUsage1: TokenUsage,

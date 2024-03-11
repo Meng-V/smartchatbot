@@ -14,7 +14,7 @@ import {
  */
 @Injectable({ scope: Scope.REQUEST })
 export class LlmChainService {
-  totalLlmTokenUsage: TokenUsage = {};
+  private totalLlmTokenUsage: TokenUsage = {};
   constructor(
     private llmService: LlmService,
     private promptService: ChatbotConversationPromptWithToolsService,
@@ -52,9 +52,11 @@ export class LlmChainService {
   }
 
   public getTokenUsage(): TokenUsage {
-    return this.tokenUsageService.combineTokenUsage(
+    const totalTokenUsageFromMemory = this.memoryService.getTokenUsage()
+    const totalTokenUsage = this.tokenUsageService.combineTokenUsage(
       this.totalLlmTokenUsage,
-      this.memoryService.getTokenUsage(),
+      totalTokenUsageFromMemory,
     );
+    return totalTokenUsage;
   }
 }
