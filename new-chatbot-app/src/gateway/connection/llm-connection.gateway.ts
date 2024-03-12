@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ContextId, ContextIdFactory, ModuleRef } from '@nestjs/core';
 import { LlmChainService } from '../../llm-chain/llm-chain.service';
-
-import { Socket } from 'socket.io';
+import { RetrieveEnvironmentVariablesService } from '../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
 
 @Injectable()
 export class LlmConnectionGateway {
-  private socketContextIdMapping: Map<Socket, ContextId> = new Map<
-    Socket,
+  private socketIdToContextIdMapping: Map<string, ContextId> = new Map<
+    string,
     ContextId
   >();
   constructor(private readonly moduleRef: ModuleRef) {}
@@ -17,19 +16,30 @@ export class LlmConnectionGateway {
    * @param socket
    * @returns
    */
-  public getLlmChainForCurrentSocket(socket: Socket): Promise<LlmChainService> {
-    if (!this.socketContextIdMapping.has(socket)) {
+  public async getLlmChainForCurrentSocket(
+    socketId: string,
+  ): Promise<LlmChainService> {
+    if (!this.socketIdToContextIdMapping.has(socketId)) {
       const contextId = ContextIdFactory.create();
       this.moduleRef.registerRequestByContextId(LlmChainService, contextId);
-      this.socketContextIdMapping.set(socket, contextId);
+      this.socketIdToContextIdMapping.set(socketId, contextId);
     }
-    const contextId: ContextId = this.socketContextIdMapping.get(socket)!;
-    return this.moduleRef.resolve(LlmChainService, contextId, {
+    const contextId: ContextId = this.socketIdToContextIdMapping.get(socketId)!;
+    return await this.moduleRef.resolve(LlmChainService, contextId, {
       strict: false,
     });
   }
 
-  public closeLlmChainForCurrentSocket(socket: Socket) {
-    this.socketContextIdMapping.delete(socket);
+  /**
+   *
+   * @param socketId
+   * @returns string if there exists socketId, else return undefined
+   */
+  public getContextId(socketId: string): ContextId | undefined {
+    return this.socketIdToContextIdMapping.get(socketId);
+  }
+
+  public closeLlmChainForCurrentSocket(socketId: string): void {
+    this.socketIdToContextIdMapping.delete(socketId);
   }
 }

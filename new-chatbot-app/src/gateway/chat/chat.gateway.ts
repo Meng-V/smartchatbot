@@ -21,7 +21,7 @@ export class ChatGateway implements OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
     const llmChain: LlmChainService =
-      await this.llmConnnectionGateway.getLlmChainForCurrentSocket(client);
+      await this.llmConnnectionGateway.getLlmChainForCurrentSocket(client.id);
 
     const modelResponse = await llmChain.getModelResponse(userMessage);
     client.emit('message', modelResponse);
