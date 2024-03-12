@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConversationMemory } from 'src/llm-chain/memory/memory.interface';
 import { ChatbotConversationPromptWithToolsService } from './chatbot-conversation-prompt-with-tools.service';
 import { ConfigService } from '@nestjs/config';
+import { SharedModule } from '../../../shared/shared.module';
 
 describe('ChatbotConversationPromptWithToolsService', () => {
   let chatbotConversationPromptService: ChatbotConversationPromptWithToolsService;
@@ -9,6 +10,7 @@ describe('ChatbotConversationPromptWithToolsService', () => {
 
   beforeEach(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
+      imports: [SharedModule],
       providers: [ChatbotConversationPromptWithToolsService, ConfigService],
     }).compile();
 

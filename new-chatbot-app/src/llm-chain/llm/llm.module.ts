@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { LlmService } from './llm.service';
-import { OpenaiApiService } from './openai-api/openai-api.service';
-import { TokenUsageService } from 'src/shared/services/token-usage/token-usage.service';
+import {
+  OpenaiApiService,
+  OpenAiModelType,
+} from './openai-api/openai-api.service';
+import { SharedModule } from '../../shared/shared.module';
 
 export type LlmModelType = OpenAiModelType | CohereModelType;
 
@@ -18,6 +21,8 @@ export type LlmModelSetting = {
 };
 
 @Module({
-  providers: [LlmService, OpenaiApiService, TokenUsageService],
+  imports: [SharedModule],
+  providers: [LlmService, OpenaiApiService],
+  exports: [LlmService, OpenaiApiService],
 })
 export class LlmModule {}

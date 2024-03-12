@@ -1,15 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { Prompt } from '../prompt/prompt.interface';
-import {
-  TokenUsage,
-  TokenUsageService,
-} from '../../shared/services/token-usage/token-usage.service';
+import { TokenUsage } from '../../shared/services/token-usage/token-usage.service';
 import { LlmInterface } from './llm.interface';
 import {
   OpenaiApiService,
   OpenAiModelType,
 } from './openai-api/openai-api.service';
+import { LlmModelType } from './llm.module';
 
 /**
  * Service for getting response from different LLM model and number of token used
@@ -18,10 +16,7 @@ import {
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
 
-  constructor(
-    private tokenUsageService: TokenUsageService,
-    private openaiApiService: OpenaiApiService,
-  ) {}
+  constructor(private openaiApiService: OpenaiApiService) {}
 
   /**
    * Get the LLM Model from input model name
@@ -47,7 +42,7 @@ export class LlmService {
    * @param top_p
    * @returns
    */
-  async getModelResponse(
+  public async getModelResponse(
     prompt: Prompt,
     modelType: LlmModelType,
     temperature: number = 0.0,
@@ -59,8 +54,8 @@ export class LlmService {
         let model: LlmInterface;
         try {
           model = this.getModel(modelType);
-        } catch (e: any) {
-          throw new Error(e);
+        } catch (error: any) {
+          throw error;
         }
 
         // Get the prompt from the prompt object

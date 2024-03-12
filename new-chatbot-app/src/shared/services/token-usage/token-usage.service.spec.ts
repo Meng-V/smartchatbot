@@ -126,5 +126,26 @@ describe('TokenUsageService', () => {
     expect(service.combineTokenUsage(mockTokenUsage1, mockTokenUsage2)).toEqual(
       expectedTokenUsageResult,
     );
+
+    //Should be able to deal with empty object
+    mockTokenUsage1 = {};
+    mockTokenUsage2 = {
+      'gpt-4-0314': {
+        totalTokens: 140,
+        promptTokens: 110,
+        completionTokens: 30,
+      },
+    };
+
+    expectedTokenUsageResult = {
+      'gpt-4-0314': {
+        totalTokens: 140,
+        promptTokens: 110,
+        completionTokens: 30,
+      },
+    };
+    expect(service.combineTokenUsage(mockTokenUsage1, mockTokenUsage2)).toEqual(
+      expectedTokenUsageResult,
+    );
   });
 });

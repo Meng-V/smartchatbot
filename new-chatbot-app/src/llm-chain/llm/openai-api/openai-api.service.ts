@@ -34,7 +34,7 @@ export class OpenaiApiService implements LlmInterface {
     private tokenUsageService: TokenUsageService,
   ) {
     const modelConfiguration = new Configuration({
-      organization: this.retrieveEnvironmentVariablesService.retrieve(
+      organization: this.retrieveEnvironmentVariablesService.retrieve<string>(
         'OPENAI_ORGANIZATION_ID',
       ),
       apiKey:
