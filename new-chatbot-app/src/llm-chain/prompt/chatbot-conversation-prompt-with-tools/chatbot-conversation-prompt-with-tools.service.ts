@@ -9,7 +9,7 @@ import { RetrieveEnvironmentVariablesService } from '../../../shared/services/re
  *
  * Scope: Request
  */
-@Injectable({ scope: Scope.REQUEST })
+@Injectable({ scope: Scope.TRANSIENT })
 export class ChatbotConversationPromptWithToolsService implements Prompt {
   private modelDescription: string;
   private conversationMemory: ConversationMemory | undefined = undefined;
@@ -28,10 +28,10 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
     const date = new Date();
 
     this.modelDescription =
-      "You are a helpful assistant.You should try your best to answer the question.Unfortunately,you don't know anything about the library,books,and articles so you have to always rely on the tool or the given context for  library-related,book-related,or article-related questions.\n" +
+      "You are a helpful assistant.You should try your best to help and talk to the customer based on the conversation below.Unfortunately,you don't know anything about the library,books,and articles so you have to always rely on the tool or the given context for  library-related,book-related,or article-related questions.\n" +
       `For context,the current time is ${date.toLocaleString('en-US', {
         timeZone: 'America/New_York',
-      })}\n`;
+      })}\nONLY include your answer in your final answer`;
     this.modelScratchpad = '';
   }
 
@@ -182,16 +182,14 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
    * @returns string The whole prompt
    */
   public async getPrompt(): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
-      // Get the conversation summary string
-      const conversationString =
-        await this.conversationMemory?.getConversationAsString(0, 0);
+    // Get the conversation summary string
+    const conversationString =
+      await this.conversationMemory?.getConversationAsString(0);
 
-      const wholePrompt: string =
-        `\nThis is the conversation so far(delimited by the triple dashes)\n---\n${conversationString}\n---\n` +
-        `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;
-      resolve(wholePrompt);
-    });
+    const wholePrompt: string =
+      `\nThis is the conversation so far(delimited by the triple dashes)\n---\n${conversationString}\n---\n` +
+      `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;
+    return wholePrompt;
   }
 
   /**

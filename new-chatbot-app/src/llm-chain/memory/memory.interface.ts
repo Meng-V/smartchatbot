@@ -33,7 +33,7 @@ export interface ConversationMemory {
    * @returns the whole conversation as a string.
    * @throws Error if start and end indices are not appropriate
    */
-  getConversationAsString(start: number, end: number): Promise<string>;
+  getConversationAsString(start?: number, end?: number): Promise<string>;
 
   /**
    * Get the total token usage for the whole memory (in case when we use LLM inside this object to summarize the conversation)
