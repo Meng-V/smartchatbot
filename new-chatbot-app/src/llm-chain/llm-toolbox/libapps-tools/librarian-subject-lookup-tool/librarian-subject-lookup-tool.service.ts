@@ -29,7 +29,9 @@ export type LibrarianInformation = {
 };
 
 @Injectable()
-export class LibrarianSubjectLookupToolService implements LlmTool, OnModuleDestroy {
+export class LibrarianSubjectLookupToolService
+  implements LlmTool, OnModuleDestroy
+{
   public readonly toolName: string = 'LibrarianSearchWithSubjectTool';
   public readonly toolDescription: string =
     'This tool is useful for searching which librarians are responsible for a specific subject(such as Computer Science,Finance,Environmental Studies,Biology,etc).';
@@ -317,12 +319,12 @@ export class LibrarianSubjectLookupToolService implements LlmTool, OnModuleDestr
         filteredSubjectToLibrarianMap,
       )}`;
     } catch (error) {
-      this.logger.error(error)
+      this.logger.error(error);
       throw error;
     }
   }
 
   onModuleDestroy() {
-      this.tokenSubscription.unsubscribe();
+    this.tokenSubscription.unsubscribe();
   }
 }
