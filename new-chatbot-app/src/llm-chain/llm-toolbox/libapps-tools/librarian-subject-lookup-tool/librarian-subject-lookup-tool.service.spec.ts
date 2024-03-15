@@ -1,23 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   LibrarianInformation,
-  LibrarianSubjectLookupService,
-} from './librarian-subject-lookup.service';
+  LibrarianSubjectLookupToolService,
+} from './librarian-subject-lookup-tool.service';
 import { HttpModule } from '@nestjs/axios';
 import { LibraryApiModule } from '../../../../library-api/library-api.module';
 import AxiosResponse from 'axios';
 
-describe('LibrarianSubjectLookupService', () => {
-  let service: LibrarianSubjectLookupService;
+describe('LibrarianSubjectLookupToolService', () => {
+  let service: LibrarianSubjectLookupToolService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [HttpModule, LibraryApiModule],
-      providers: [LibrarianSubjectLookupService],
+      providers: [LibrarianSubjectLookupToolService],
     }).compile();
 
-    service = module.get<LibrarianSubjectLookupService>(
-      LibrarianSubjectLookupService,
+    service = module.get<LibrarianSubjectLookupToolService>(
+      LibrarianSubjectLookupToolService,
     );
   });
 

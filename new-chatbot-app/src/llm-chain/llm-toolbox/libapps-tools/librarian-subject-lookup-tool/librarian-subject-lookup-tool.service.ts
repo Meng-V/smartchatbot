@@ -29,7 +29,7 @@ export type LibrarianInformation = {
 };
 
 @Injectable()
-export class LibrarianSubjectLookupService implements LlmTool, OnModuleDestroy {
+export class LibrarianSubjectLookupToolService implements LlmTool, OnModuleDestroy {
   public readonly toolName: string = 'LibrarianSearchWithSubjectTool';
   public readonly toolDescription: string =
     'This tool is useful for searching which librarians are responsible for a specific subject(such as Computer Science,Finance,Environmental Studies,Biology,etc).';
@@ -43,7 +43,7 @@ export class LibrarianSubjectLookupService implements LlmTool, OnModuleDestroy {
   private accessToken: string = '';
   private tokenSubscription: Subscription;
 
-  private readonly logger = new Logger(LibrarianSubjectLookupService.name);
+  private readonly logger = new Logger(LibrarianSubjectLookupToolService.name);
 
   constructor(
     private libappsAuthorizationService: LibappsAuthorizationService,
