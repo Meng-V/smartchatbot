@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TokenUsage, TokenUsageService } from './token-usage.service';
-import { AxiosResponse } from 'axios';
-import { CreateChatCompletionResponse } from 'openai';
+import { ChatCompletion } from 'openai/resources';
 
 describe('TokenUsageService', () => {
   let service: TokenUsageService;
@@ -19,32 +18,28 @@ describe('TokenUsageService', () => {
   });
 
   it('should get the right Token Usage from OpenAiApiResponse', () => {
-    const mockAxiosResponse: AxiosResponse<CreateChatCompletionResponse, any> =
-      {
-        data: {
-          choices: [
-            {
-              message: {
-                role: 'system',
-                content: 'Sample content',
-              },
-            },
-          ],
-          model: 'gpt-3.5-turbo',
-          usage: {
-            total_tokens: 100,
-            completion_tokens: 60,
-            prompt_tokens: 40,
+    const mockOpenaiResponse: ChatCompletion = {
+      choices: [
+        {
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: 'Sample content',
           },
-          id: 'someID',
-          object: 'someObj',
-          created: 1,
+          logprobs: null,
+          finish_reason: 'stop',
         },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {},
-      };
+      ],
+      model: 'gpt-3.5-turbo',
+      usage: {
+        total_tokens: 100,
+        completion_tokens: 60,
+        prompt_tokens: 40,
+      },
+      id: 'someID',
+      object: 'chat.completion',
+      created: 1,
+    };
     const expectedTokenUsageResult: TokenUsage = {
       'gpt-3.5-turbo': {
         totalTokens: 100,
@@ -54,7 +49,7 @@ describe('TokenUsageService', () => {
     };
 
     const tokenUsage =
-      service.getTokenUsageFromOpenAiApiResponse(mockAxiosResponse);
+      service.getTokenUsageFromOpenAiApiResponse(mockOpenaiResponse);
     expect(tokenUsage).toEqual(expectedTokenUsageResult);
   });
 

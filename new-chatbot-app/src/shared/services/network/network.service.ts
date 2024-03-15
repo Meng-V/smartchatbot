@@ -17,28 +17,27 @@ export class NetworkService {
     axiosFunc: (...args: any[]) => Promise<T>,
     maxAttemps: number = 5,
   ): Promise<T> {
-    return new Promise<T>(async (resolve, reject) => {
-      let retries = 0;
-      let response;
-      let error: any;
-      // Retry until the function succeeds or the maximum number of attempts is reached
-      while (!response && retries < maxAttemps) {
-        try {
-          response = await axiosFunc();
-        } catch (e: any) {
-          error = e;
-        }
-        retries++;
+    let retries = 0;
+    let response;
+    let error: any;
+    // Retry until the function succeeds or the maximum number of attempts is reached
+    while (!response && retries < maxAttemps) {
+      try {
+        response = await axiosFunc();
+      } catch (e: any) {
+        error = e;
       }
+      retries++;
+    }
 
-      if (response) {
-        resolve(response);
-      } else {
-        const errorMessage =
-          'Cannot establish connection with the target network.';
-        this.logger.error(errorMessage);
-        throw new Error(errorMessage);
-      }
-    });
+    if (response) {
+      return response;
+    } else {
+      const errorMessage =
+        'Cannot establish connection with the target network.\n' +
+        error.message;
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
   }
 }
