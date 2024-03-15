@@ -48,10 +48,6 @@ const App = () => {
       JSON.parse(sessionStorage.getItem('chat_messages')) || [];
     setMessages(storedMessages);
 
-    // Set up URL from environment variables
-    const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL')}:${retrieveEnvironmentVariable(
-      'VITE_BACKEND_PORT',
-    )}`;
     // Connect to the socket server with option to use websocket and disable upgrade
     const socketIo = io(url, { transports: ['websocket'], upgrade: false });
 

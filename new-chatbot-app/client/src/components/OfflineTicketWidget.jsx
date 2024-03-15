@@ -1,5 +1,6 @@
 import { FormControl, FormLabel, Input, Button } from "@chakra-ui/react";
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { SocketContext } from "../context/SocketContextProvider";
 
 const OfflineTicketWidget = () => {
 
@@ -8,8 +9,30 @@ const OfflineTicketWidget = () => {
   const [name, setName] = useState('');
   const [details, setDetails] = useState('');
 
+  const { socket } = useContext(SocketContext);
+
+  const handleTicketSubmit = (e) => {
+    e.preventDefault();
+    if (socket) {
+      socket.emit(
+        "createTicket",
+        {
+          question: question,
+          email: email,
+          name: name,
+          details: details,
+          ua: navigator.userAgent,
+        },
+        (responseMessage) => {
+          console.log(responseMessage);
+          setStep("initial");
+        }
+      );
+    }
+  };
+
   return (
-    <form>
+    <form onSubmit={handleTicketSubmit}>
       <FormControl>
         <FormLabel>Name</FormLabel>
         <Input

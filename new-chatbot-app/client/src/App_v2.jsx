@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 import {
   Button,
@@ -18,6 +18,10 @@ import OfflineTicketWidget from './components/OfflineTicketWidget';
 import ChatBotComponent from './components/ChatBotComponent';
 import { useToast } from '@chakra-ui/react';
 
+import useSocket from './hooks/useSocket';
+import { SocketContext } from './context/SocketContextProvider';
+import { MessageContext } from './context/MessageContextProvider';
+
 import './App.css';
 import { retrieveEnvironmentVariable } from './services/RetrieveEnvironmentVariable';
 
@@ -28,39 +32,24 @@ const App_v2 = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [inputMessage, setInputMessage] = useState('');
   const [step, setStep] = useState('initial');
-  const [isConnected, setIsConnected] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [welcomeMessageShown, setWelcomeMessageShown] = useState(false);
   const socketRef = useRef();
   const toast = useToast();
-  const [attemptedConnection, setAttemptedConnection] = useState(false);
 
-  /**
-   * Hook to connect to the socket and listen for messages
-   */
+  const { socket, isConnected, attemptedConnection, setIsConnected, setAttemptedConnection } = useContext(SocketContext);
+  const { setIsWelcomeMessage, setMessage, isWelcomeMessage, addMessage } = useContext(MessageContext);
+ 
   useEffect(() => {
-    // Will return empty array if there are no messages in the session storage
-    const storedMessages =
-      JSON.parse(sessionStorage.getItem('chat_messages')) || [];
-    setMessages(storedMessages);
-
-    // Set up URL from environment variables
-    const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL')}:${retrieveEnvironmentVariable(
-      'VITE_BACKEND_PORT',
-    )}`;
-    // Connect to the socket server with option to use websocket and disable upgrade
-    const socketIo = io(url, { transports: ['websocket'], upgrade: false });
-
-    socketIo.on('connect', () => {
+    socket.on('connect', () => {
       setIsConnected(true); // Update the state to indicate that the connection is established
       setAttemptedConnection(true); // Update the state to indicate that the connection has been attempted
-      if (!welcomeMessageShown) {
+      if (!isWelcomeMessage) {
         // Send the welcome message only once per session
         const welcomeMessage = {
           text: 'Hi this is the Library Smart Chatbot. How may I help you?',
           sender: 'chatbot',
         };
-        setMessages((prevMessages) => {
+        setMessage((prevMessages) => {
           const updatedMessages = [...prevMessages, welcomeMessage];
           // Store the messages in the session storage
           sessionStorage.setItem(
@@ -69,44 +58,40 @@ const App_v2 = () => {
           );
           return updatedMessages;
         });
-        setWelcomeMessageShown(true); // Update the state to ensure the welcome message is shown only once
+        setIsWelcomeMessage(true); // Update the state to ensure the welcome message is shown only once
       }
       setIsTyping(false);
     });
 
-    // Listen from the server
-    socketIo.on('message', function (message) {
+    socket.on('message', function (message) {
       setIsTyping(false);
       addMessage(message, 'chatbot');
     });
 
-    socketIo.on('disconnect', function () {
+    socket.on('disconnect', function () {
       setIsConnected(false);
       setAttemptedConnection(true);
     });
 
-    socketIo.on('connect_error', (error) => {
+    socket.on('connect_error', (error) => {
       console.error('Connection Error:', error);
       setIsConnected(false);
       setAttemptedConnection(true);
     });
 
-    socketIo.on('connect_timeout', (timeout) => {
+    socket.on('connect_timeout', (timeout) => {
       console.error('Connection Timeout:', timeout);
       setIsConnected(false);
       setAttemptedConnection(true);
     });
 
-    // Refer the current socket client to WebSocket connection
-    socketRef.current = socketIo;
-
     return () => {
-      socketIo.off('message');
-      socketIo.off('disconnect');
-      socketIo.off('connect_error');
-      socketIo.off('connect_timeout');
+      socket.off('message');
+      socket.off('disconnect');
+      socket.off('connect_error');
+      socket.off('connect_timeout');
     };
-  }, [welcomeMessageShown, setMessages]);
+  }, [isWelcomeMessage, setMessage]);
 
   /**
    * Hook to scroll to the bottom of the chat window
@@ -116,24 +101,6 @@ const App_v2 = () => {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [messages]);
-
-  /**
-   * Function to add the message to the messages array
-   * @param {*} message
-   * @param {*} sender
-   */
-  const addMessage = (message, sender) => {
-    const messageText =
-      typeof message === 'object' && message.response
-        ? message.response.join('\n')
-        : message;
-    // Add the new message
-    setMessages((prevMessages) => {
-      const updatedMessages = [...prevMessages, { text: messageText, sender }];
-      sessionStorage.setItem('chat_messages', JSON.stringify(updatedMessages));
-      return updatedMessages;
-    });
-  };
 
   /**
    * Hook to display the toast message when the connection is not established
@@ -158,23 +125,14 @@ const App_v2 = () => {
    * Function to handle the user message submission
    * @param {*} e event
    */
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    if (inputMessage && socketRef.current) {
-      addMessage(inputMessage, 'user');
-      setInputMessage(''); // Clear the input message
-      setIsTyping(true); // Chatbot is typing
-      // Send the message to the server
-      socketRef.current.emit('message', inputMessage, () => { });
-    }
-  };
+  
 
   /**
    * Function to handle the modal close
    */
   const handleClose = () => {
     setStep('initial');
-    setWelcomeMessageShown(false);
+    setIsWelcomeMessage(false);
     onClose();
   };
 

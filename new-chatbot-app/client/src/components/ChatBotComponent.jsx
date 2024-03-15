@@ -1,32 +1,24 @@
 import { Box, VStack, HStack, Input, Button, Text } from "@chakra-ui/react";
 import MessageComponents from './ParseLinks';
-import { useState, useEffect } from "react";
+import { useContext } from "react";
+import { SocketContext } from "../context/SocketContextProvider";
+import { MessageContext } from "../context/MessageContextProvider";
 import './ChatBotComponent.css';
 
 const ChatBotComponent = () => {
 
-  // TODO: Remove, only here for testing
-  const [inputMessage, setInputMessage] = useState("");
-  const [messages, setMessages] = useState([]);
-  const isConnected = true;
-  const isTyping = false;
+  const { socket, isConnected } = useContext(SocketContext);
+  const { inputMessage, setInputMessage, message, isTyping, setIsTyping, addMessage } = useContext(MessageContext);
   
-  // TODO: Remove, only here for testing
-  useEffect(() => {
-    const welcomeMessage = {
-      text: 'Hi this is the Library Smart Chatbot. How may I help you?',
-      sender: 'chatbot',
-    };
-    setMessages((prevMessages) => {
-      const updatedMessages = [...prevMessages, welcomeMessage];
-      // Store the messages in the session storage
-      sessionStorage.setItem(
-        'chat_messages',
-        JSON.stringify(updatedMessages),
-      );
-      return updatedMessages;
-    });
-  }, [])
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    if (inputMessage && socket) {
+      addMessage(inputMessage, 'user');
+      setInputMessage('');
+      setIsTyping(true);
+      socket.emit('message', inputMessage, () => {});
+    }
+  };
 
   return (
     <>
@@ -45,7 +37,7 @@ const ChatBotComponent = () => {
             </Box>
           )}
 
-          {messages.map((message, index) => {
+          {message.map((message, index) => {
             const adjustedMessage =
               typeof message.text === 'object'
                 ? message.text.response.join('')
@@ -95,7 +87,7 @@ const ChatBotComponent = () => {
           )}
         </VStack>
       </Box>
-      <form>
+      <form onSubmit={handleFormSubmit}>
         <HStack spacing={3}>
           <Input
             value={inputMessage}
