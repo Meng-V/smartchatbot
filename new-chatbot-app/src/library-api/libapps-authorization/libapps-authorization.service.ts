@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { Subject, Observable, map, tap } from 'rxjs';
 
@@ -6,9 +6,7 @@ import { RetrieveEnvironmentVariablesService } from '../../shared/services/retri
 import { AxiosResponse } from 'axios';
 
 @Injectable()
-export class LibappsAuthorizationService {
-  private readonly logger = new Logger(LibappsAuthorizationService.name);
-
+export class LibappsAuthorizationService implements OnModuleInit {
   private readonly OAUTH_URL: string =
     this.retrieveEnvironmentVariablesService.retrieve('LIBAPPS_OAUTH_URL');
   private readonly CLIENT_ID: string =
@@ -23,8 +21,13 @@ export class LibappsAuthorizationService {
   constructor(
     private readonly retrieveEnvironmentVariablesService: RetrieveEnvironmentVariablesService,
     private httpService: HttpService,
-  ) {
-    this.resetToken();
+  ) {}
+
+  /**
+   * Wait for the service to successfully fetch the key before finishing initializing the module
+   */
+  async onModuleInit(): Promise<void> {
+    await this.resetToken();
   }
 
   /**
@@ -39,14 +42,24 @@ export class LibappsAuthorizationService {
   /**
    * Reset the access token for Libapps
    */
-  public resetToken(): void {
-    this.httpService
-      .post(this.OAUTH_URL, {
-        client_id: this.CLIENT_ID,
-        client_secret: this.CLIENT_SECRET,
-        grant_type: this.GRANT_TYPE,
-      })
-      .pipe(map((response: AxiosResponse) => response.data.access_token))
-      .subscribe((token: string) => this.token$.next(token));
+  public resetToken(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.httpService
+        .post(this.OAUTH_URL, {
+          client_id: this.CLIENT_ID,
+          client_secret: this.CLIENT_SECRET,
+          grant_type: this.GRANT_TYPE,
+        })
+        .pipe(map((response: AxiosResponse) => response.data.access_token))
+        .subscribe({
+          next: (token: string) => {
+            this.token$.next(token);
+            resolve();
+          },
+          error: (error: any) => {
+            reject(error);
+          },
+        });
+    });
   }
 }

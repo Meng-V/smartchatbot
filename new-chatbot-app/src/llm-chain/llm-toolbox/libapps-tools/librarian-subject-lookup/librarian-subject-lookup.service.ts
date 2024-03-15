@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { LlmTool, LlmToolInput } from '../../llm-tool.interface';
 
 import * as synonymJSON from './subject-synonyms.json';
@@ -29,7 +29,7 @@ export type LibrarianInformation = {
 };
 
 @Injectable()
-export class LibrarianSubjectLookupService implements LlmTool {
+export class LibrarianSubjectLookupService implements LlmTool, OnModuleDestroy {
   public readonly toolName: string = 'LibrarianSearchWithSubjectTool';
   public readonly toolDescription: string =
     'This tool is useful for searching which librarians are responsible for a specific subject(such as Computer Science,Finance,Environmental Studies,Biology,etc).';
@@ -178,7 +178,7 @@ export class LibrarianSubjectLookupService implements LlmTool {
   public async fetchLibrarianSubjectData(): Promise<LibrarianInformation[]> {
     const fetchData = async (accessToken: string): Promise<AxiosResponse> => {
       const header = {
-        Authorization: `Bearer ${this.accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       };
 
       const response = await this.httpService.axiosRef.get<
@@ -192,6 +192,8 @@ export class LibrarianSubjectLookupService implements LlmTool {
 
       return response;
     };
+
+    //Reset the authorization token if the current one is expired
     const HTTP_UNAUTHORIZED = 403;
     let response: AxiosResponse | undefined;
     while (response === undefined || response.status === HTTP_UNAUTHORIZED) {
@@ -315,8 +317,12 @@ export class LibrarianSubjectLookupService implements LlmTool {
         filteredSubjectToLibrarianMap,
       )}`;
     } catch (error) {
-      console.error(error);
-      throw new Error('Librarian Subject tool error');
+      this.logger.error(error)
+      throw error;
     }
+  }
+
+  onModuleDestroy() {
+      this.tokenSubscription.unsubscribe();
   }
 }
