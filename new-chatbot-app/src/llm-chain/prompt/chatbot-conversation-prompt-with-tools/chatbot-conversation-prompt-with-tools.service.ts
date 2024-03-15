@@ -45,7 +45,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
     {
       Thought: You should always think about what to do,
       Action: The action to take,should always be one of [${tools.map(
-        (toolDocumentation) => toolDocumentation.name,
+        (toolDocumentation) => toolDocumentation.toolName,
       )}].If you don't need to use any tool,put "null" here,
       Action Input:{parameter1:value1,parameter2:value2,parameter3:value3,etc}.If Action is not null,do not ever put null here.Put null here if Action is null,
       Final Answer: Provide your final answer for the input question from the input question or the LlmTool Response (if it exists).Always put "null" here if you decide to use any tools,
@@ -63,17 +63,17 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
     const toolsDescription = tools.reduce(
       (previousToolsDescription: string, currentToolDescription: LlmTool) => {
         const toolParamtersDescription = Object.keys(
-          currentToolDescription.parameters,
+          currentToolDescription.toolParametersStructure,
         ).reduce((previousParameter: string, parameterName: string) => {
           return (
             previousParameter +
-            `\t+ ${parameterName}: ${currentToolDescription.parameters[parameterName]}\n`
+            `\t+ ${parameterName}: ${currentToolDescription.toolParametersStructure[parameterName]}\n`
           );
         }, '');
 
         return (
           previousToolsDescription +
-          `- ${currentToolDescription.name}: ${currentToolDescription.description}.Parameters names and types:\n${toolParamtersDescription}`
+          `- ${currentToolDescription.toolName}: ${currentToolDescription.toolDescription}.Parameters names and types:\n${toolParamtersDescription}`
         );
       },
       "\nYou have access to these tools(delimited by triple backticks)to assist you.Don't tell the customer the tool's name.These tools are also useful when customer ask what you can do to help them:\n",
