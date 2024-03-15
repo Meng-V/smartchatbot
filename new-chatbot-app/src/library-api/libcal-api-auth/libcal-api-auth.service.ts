@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
 import { NetworkService } from 'src/shared/services/network/network.service';
-import { PrismaService } from 'src/prisma.service';
 
 export type Room = { roomID: string; roomName: string; capacity: number };
 
