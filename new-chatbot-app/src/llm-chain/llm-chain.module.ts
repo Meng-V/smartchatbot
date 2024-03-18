@@ -5,6 +5,7 @@ import { PromptModule } from './prompt/prompt.module';
 import { LlmChainService } from './llm-chain.service';
 import { LlmModule } from './llm/llm.module';
 import { SharedModule } from '../shared/shared.module';
+import { LlmAnswerParserService } from './llm-answer-parser/llm-answer-parser.service';
 
 @Module({
   imports: [
@@ -12,9 +13,10 @@ import { SharedModule } from '../shared/shared.module';
     LlmToolboxModule,
     MemoryModule,
     PromptModule,
+    LlmToolboxModule,
     SharedModule,
   ],
-  providers: [LlmChainService],
+  providers: [LlmChainService, LlmAnswerParserService],
   exports: [LlmChainService],
 })
 export class LlmChainModule {}

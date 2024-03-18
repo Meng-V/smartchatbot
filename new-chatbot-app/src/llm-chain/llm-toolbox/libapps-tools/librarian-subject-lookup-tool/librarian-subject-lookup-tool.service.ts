@@ -8,7 +8,10 @@ import { HttpService } from '@nestjs/axios';
 import { AxiosResponse } from 'axios';
 
 type SubjectLibrarianMap = {
-  [subject: string]: { name: string; email: string }[];
+  [subject: string]: {
+    librarians: { name: string; email: string }[];
+    subjectHomepage: string;
+  };
 };
 
 type Subject = {
@@ -34,7 +37,7 @@ export class LibrarianSubjectLookupToolService
 {
   public readonly toolName: string = 'LibrarianSearchWithSubjectTool';
   public readonly toolDescription: string =
-    'This tool is useful for searching which librarians are responsible for a specific subject(such as Computer Science,Finance,Environmental Studies,Biology,etc).';
+    'This tool is for searching which librarians can consult a specific academic subject(such as Computer Science,Finance,Environmental Studies,Biology,etc).';
   public readonly toolParametersStructure: { [parameterName: string]: string } =
     {
       subjectName: 'string[REQUIRED]',
@@ -250,6 +253,10 @@ export class LibrarianSubjectLookupToolService
         await this.fetchLibrarianSubjectData();
 
       const subjectToLibrarianMap: SubjectLibrarianMap = {};
+      const subjectToSubjectIdMap: Map<
+        string,
+        { id: number; slug_id: number }
+      > = new Map<string, { id: number; slug_id: number }>();
 
       // Iterate over the data array and populate the map
       librarianInformationList.forEach(
@@ -266,11 +273,18 @@ export class LibrarianSubjectLookupToolService
               subjectToLibrarianMap[subject.name] === undefined ||
               subjectToLibrarianMap[subject.name] === null
             ) {
-              subjectToLibrarianMap[subject.name] = [];
+              subjectToLibrarianMap[subject.name] = {
+                librarians: [],
+                subjectHomepage: '',
+              };
             }
-            subjectToLibrarianMap[subject.name].push({
+            subjectToLibrarianMap[subject.name].librarians.push({
               name: librarianName,
               email: librarianEmail,
+            });
+            subjectToSubjectIdMap.set(subject.name, {
+              id: subject.id,
+              slug_id: subject.slug_id,
             });
           });
         },
@@ -296,17 +310,26 @@ export class LibrarianSubjectLookupToolService
         // Check if the subjectName is in the selectedSubjects array
         if (!bestMatchSubject.includes(subjectName)) return;
 
-        subjectToLibrarianMap[subjectName].forEach(
+        subjectToLibrarianMap[subjectName].librarians.forEach(
           (librarianInfo: { name: string; email: string }) => {
             //Init if key does not exist
             if (
               filteredSubjectToLibrarianMap[subjectName] === undefined ||
               filteredSubjectToLibrarianMap[subjectName] === null
             ) {
-              filteredSubjectToLibrarianMap[subjectName] = [];
+              filteredSubjectToLibrarianMap[subjectName] = {
+                librarians: [],
+                subjectHomepage: '',
+              };
             }
 
-            filteredSubjectToLibrarianMap[subjectName].push(librarianInfo);
+            filteredSubjectToLibrarianMap[subjectName].librarians.push(
+              librarianInfo,
+            );
+            filteredSubjectToLibrarianMap[subjectName].subjectHomepage =
+              subjectToSubjectIdMap.has(subjectName)
+                ? `https://libguides.lib.miamioh.edu/sb.php?subject_id=${subjectToSubjectIdMap.get(subjectName)?.id}`
+                : 'Unavailable';
           },
         );
       });
@@ -314,7 +337,6 @@ export class LibrarianSubjectLookupToolService
       if (Object.keys(filteredSubjectToLibrarianMap).length === 0) {
         return 'Sorry, the requested subject has no match with our subject database. Please try another subject.';
       }
-
       return `These are the librarians that can help you with the requested subject: ${JSON.stringify(
         filteredSubjectToLibrarianMap,
       )}`;

@@ -6,5 +6,6 @@ import { HttpModule } from '@nestjs/axios';
 @Module({
   imports: [LibraryApiModule, HttpModule],
   providers: [LibrarianSubjectLookupToolService],
+  exports: [LibrarianSubjectLookupToolService],
 })
 export class LlmToolboxModule {}
