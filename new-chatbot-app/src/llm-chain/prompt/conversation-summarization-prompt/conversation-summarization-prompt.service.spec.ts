@@ -11,7 +11,7 @@ describe('ConversationSummarizationPromptService', () => {
       providers: [ConversationSummarizationPromptService],
     }).compile();
 
-    service = module.get<ConversationSummarizationPromptService>(
+    service = await module.resolve<ConversationSummarizationPromptService>(
       ConversationSummarizationPromptService,
     );
   });

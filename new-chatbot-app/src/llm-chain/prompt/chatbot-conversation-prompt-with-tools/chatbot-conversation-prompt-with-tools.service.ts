@@ -9,7 +9,7 @@ import { RetrieveEnvironmentVariablesService } from '../../../shared/services/re
  *
  * Scope: Request
  */
-@Injectable({ scope: Scope.REQUEST })
+@Injectable({ scope: Scope.TRANSIENT })
 export class ChatbotConversationPromptWithToolsService implements Prompt {
   private modelDescription: string;
   private conversationMemory: ConversationMemory | undefined = undefined;
@@ -28,10 +28,10 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
     const date = new Date();
 
     this.modelDescription =
-      "You are a helpful assistant.You should try your best to answer the question.Unfortunately,you don't know anything about the library,books,and articles so you have to always rely on the tool or the given context for  library-related,book-related,or article-related questions.\n" +
+      "You are a helpful assistant.You should try your best to help and talk to the customer based on the conversation below.Unfortunately,you don't know anything about the library,books,and articles so you have to always rely on the tool or the given context for  library-related,book-related,or article-related questions.\n" +
       `For context,the current time is ${date.toLocaleString('en-US', {
         timeZone: 'America/New_York',
-      })}\n`;
+      })}\nONLY include your answer in your final answer`;
     this.modelScratchpad = '';
   }
 
@@ -45,7 +45,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
     {
       Thought: You should always think about what to do,
       Action: The action to take,should always be one of [${tools.map(
-        (toolDocumentation) => toolDocumentation.name,
+        (toolDocumentation) => toolDocumentation.toolName,
       )}].If you don't need to use any tool,put "null" here,
       Action Input:{parameter1:value1,parameter2:value2,parameter3:value3,etc}.If Action is not null,do not ever put null here.Put null here if Action is null,
       Final Answer: Provide your final answer for the input question from the input question or the LlmTool Response (if it exists).Always put "null" here if you decide to use any tools,
@@ -63,17 +63,17 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
     const toolsDescription = tools.reduce(
       (previousToolsDescription: string, currentToolDescription: LlmTool) => {
         const toolParamtersDescription = Object.keys(
-          currentToolDescription.parameters,
+          currentToolDescription.toolParametersStructure,
         ).reduce((previousParameter: string, parameterName: string) => {
           return (
             previousParameter +
-            `\t+ ${parameterName}: ${currentToolDescription.parameters[parameterName]}\n`
+            `\t+ ${parameterName}: ${currentToolDescription.toolParametersStructure[parameterName]}\n`
           );
         }, '');
 
         return (
           previousToolsDescription +
-          `- ${currentToolDescription.name}: ${currentToolDescription.description}.Parameters names and types:\n${toolParamtersDescription}`
+          `- ${currentToolDescription.toolName}: ${currentToolDescription.toolDescription}.Parameters names and types:\n${toolParamtersDescription}`
         );
       },
       "\nYou have access to these tools(delimited by triple backticks)to assist you.Don't tell the customer the tool's name.These tools are also useful when customer ask what you can do to help them:\n",
@@ -182,16 +182,14 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
    * @returns string The whole prompt
    */
   public async getPrompt(): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
-      // Get the conversation summary string
-      const conversationString =
-        await this.conversationMemory?.getConversationAsString(0, 0);
+    // Get the conversation summary string
+    const conversationString =
+      await this.conversationMemory?.getConversationAsString(0);
 
-      const wholePrompt: string =
-        `\nThis is the conversation so far(delimited by the triple dashes)\n---\n${conversationString}\n---\n` +
-        `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;
-      resolve(wholePrompt);
-    });
+    const wholePrompt: string =
+      `\nThis is the conversation so far(delimited by the triple dashes)\n---\n${conversationString}\n---\n` +
+      `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;
+    return wholePrompt;
   }
 
   /**
