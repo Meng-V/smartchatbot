@@ -83,12 +83,16 @@ describe('LibrarianSubjectLookupToolService', () => {
 
     let expectedAnswer = `These are the librarians that can help you with the requested subject: ${JSON.stringify(
       {
-        'Computer Science': [
-          {
-            name: 'Richard Jackson',
-            email: 'rich@example.com',
-          },
-        ],
+        'Computer Science': {
+          librarians: [
+            {
+              name: 'Richard Jackson',
+              email: 'rich@example.com',
+            },
+          ],
+          subjectHomepage:
+            'https://libguides.lib.miamioh.edu/sb.php?subject_id=5',
+        },
       },
     )}`;
 
@@ -103,12 +107,16 @@ describe('LibrarianSubjectLookupToolService', () => {
     //Test for different subject
     expectedAnswer = `These are the librarians that can help you with the requested subject: ${JSON.stringify(
       {
-        Chemistry: [
-          {
-            name: 'Jane Smith',
-            email: 'jane@example.com',
-          },
-        ],
+        Chemistry: {
+          librarians: [
+            {
+              name: 'Jane Smith',
+              email: 'jane@example.com',
+            },
+          ],
+          subjectHomepage:
+            'https://libguides.lib.miamioh.edu/sb.php?subject_id=3',
+        },
       },
     )}`;
 

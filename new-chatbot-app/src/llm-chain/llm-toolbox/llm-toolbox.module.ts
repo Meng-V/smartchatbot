@@ -7,5 +7,6 @@ import { CitationAssistToolService } from './citation-assist-tool/citation-assis
 @Module({
   imports: [LibraryApiModule, HttpModule],
   providers: [LibrarianSubjectLookupToolService, CitationAssistToolService],
+  exports: [LibrarianSubjectLookupToolService, CitationAssistToolService],
 })
 export class LlmToolboxModule {}
