@@ -56,18 +56,14 @@ export class LlmService {
       throw error;
     }
 
-    // Get the prompt from the prompt object
-    const promptString = await prompt.getPrompt();
-
     const { response, tokenUsage: responseTokenUsage } =
       await model.getModelResponse(
-        promptString,
+        await prompt.getPrompt(),
         prompt.getSystemDescription(),
         modelType,
         temperature,
         top_p,
       );
-
     return {
       response: response,
       tokenUsage: responseTokenUsage,
