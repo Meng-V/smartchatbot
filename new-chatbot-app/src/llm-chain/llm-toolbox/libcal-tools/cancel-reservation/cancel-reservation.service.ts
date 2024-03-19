@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { NetworkService } from 'src/shared/services/network/network.service';
-import { Room, LibcalApiAuthorizationService } from '../libcal-api-auth/libcal-api-auth.service';
+import { Room, LibcalApiAuthorizationService } from '../../../../library-api/libcal-api-auth/libcal-api-auth.service';
 
 @Injectable()
 export class CancelReservationService {

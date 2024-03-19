@@ -6,8 +6,7 @@ import { PrismaService } from './prisma.service';
 import { GatewayModule } from './gateway/gateway.module';
 
 @Module({
-  imports: [LlmChainModule, LibraryApiModule, SharedModule],
-  providers: [ChatGateway, PrismaService],
+  providers: [PrismaService],
   imports: [LlmChainModule, LibraryApiModule, SharedModule, GatewayModule],
 })
 export class AppModule {}
