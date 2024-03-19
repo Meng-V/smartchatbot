@@ -1,12 +1,19 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-
-import { LibappsAuthorizationService } from './libapps-authorization/libapps-authorization.service';
-import { SharedModule } from '../shared/shared.module';
+import { CancelReservationService } from './cancel-reservation/cancel-reservation.service';
+import { LibcalApiAuthorizationService } from './libcal-api-auth/libcal-api-auth.service';
+import { UtilService } from './util/util.service';
+import { SharedModule } from 'src/shared/shared.module';
+import { PrismaService } from 'src/prisma.service';
+import { RoomReservationService } from './room-reservation/room-reservation.service';
 
 @Module({
-  imports: [HttpModule, SharedModule],
-  providers: [LibappsAuthorizationService],
-  exports: [LibappsAuthorizationService],
+  imports: [SharedModule],
+  providers: [
+    CancelReservationService,
+    LibcalApiAuthorizationService,
+    UtilService,
+    PrismaService,
+    RoomReservationService
+  ]
 })
 export class LibraryApiModule {}
