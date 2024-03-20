@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { LlmTool, LlmToolInput } from '../llm-tool.interface';
+import { LlmTool } from '../llm-tool.interface';
 
-enum CitationType {
+export enum CitationType {
   APA = 'APA',
   MLA = 'MLA',
   Chicago = 'Chicago',
@@ -116,9 +116,14 @@ export class CitationAssistToolService implements LlmTool {
   }
 
   public async toolRunForLlm(toolInput: {
-    citationType: string | null;
+    citationType: string | null | undefined;
   }): Promise<string> {
-    if (toolInput.citationType === null || toolInput.citationType === 'null') {
+    if (
+      toolInput.citationType === null ||
+      toolInput.citationType === 'null' ||
+      toolInput.citationType === undefined ||
+      toolInput.citationType === 'undefined'
+    ) {
       return `Cannot use this tool because missing paramter citationType.Ask the customer to provide this data.`;
     }
 
