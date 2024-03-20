@@ -211,37 +211,17 @@ export class LibrarianSubjectLookupToolService
     return response.data as LibrarianInformation[];
   }
 
-  /**
-   * Return the array of parameters that are null or undefined
-   * @param llmToolInput
-   * @returns the array of parameters that are null or undefined in the llmToolInput
-   */
-  private checkLlmToolInput(llmToolInput: LlmToolInput): string[] {
-    let nullFields: string[] = [];
-    for (const param of Object.keys(llmToolInput)) {
-      if (
-        llmToolInput[param] === null ||
-        llmToolInput[param] === 'null' ||
-        llmToolInput[param] === undefined ||
-        llmToolInput[param] === 'undefined'
-      ) {
-        nullFields.push(param);
-      }
-    }
-
-    return nullFields;
-  }
-
-  public async toolRunForLlm(llmToolInput: LlmToolInput): Promise<string> {
-    const nullFields = this.checkLlmToolInput(llmToolInput);
-
+  public async toolRunForLlm(llmToolInput: {
+    subjectName: string | null | undefined;
+  }): Promise<string> {
     //Insufficient parameters, feedback the status with the LLM
-    if (nullFields.length > 0) {
-      return `Cannot search for librarian because missing parameter ${JSON.stringify(
-        nullFields,
-      )}. Ask the customer to provide ${JSON.stringify(
-        nullFields,
-      )} to search for librarian.`;
+    if (
+      llmToolInput.subjectName === null ||
+      llmToolInput.subjectName === 'null' ||
+      llmToolInput.subjectName === undefined ||
+      llmToolInput.subjectName === 'undefined'
+    ) {
+      return `Cannot use this tool because missing paramter subjectName.Ask the customer to provide this data.`;
     }
 
     const { subjectName } = llmToolInput;

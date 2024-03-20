@@ -128,7 +128,7 @@ export class CitationAssistToolService implements LlmTool {
     }
 
     if (!this.isValidCitationType(toolInput.citationType)) {
-      return `Error:citationType must be one of${Object.keys(CitationType)}`;
+      return `Error:citationType must be one of ${Object.keys(CitationType)}`;
     }
 
     const citationType = toolInput.citationType as CitationType;

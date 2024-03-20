@@ -59,7 +59,7 @@ describe('CitationAssistToolService', () => {
   });
 
   it('should return error message with improper input', async () => {
-    //null and undefined
+    //null and undefined toolInput
     let expectedResponse = `Cannot use this tool because missing paramter citationType.Ask the customer to provide this data.`;
     expect(
       await service.toolRunForLlm({
@@ -77,9 +77,8 @@ describe('CitationAssistToolService', () => {
       }),
     ).toEqual(expectedResponse);
 
-    
     //Invalid citation type
-    expectedResponse = `Error:citationType must be one of${Object.keys(CitationType)}`;
+    expectedResponse = `Error:citationType must be one of ${Object.keys(CitationType)}`;
     console.log(expectedResponse);
     expect(
       await service.toolRunForLlm({
