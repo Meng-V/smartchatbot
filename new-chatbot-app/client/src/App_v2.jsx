@@ -1,5 +1,4 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import io from 'socket.io-client';
 import {
   Button,
   VStack,
@@ -17,49 +16,45 @@ import RealLibrarianWidget from './components/RealLibrarianWidget';
 import OfflineTicketWidget from './components/OfflineTicketWidget';
 import ChatBotComponent from './components/ChatBotComponent';
 import { useToast } from '@chakra-ui/react';
-
-import useSocket from './hooks/useSocket';
 import { SocketContext } from './context/SocketContextProvider';
 import { MessageContext } from './context/MessageContextProvider';
 
 import './App.css';
-import { retrieveEnvironmentVariable } from './services/RetrieveEnvironmentVariable';
 
 const App_v2 = () => {
 
   const chatRef = useRef();
-  const [messages, setMessages] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [inputMessage, setInputMessage] = useState('');
   const [step, setStep] = useState('initial');
-  const [isTyping, setIsTyping] = useState(false);
-  const socketRef = useRef();
   const toast = useToast();
 
   const { socket, isConnected, attemptedConnection, setIsConnected, setAttemptedConnection } = useContext(SocketContext);
-  const { setIsWelcomeMessage, setMessage, isWelcomeMessage, addMessage } = useContext(MessageContext);
- 
+  const { isWelcomeMessage, setIsWelcomeMessage, setMessage, message, addMessage, setIsTyping } = useContext(MessageContext);
+  const firstConnection = useRef(true);
+
+  useEffect(() => {
+    if (firstConnection.current && !isWelcomeMessage) {
+      const welcomeMessage = {
+        text: 'Hi this is the Library Smart Chatbot. How may I help you?',
+        sender: 'chatbot',
+      };
+      setMessage((prevMessages) => {
+        const updatedMessages = [...prevMessages, welcomeMessage];
+        sessionStorage.setItem(
+          'chat_messages',
+          JSON.stringify(updatedMessages),
+        );
+        return updatedMessages;
+      });
+      firstConnection.current = false;
+      setIsWelcomeMessage(true);
+    }
+  }, [isWelcomeMessage]);
+
   useEffect(() => {
     socket.on('connect', () => {
-      setIsConnected(true); // Update the state to indicate that the connection is established
-      setAttemptedConnection(true); // Update the state to indicate that the connection has been attempted
-      if (!isWelcomeMessage) {
-        // Send the welcome message only once per session
-        const welcomeMessage = {
-          text: 'Hi this is the Library Smart Chatbot. How may I help you?',
-          sender: 'chatbot',
-        };
-        setMessage((prevMessages) => {
-          const updatedMessages = [...prevMessages, welcomeMessage];
-          // Store the messages in the session storage
-          sessionStorage.setItem(
-            'chat_messages',
-            JSON.stringify(updatedMessages),
-          );
-          return updatedMessages;
-        });
-        setIsWelcomeMessage(true); // Update the state to ensure the welcome message is shown only once
-      }
+      setIsConnected(true);
+      setAttemptedConnection(true);
       setIsTyping(false);
     });
 
@@ -91,24 +86,16 @@ const App_v2 = () => {
       socket.off('connect_error');
       socket.off('connect_timeout');
     };
-  }, [isWelcomeMessage, setMessage]);
+  }, [isConnected, setMessage]);
 
-  /**
-   * Hook to scroll to the bottom of the chat window
-   */
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [message]);
 
-  /**
-   * Hook to display the toast message when the connection is not established
-   */
   useEffect(() => {
-    // Only show the toast if the connection has been attempted and the connection is not established
     if (!isConnected && attemptedConnection) {
-      // Display the toast
       toast({
         title: 'Connection Error',
         description:
@@ -121,24 +108,15 @@ const App_v2 = () => {
     }
   }, [isConnected, attemptedConnection, toast]);
 
-  /**
-   * Function to handle the user message submission
-   * @param {*} e event
-   */
-  
-
-  /**
-   * Function to handle the modal close
-   */
   const handleClose = () => {
     setStep('initial');
+    firstConnection.current = true;
     setIsWelcomeMessage(false);
     onClose();
   };
 
   return (
     <>
-      {/* Chat icon starts here */}
       <IconButton
         boxSize={6}
         onClick={onOpen}
@@ -150,9 +128,8 @@ const App_v2 = () => {
         height={30}
       />
 
-      {/* Modal starts here. If icon above is clicked */}
       <Modal isOpen={isOpen} onClose={handleClose}>
-        <ModalOverlay /> {/* Overlay to dim the background */}
+        <ModalOverlay />
         <ModalContent
           maxW="350px"
           position="fixed"
@@ -176,7 +153,6 @@ const App_v2 = () => {
           </ModalHeader>
           <ModalCloseButton />
 
-          {/* Modal body starts here */}
           {step !== 'initial' && (
             <Button
               leftIcon={<ArrowBackIcon />}
@@ -190,8 +166,6 @@ const App_v2 = () => {
               Back
             </Button>
           )}
-
-          {/* 3 options */}
           <ModalBody py={5}>
             {step === 'initial' && (
               <VStack>
@@ -206,14 +180,8 @@ const App_v2 = () => {
                 </Button>
               </VStack>
             )}
-
-            {/* Option #1: Chatbot */}
             {step === 'services' && <ChatBotComponent />}
-
-            {/* Option #2: Real Librarian */}
             {step === 'realLibrarian' && <RealLibrarianWidget />}
-
-            {/* Option #3: Ticket */}
             {step === 'ticket' && <OfflineTicketWidget />}
           </ModalBody>
         </ModalContent>
