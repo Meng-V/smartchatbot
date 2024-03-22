@@ -1,17 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LibrarianSubjectLookupToolService } from './libapps-tools/librarian-subject-lookup-tool/librarian-subject-lookup-tool.service';
+import { CancelReservationToolService } from './libcal-tools/cancel-reservation-tool/cancel-reservation-tool.service';
 import { LibraryApiModule } from '../../library-api/library-api.module';
 import { HttpModule } from '@nestjs/axios';
-import { LibappsAuthorizationService } from 'src/library-api/libapps-authorization/libapps-authorization.service';
-import { RetrieveEnvironmentVariablesService } from 'src/shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
+import { SharedModule } from '../../shared/shared.module';
 
 @Module({
-  imports: [LibraryApiModule, HttpModule],
+  imports: [LibraryApiModule, HttpModule, SharedModule],
   providers: [
-    ConfigService,
     LibrarianSubjectLookupToolService,
-    LibappsAuthorizationService,
-    RetrieveEnvironmentVariablesService],
+    CancelReservationToolService
+  ],
 })
 export class LlmToolboxModule {}

@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { LibcalApiAuthorizationService } from './libcal-api-auth.service';
+import { LibcalAuthorizationService } from './libcal-authorization.service';
 
 describe('LibcalApiService', () => {
-  let service: LibcalApiAuthorizationService;
+  let service: LibcalAuthorizationService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [LibcalApiAuthorizationService],
+      providers: [LibcalAuthorizationService],
     }).compile();
 
-    service = module.get<LibcalApiAuthorizationService>(LibcalApiAuthorizationService);
+    service = module.get<LibcalAuthorizationService>(LibcalAuthorizationService);
   });
 
   it('should be defined', () => {
