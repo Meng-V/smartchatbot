@@ -48,32 +48,25 @@ export class LlmService {
     temperature: number = 0.0,
     top_p: number = 0.1,
   ): Promise<{ response: string; tokenUsage: TokenUsage }> {
-    return new Promise<{ response: string; tokenUsage: TokenUsage }>(
-      async (resolve, reject) => {
-        //Get the appropriate model
-        let model: LlmInterface;
-        try {
-          model = this.getModel(modelType);
-        } catch (error: any) {
-          throw error;
-        }
+    //Get the appropriate model
+    let model: LlmInterface;
+    try {
+      model = this.getModel(modelType);
+    } catch (error: any) {
+      throw error;
+    }
 
-        // Get the prompt from the prompt object
-        const promptString = await prompt.getPrompt();
-
-        const { response, tokenUsage: responseTokenUsage } =
-          await model.getModelResponse(
-            promptString,
-            prompt.getSystemDescription(),
-            temperature,
-            top_p,
-          );
-
-        resolve({
-          response: response,
-          tokenUsage: responseTokenUsage,
-        });
-      },
-    );
+    const { response, tokenUsage: responseTokenUsage } =
+      await model.getModelResponse(
+        await prompt.getPrompt(),
+        prompt.getSystemDescription(),
+        modelType,
+        temperature,
+        top_p,
+      );
+    return {
+      response: response,
+      tokenUsage: responseTokenUsage,
+    };
   }
 }

@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { Configuration, CreateChatCompletionResponse, OpenAIApi } from 'openai';
-import { AxiosResponse } from 'axios';
+import OpenAI from 'openai';
 
 import { NetworkService } from '../../../shared/services/network/network.service';
 import { RetrieveEnvironmentVariablesService } from '../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
@@ -10,14 +9,17 @@ import {
   TokenUsageService,
 } from '../../../shared/services/token-usage/token-usage.service';
 import { LlmInterface } from '../llm.interface';
+import { ChatCompletion } from 'openai/resources';
 
 export enum OpenAiModelType {
   GPT_3_5_TURBO = 'gpt-3.5-turbo',
+  GPT_3_5_TURBO_1106 = 'gpt-3.5-turbo-1106',
   GPT_3_5_TURBO_0613 = 'gpt-3.5-turbo-0613',
   GPT_3_5_TURBO_0301 = 'gpt-3.5-turbo-0301',
   GPT_4 = 'gpt-4',
   GPT_4_0613 = 'gpt-4-0613',
   GPT_4_0314 = 'gpt-4-0314',
+  GPT_4_TURBO = 'gpt-4-0125-preview',
 }
 
 /**
@@ -26,21 +28,20 @@ export enum OpenAiModelType {
 @Injectable()
 export class OpenaiApiService implements LlmInterface {
   private readonly logger = new Logger(OpenaiApiService.name);
-  private readonly model: OpenAIApi;
+  private readonly openai: OpenAI;
 
   constructor(
     private networkService: NetworkService,
     private retrieveEnvironmentVariablesService: RetrieveEnvironmentVariablesService,
     private tokenUsageService: TokenUsageService,
   ) {
-    const modelConfiguration = new Configuration({
+    this.openai = new OpenAI({
       organization: this.retrieveEnvironmentVariablesService.retrieve<string>(
         'OPENAI_ORGANIZATION_ID',
       ),
       apiKey:
         this.retrieveEnvironmentVariablesService.retrieve('OPENAI_API_KEY'),
     });
-    this.model = new OpenAIApi(modelConfiguration);
   }
 
   /**
@@ -54,61 +55,52 @@ export class OpenaiApiService implements LlmInterface {
    * @throws Throw error if doesn't receive any message from the OpenAI API
    */
   async getModelResponse(
-    systemPrompt: string,
     userPrompt: string,
+    systemPrompt?: string,
     modelName: OpenAiModelType = OpenAiModelType.GPT_4,
     temperature: number = 0.0,
     top_p: number = 0.1,
   ): Promise<{ response: string; tokenUsage: TokenUsage }> {
-    return new Promise<{ response: string; tokenUsage: TokenUsage }>(
-      async (resolve, reject) => {
-        // Get the prompt from the prompt object
-        let response; // The response from the model, as a result to be returned
-        try {
-          response = await this.networkService.retryWithMaxAttempts<
-            AxiosResponse<CreateChatCompletionResponse, any>
-          >((): Promise<AxiosResponse<CreateChatCompletionResponse, any>> => {
-            return new Promise<
-              AxiosResponse<CreateChatCompletionResponse, any>
-            >((resolve, reject) => {
-              try {
-                const chatResponse = this.model.createChatCompletion({
-                  model: modelName,
-                  temperature: temperature,
-                  top_p: top_p,
-                  messages: [
-                    {
-                      role: 'system',
-                      content: systemPrompt,
-                    },
-                    { role: 'user', content: userPrompt },
-                  ],
-                }) as Promise<AxiosResponse<CreateChatCompletionResponse, any>>;
-                resolve(chatResponse);
-              } catch (error: any) {
-                reject(error);
-              }
+    let modelResponse;
+    try {
+      modelResponse =
+        await this.networkService.retryWithMaxAttempts<ChatCompletion>(
+          async (): Promise<ChatCompletion> => {
+            const chatResponse = await this.openai.chat.completions.create({
+              model: modelName as string,
+              temperature: temperature,
+              top_p: top_p,
+              messages: [
+                {
+                  role: 'system',
+                  content: systemPrompt !== undefined ? systemPrompt : '',
+                },
+                { role: 'user', content: userPrompt },
+              ],
             });
-          });
-        } catch (error: any) {
-          reject(error);
-          return;
-        }
+            return chatResponse;
+          },
+          5,
+        );
+    } catch (error: any) {
+      this.logger.error(error);
+      throw error;
+    }
 
-        if (response.data.choices[0].message?.content) {
-          // Extract the usage information from the response
-          const openAiApiTokenUsage: TokenUsage =
-            this.tokenUsageService.getTokenUsageFromOpenAiApiResponse(response);
-          resolve({
-            response: response.data.choices[0].message?.content,
-            tokenUsage: openAiApiTokenUsage,
-          });
-        } else {
-          const errorMsg = 'Error: No response from the model';
-          this.logger.error(errorMsg);
-          throw new Error(errorMsg);
-        }
-      },
-    );
+    if (modelResponse.choices[0].message?.content) {
+      // Extract the usage information from the modelResponse
+      const openAiApiTokenUsage: TokenUsage =
+        this.tokenUsageService.getTokenUsageFromOpenAiApiResponse(
+          modelResponse,
+        );
+      return {
+        response: modelResponse.choices[0].message?.content,
+        tokenUsage: openAiApiTokenUsage,
+      };
+    } else {
+      const errorMsg = 'Error: No modelResponse from the model';
+      this.logger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
   }
 }
