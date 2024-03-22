@@ -9,14 +9,14 @@ const ChatBotComponent = () => {
 
   const { socket, isConnected } = useContext(SocketContext);
   const { inputMessage, setInputMessage, message, isTyping, setIsTyping, addMessage } = useContext(MessageContext);
-  
+
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (inputMessage && socket) {
       addMessage(inputMessage, 'user');
       setInputMessage('');
       setIsTyping(true);
-      socket.emit('message', inputMessage, () => {});
+      socket.emit('message', inputMessage, () => { });
     }
   };
 
@@ -24,18 +24,6 @@ const ChatBotComponent = () => {
     <>
       <Box className="chat">
         <VStack align="start" spacing={4}>
-          {!isConnected && (
-            <Box
-              maxW="350px"
-              px={5}
-              py={3}
-              rounded="md"
-              bg={'gray.200'}
-              alignSelf={'flex-start'}
-            >
-              <Text color={"black"}>Connecting to the chatbot</Text>
-            </Box>
-          )}
 
           {message.map((message, index) => {
             const adjustedMessage =
@@ -77,11 +65,24 @@ const ChatBotComponent = () => {
               </Box>
             );
           })}
-
           {isTyping && (
             <Box>
               <Text>
                 Chatbot is thinking <span className="dots"></span>
+              </Text>
+            </Box>
+          )}
+          {!isConnected && (
+            <Box
+              maxW="350px"
+              px={5}
+              py={3}
+              rounded="md"
+              bg={'gray.200'}
+              alignSelf={'flex-start'}
+            >
+              <Text color={"black"}>
+                Connecting to the chatbot <span className="dots"></span>
               </Text>
             </Box>
           )}
@@ -106,7 +107,7 @@ const ChatBotComponent = () => {
       </form>
     </>
   );
-  
+
 }
 
 export default ChatBotComponent;

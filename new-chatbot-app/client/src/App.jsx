@@ -25,12 +25,27 @@ const App = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [step, setStep] = useState('initial');
   const toast = useToast();
-
+  const firstSession = useRef(true);
   const { socket, isConnected, attemptedConnection, setIsConnected, setAttemptedConnection } = useContext(SocketContext);
-  const { setWelcomeMessage, setMessage, message, addMessage, setIsTyping, closeSession } = useContext(MessageContext);
+  const { setMessage, message, addMessage, setIsTyping, } = useContext(MessageContext);
 
   useEffect(() => {
     socket.on('connect', () => {
+      if (firstSession.current) {
+        const welcomeMessage = {
+          text: 'Hi this is the Library Smart Chatbot. How may I help you?',
+          sender: 'chatbot',
+        };
+        setMessage((prevMessages) => {
+          const updatedMessages = [...prevMessages, welcomeMessage];
+          sessionStorage.setItem(
+            'chat_messages',
+            JSON.stringify(updatedMessages),
+          );
+          return updatedMessages;
+        });
+        firstSession.current = false;
+      }
       setIsConnected(true);
       setAttemptedConnection(true);
       setIsTyping(false);
@@ -88,8 +103,6 @@ const App = () => {
 
   const handleClose = () => {
     setStep('initial');
-    closeSession();
-    setWelcomeMessage(false);
     onClose();
   };
 
