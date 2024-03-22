@@ -25,6 +25,27 @@ describe('LibrarianSubjectLookupToolService', () => {
     expect(service).toBeDefined();
   });
 
+  it('should return error message with improper input', async () => {
+    //Null and undefined toolInput
+    let expectedResponse = `Cannot use this tool because missing paramter subjectName.Ask the customer to provide this data.`;
+
+    expect(
+      await service.toolRunForLlm({
+        subjectName: null,
+      }),
+    ).toEqual(expectedResponse);
+    expect(
+      await service.toolRunForLlm({
+        subjectName: 'null',
+      }),
+    ).toEqual(expectedResponse);
+    expect(
+      await service.toolRunForLlm({
+        subjectName: 'undefined',
+      }),
+    ).toEqual(expectedResponse);
+  });
+
   it('should output correct librarian for input subject', async () => {
     const fakeLibrarianInformation: LibrarianInformation[] = [
       {

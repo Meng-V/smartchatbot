@@ -12,6 +12,7 @@ import {
   TokenUsageService,
 } from '../shared/services/token-usage/token-usage.service';
 import { LlmModelType } from './llm/llm.module';
+import { CitationAssistToolService } from './llm-toolbox/citation-assist-tool/citation-assist-tool.service';
 
 /**
  * Service for using the LLM Chain
@@ -32,6 +33,7 @@ export class LlmChainService {
     private llmAnswerParserService: LlmAnswerParserService,
     private tokenUsageService: TokenUsageService,
     private librarianSubjectLookupToolService: LibrarianSubjectLookupToolService,
+    private citationAssistToolService: CitationAssistToolService,
   ) {
     this.memoryService.setMaxContextWindow(6);
     this.memoryService.setConversationBufferSize(3);
@@ -39,7 +41,10 @@ export class LlmChainService {
     this.promptService.setConversationMemory(this.memoryService);
 
     this.setAvailableTools(
-      new Set<LlmTool>([this.librarianSubjectLookupToolService]),
+      new Set<LlmTool>([
+        this.librarianSubjectLookupToolService,
+        this.citationAssistToolService,
+      ]),
     );
   }
 

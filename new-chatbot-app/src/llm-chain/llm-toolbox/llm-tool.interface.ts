@@ -1,4 +1,4 @@
-export type LlmToolInput = Record<string, string | null>;
+export type LlmToolInput = Record<string, string | null | undefined>;
 
 export interface LlmTool {
   readonly toolName: string;
