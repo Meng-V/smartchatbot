@@ -1,11 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import io from 'socket.io-client';
+import { useContext, useEffect, useRef, useState } from 'react';
 import {
-  HStack,
-  Input,
   Button,
-  Box,
-  Text,
   VStack,
   useDisclosure,
   Modal,
@@ -17,131 +12,68 @@ import {
   IconButton,
 } from '@chakra-ui/react';
 import { ArrowBackIcon, ChatIcon } from '@chakra-ui/icons';
-import MessageComponents from './components/ParseLinks';
 import RealLibrarianWidget from './components/RealLibrarianWidget';
 import OfflineTicketWidget from './components/OfflineTicketWidget';
+import ChatBotComponent from './components/ChatBotComponent';
 import { useToast } from '@chakra-ui/react';
-
-import './App.css';
-import { retrieveEnvironmentVariable } from './services/RetrieveEnvironmentVariable';
+import { SocketContext } from './context/SocketContextProvider';
+import { MessageContext } from './context/MessageContextProvider';
 
 const App = () => {
 
   const chatRef = useRef();
-  const [messages, setMessages] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [inputMessage, setInputMessage] = useState('');
   const [step, setStep] = useState('initial');
-  const [isConnected, setIsConnected] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const [welcomeMessageShown, setWelcomeMessageShown] = useState(false);
-  const socketRef = useRef();
   const toast = useToast();
-  const [attemptedConnection, setAttemptedConnection] = useState(false);
 
-  /**
-   * Hook to connect to the socket and listen for messages
-   */
+  const { socket, isConnected, attemptedConnection, setIsConnected, setAttemptedConnection } = useContext(SocketContext);
+  const { setWelcomeMessage, setMessage, message, addMessage, setIsTyping, closeSession } = useContext(MessageContext);
+
   useEffect(() => {
-    // Will return empty array if there are no messages in the session storage
-    const storedMessages =
-      JSON.parse(sessionStorage.getItem('chat_messages')) || [];
-    setMessages(storedMessages);
-
-    // Connect to the socket server with option to use websocket and disable upgrade
-    const socketIo = io(url, { transports: ['websocket'], upgrade: false });
-
-    socketIo.on('connect', () => {
-      setIsConnected(true); // Update the state to indicate that the connection is established
-      setAttemptedConnection(true); // Update the state to indicate that the connection has been attempted
-      if (!welcomeMessageShown) {
-        // Send the welcome message only once per session
-        const welcomeMessage = {
-          text: 'Hi this is the Library Smart Chatbot. How may I help you?',
-          sender: 'chatbot',
-        };
-        setMessages((prevMessages) => {
-          const updatedMessages = [...prevMessages, welcomeMessage];
-          // Store the messages in the session storage
-          sessionStorage.setItem(
-            'chat_messages',
-            JSON.stringify(updatedMessages),
-          );
-          return updatedMessages;
-        });
-        setWelcomeMessageShown(true); // Update the state to ensure the welcome message is shown only once
-      }
+    socket.on('connect', () => {
+      setIsConnected(true);
+      setAttemptedConnection(true);
       setIsTyping(false);
     });
 
-    // Listen from the server
-    socketIo.on('message', function (message) {
+    socket.on('message', function (message) {
       setIsTyping(false);
       addMessage(message, 'chatbot');
     });
 
-    socketIo.on('disconnect', function () {
+    socket.on('disconnect', function () {
       setIsConnected(false);
       setAttemptedConnection(true);
     });
 
-    socketIo.on('connect_error', (error) => {
+    socket.on('connect_error', (error) => {
       console.error('Connection Error:', error);
       setIsConnected(false);
       setAttemptedConnection(true);
     });
 
-    socketIo.on('connect_timeout', (timeout) => {
+    socket.on('connect_timeout', (timeout) => {
       console.error('Connection Timeout:', timeout);
       setIsConnected(false);
       setAttemptedConnection(true);
     });
 
-    // Refer the current socket client to WebSocket connection
-    socketRef.current = socketIo;
-
     return () => {
-      socketIo.off('message');
-      socketIo.off('disconnect');
-      socketIo.off('connect_error');
-      socketIo.off('connect_timeout');
+      socket.off('message');
+      socket.off('disconnect');
+      socket.off('connect_error');
+      socket.off('connect_timeout');
     };
-  }, [welcomeMessageShown, setMessages]);
+  }, [isConnected, setMessage]);
 
-  /**
-   * Hook to scroll to the bottom of the chat window
-   */
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [message]);
 
-  /**
-   * Function to add the message to the messages array
-   * @param {*} message
-   * @param {*} sender
-   */
-  const addMessage = (message, sender) => {
-    const messageText =
-      typeof message === 'object' && message.response
-        ? message.response.join('\n')
-        : message;
-    // Add the new message
-    setMessages((prevMessages) => {
-      const updatedMessages = [...prevMessages, { text: messageText, sender }];
-      sessionStorage.setItem('chat_messages', JSON.stringify(updatedMessages));
-      return updatedMessages;
-    });
-  };
-
-  /**
-   * Hook to display the toast message when the connection is not established
-   */
   useEffect(() => {
-    // Only show the toast if the connection has been attempted and the connection is not established
     if (!isConnected && attemptedConnection) {
-      // Display the toast
       toast({
         title: 'Connection Error',
         description:
@@ -154,33 +86,15 @@ const App = () => {
     }
   }, [isConnected, attemptedConnection, toast]);
 
-  /**
-   * Function to handle the user message submission
-   * @param {*} e event
-   */
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    if (inputMessage && socketRef.current) {
-      addMessage(inputMessage, 'user');
-      setInputMessage(''); // Clear the input message
-      setIsTyping(true); // Chatbot is typing
-      // Send the message to the server
-      socketRef.current.emit('message', inputMessage, () => { });
-    }
-  };
-
-  /**
-   * Function to handle the modal close
-   */
   const handleClose = () => {
     setStep('initial');
-    setWelcomeMessageShown(false);
+    closeSession();
+    setWelcomeMessage(false);
     onClose();
   };
 
   return (
     <>
-      {/* Chat icon starts here */}
       <IconButton
         boxSize={6}
         onClick={onOpen}
@@ -192,9 +106,8 @@ const App = () => {
         height={30}
       />
 
-      {/* Modal starts here. If icon above is clicked */}
       <Modal isOpen={isOpen} onClose={handleClose}>
-        <ModalOverlay /> {/* Overlay to dim the background */}
+        <ModalOverlay />
         <ModalContent
           maxW="350px"
           position="fixed"
@@ -218,7 +131,6 @@ const App = () => {
           </ModalHeader>
           <ModalCloseButton />
 
-          {/* Modal body starts here */}
           {step !== 'initial' && (
             <Button
               leftIcon={<ArrowBackIcon />}
@@ -232,8 +144,6 @@ const App = () => {
               Back
             </Button>
           )}
-
-          {/* 3 options */}
           <ModalBody py={5}>
             {step === 'initial' && (
               <VStack>
@@ -248,113 +158,8 @@ const App = () => {
                 </Button>
               </VStack>
             )}
-
-            {/* Option #1: Chatbot */}
-            {step === 'services' && (
-              <>
-                {/* Chat window */}
-                <Box ref={chatRef} className="chat">
-                  <VStack align="start" spacing={4}>
-                    {/* Display the connecting message and grey out the chat window
-                        if the connection is not established
-                      */}
-                    {!isConnected && (
-                      <Box
-                        maxW="350px"
-                        px={5}
-                        py={3}
-                        rounded="md"
-                        bg={'gray.200'}
-                        alignSelf={'flex-start'}
-                      >
-                        <Text color={'black'}>Connecting to the chatbot</Text>
-                      </Box>
-                    )}
-                    {/* Display the messages */}
-                    {messages.map((message, index) => {
-                      // console.log("Message Sender:", message.sender); // Log the sender
-                      // console.log("Message Text:", message.text); // Log the text
-                      const adjustedMessage =
-                        typeof message.text === 'object'
-                          ? message.text.response.join('')
-                          : message.text;
-                      return (
-                        <Box
-                          key={index}
-                          maxW="md"
-                          px={5}
-                          py={3}
-                          rounded="md"
-                          bg={message.sender === 'user' ? 'white' : 'gray.200'}
-                          border={message.sender === 'user' ? '1px' : '0px'}
-                          borderColor={
-                            message.sender === 'user' ? 'red.400' : ' '
-                          }
-                          alignSelf={
-                            message.sender === 'user'
-                              ? 'flex-end'
-                              : 'flex-start'
-                          }
-                        >
-                          <Box
-                            color={
-                              message.sender === 'user' ? 'red.600' : 'black'
-                            }
-                            whiteSpace="pre-line"
-                          >
-                            {typeof message.text === 'object' ? (
-                              <div className="half-line-height">
-                                <MessageComponents msg={adjustedMessage} />
-                              </div>
-                            ) : (
-                              <MessageComponents msg={adjustedMessage} />
-                            )}
-                          </Box>
-                        </Box>
-                      );
-                    })}
-
-                    {/* Display the chatbot is typing message */}
-                    {isTyping && (
-                      <Box
-                        maxW="350px"
-                        px={5}
-                        py={1}
-                        rounded="md"
-                        bg={'gray.200'}
-                        alignSelf={'flex-start'}
-                      >
-                        <Text>
-                          Chatbot is thinking <span className="dots"></span>
-                        </Text>
-                      </Box>
-                    )}
-                  </VStack>
-                </Box>
-                <form onSubmit={handleFormSubmit}>
-                  <HStack spacing={3}>
-                    <Input
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      placeholder="Type your message..."
-                      disabled={!isConnected}
-                    />
-                    <Button
-                      colorScheme="red"
-                      type="submit"
-                      disabled={!isConnected}
-                    >
-                      Send
-                    </Button>
-                  </HStack>
-                </form>
-              </>
-            )}
-
-            {/* Option #2: Real Librarian */}
+            {step === 'services' && <ChatBotComponent />}
             {step === 'realLibrarian' && <RealLibrarianWidget />}
-
-            {/* Option #3: Ticket */}
             {step === 'ticket' && <OfflineTicketWidget />}
           </ModalBody>
         </ModalContent>

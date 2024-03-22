@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
-import App_v2 from './App_v2.jsx';
 import './index.css';
 import { ChakraProvider } from '@chakra-ui/react';
 import { SocketContextProvider } from './context/SocketContextProvider.jsx';
@@ -12,7 +11,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ChakraProvider>
       <SocketContextProvider>
         <MessageContextProvider>
-          <App_v2 />
+          <App />
         </MessageContextProvider>
       </SocketContextProvider>
     </ChakraProvider>
