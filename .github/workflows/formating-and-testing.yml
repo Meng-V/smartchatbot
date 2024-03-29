@@ -34,6 +34,8 @@ jobs:
           OPENAI_ORGANIZATION_ID: ${{ secrets.OPENAI_ORGANIZATION_ID }}
           LIBAPPS_OAUTH_URL: ${{ secrets.LIBAPPS_OAUTH_URL }}
           LIBAPPS_CLIENT_ID: ${{ secrets.LIBAPPS_CLIENT_ID }}
+          LIBCAL_OAUTH_URL: ${{ secrets.LIBCAL_OAUTH_URL }}
+          LIBCAL_CLIENT_ID: ${{ secrets.LIBCAL_CLIENT_ID }}
           LIBAPPS_CLIENT_SECRET: ${{ secrets.LIBAPPS_CLIENT_SECRET }}
           LIBAPPS_GRANT_TYPE: ${{ secrets.LIBAPPS_GRANT_TYPE }}
         run: npm test
