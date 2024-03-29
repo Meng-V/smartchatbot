@@ -40,6 +40,7 @@ jobs:
           LIBCAL_CLIENT_ID: ${{ secrets.LIBCAL_CLIENT_ID }}
           LIBCAL_CLIENT_SECRET: ${{ secrets.LIBCAL_CLIENT_SECRET }}
           LIBCAL_GRANT_TYPE: ${{ secrets.LIBCAL_GRANT_TYPE }}
+          LIBCAL_CANCEL_URL: ${{ secrets.LIBCAL_CANCEL_URL }}
         run: npm test
       
       - name: Check formatting
