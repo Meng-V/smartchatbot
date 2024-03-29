@@ -10,6 +10,8 @@ import { PromptModule } from './prompt/prompt.module';
 import { LlmService } from './llm/llm.service';
 import { ConversationMemoryService } from './memory/conversation-memory/conversation-memory.service';
 import { LlmChainModule } from './llm-chain.module';
+import { LlmToolboxModule } from './llm-toolbox/llm-toolbox.module';
+import { LlmAnswerParserService } from './llm-answer-parser/llm-answer-parser.service';
 
 describe('LlmChainService', () => {
   let llmChainService: LlmChainService;
@@ -23,18 +25,12 @@ describe('LlmChainService', () => {
         LlmModule,
         PromptModule,
         LlmChainModule,
+        LlmToolboxModule,
       ],
-      providers: [
-        LlmChainService,
-        LlmService,
-        ConversationMemoryService,
-        ChatbotConversationPromptWithToolsService,
-        TokenUsageService,
-      ],
+      providers: [LlmChainService, LlmAnswerParserService],
     }).compile();
 
     llmChainService = await moduleRef.resolve<LlmChainService>(LlmChainService);
-
     mockedLlmService = await moduleRef.resolve<LlmService>(LlmService);
   });
 
@@ -43,11 +39,14 @@ describe('LlmChainService', () => {
   });
 
   it('should get the correct model response', async () => {
-    const expectedResponse = 'This is response';
+    const expectedLlmResponse = {
+      Thought: 'this is thought',
+      'Final Answer': 'This is final answer',
+    };
     jest
       .spyOn(mockedLlmService, 'getModelResponse')
       .mockImplementation(async () => ({
-        response: expectedResponse,
+        response: JSON.stringify(expectedLlmResponse),
         tokenUsage: {
           'gpt-4': {
             totalTokens: 100,
@@ -58,15 +57,19 @@ describe('LlmChainService', () => {
       }));
 
     expect(await llmChainService.getModelResponse('Message from user')).toEqual(
-      expectedResponse,
+      expectedLlmResponse['Final Answer'],
     );
   });
 
   it('should get the correct token usage', async () => {
+    const expectedLlmResponse = {
+      Thought: 'this is thought',
+      'Final Answer': 'This is final answer',
+    };
     jest
       .spyOn(mockedLlmService, 'getModelResponse')
       .mockImplementation(async () => ({
-        response: '_',
+        response: JSON.stringify(expectedLlmResponse),
         tokenUsage: {
           'gpt-4': {
             totalTokens: 100,

@@ -25,6 +25,27 @@ describe('LibrarianSubjectLookupToolService', () => {
     expect(service).toBeDefined();
   });
 
+  it('should return error message with improper input', async () => {
+    //Null and undefined toolInput
+    let expectedResponse = `Cannot use this tool because missing paramter subjectName.Ask the customer to provide this data.`;
+
+    expect(
+      await service.toolRunForLlm({
+        subjectName: null,
+      }),
+    ).toEqual(expectedResponse);
+    expect(
+      await service.toolRunForLlm({
+        subjectName: 'null',
+      }),
+    ).toEqual(expectedResponse);
+    expect(
+      await service.toolRunForLlm({
+        subjectName: 'undefined',
+      }),
+    ).toEqual(expectedResponse);
+  });
+
   it('should output correct librarian for input subject', async () => {
     const fakeLibrarianInformation: LibrarianInformation[] = [
       {
@@ -83,12 +104,16 @@ describe('LibrarianSubjectLookupToolService', () => {
 
     let expectedAnswer = `These are the librarians that can help you with the requested subject: ${JSON.stringify(
       {
-        'Computer Science': [
-          {
-            name: 'Richard Jackson',
-            email: 'rich@example.com',
-          },
-        ],
+        'Computer Science': {
+          librarians: [
+            {
+              name: 'Richard Jackson',
+              email: 'rich@example.com',
+            },
+          ],
+          subjectHomepage:
+            'https://libguides.lib.miamioh.edu/sb.php?subject_id=5',
+        },
       },
     )}`;
 
@@ -103,12 +128,16 @@ describe('LibrarianSubjectLookupToolService', () => {
     //Test for different subject
     expectedAnswer = `These are the librarians that can help you with the requested subject: ${JSON.stringify(
       {
-        Chemistry: [
-          {
-            name: 'Jane Smith',
-            email: 'jane@example.com',
-          },
-        ],
+        Chemistry: {
+          librarians: [
+            {
+              name: 'Jane Smith',
+              email: 'jane@example.com',
+            },
+          ],
+          subjectHomepage:
+            'https://libguides.lib.miamioh.edu/sb.php?subject_id=3',
+        },
       },
     )}`;
 

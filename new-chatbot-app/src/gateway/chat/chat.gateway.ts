@@ -23,19 +23,19 @@ export class ChatGateway implements OnGatewayDisconnect {
     const llmChain: LlmChainService =
       await this.llmConnnectionGateway.getLlmChainForCurrentSocket(client.id);
 
-    const modelResponse = await llmChain.getModelResponse(userMessage);
+    const modelResponse: string = await llmChain.getModelResponse(userMessage);
     client.emit('message', modelResponse);
   }
 
-  async handleDisconnect(client: any): Promise<void> {
+  async handleDisconnect(client: Socket): Promise<void> {
     const llmChain: LlmChainService =
-      await this.llmConnnectionGateway.getLlmChainForCurrentSocket(client);
+      await this.llmConnnectionGateway.getLlmChainForCurrentSocket(client.id);
 
     const totalTokenUsage = llmChain.getTokenUsage();
     this.logger.log(
       `Total Token Used for the chat session is ${JSON.stringify(totalTokenUsage)}`,
     );
 
-    this.llmConnnectionGateway.closeLlmChainForCurrentSocket(client);
+    this.llmConnnectionGateway.closeLlmChainForCurrentSocket(client.id);
   }
 }

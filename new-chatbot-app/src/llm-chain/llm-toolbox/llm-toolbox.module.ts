@@ -4,13 +4,18 @@ import { LibrarianSubjectLookupToolService } from './libapps-tools/librarian-sub
 import { CancelReservationToolService } from './libcal-tools/cancel-reservation-tool/cancel-reservation-tool.service';
 import { LibraryApiModule } from '../../library-api/library-api.module';
 import { HttpModule } from '@nestjs/axios';
+import { CitationAssistToolService } from './citation-assist-tool/citation-assist-tool.service';
 import { SharedModule } from '../../shared/shared.module';
 
 @Module({
   imports: [LibraryApiModule, HttpModule, SharedModule],
   providers: [
     LibrarianSubjectLookupToolService,
-    CancelReservationToolService
+    CancelReservationToolService,
+    CitationAssistToolService],
+  exports: [
+    LibrarianSubjectLookupToolService,
+    CitationAssistToolService
   ],
 })
 export class LlmToolboxModule {}
