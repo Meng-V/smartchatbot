@@ -26,13 +26,22 @@ model Message {
 }
 
 model Conversation {
-  id               String    @id @default(uuid())
-  userAgent        String?
-  toolUsed         String[]
-  messageList      Message[]
+  id                   String                @id @default(uuid())
+  toolUsed             String[]
+  messageList          Message[]
+  tokenUsages          ModelTokenUsage[] // One conversation might use multiple models
+  conversationFeedback ConversationFeedback?
+}
+
+//Token Usage of each LLM model
+model ModelTokenUsage {
+  id               String        @id @default(uuid())
+  llmModelName     String
   completionTokens Int
   promptTokens     Int
   totalTokens      Int
+  conversation     Conversation? @relation(fields: [conversationId], references: [id])
+  conversationId   String
 }
 
 model Building {
@@ -42,9 +51,17 @@ model Building {
 }
 
 model Room {
-  id          String   @id
-  codeName    String   @unique @db.VarChar(10)
-  capacity    Int
-  building    Building @relation(fields: [buildingId], references: [id])
-  buildingId  String
+  id         String   @id
+  codeName   String   @unique @db.VarChar(10)
+  capacity   Int
+  building   Building @relation(fields: [buildingId], references: [id])
+  buildingId String
+}
+
+model ConversationFeedback {
+  id             String       @id @default(uuid())
+  rating         Int
+  userComment    String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String       @unique
 }
