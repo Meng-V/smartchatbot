@@ -15,7 +15,8 @@ import { SharedModule } from '../../shared/shared.module';
     CitationAssistToolService],
   exports: [
     LibrarianSubjectLookupToolService,
-    CitationAssistToolService
+    CitationAssistToolService,
+    CancelReservationToolService
   ],
 })
 export class LlmToolboxModule {}

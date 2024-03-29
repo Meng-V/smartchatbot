@@ -4,11 +4,15 @@ import { of } from 'rxjs';
 
 import { CancelReservationToolService } from './cancel-reservation-tool.service';
 import { LibcalAuthorizationService } from '../../../../library-api/libcal-authorization/libcal-authorization.service';
+import { RetrieveEnvironmentVariablesService } from '../../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
 
 describe('CancelReservationService', () => {
   let service: CancelReservationToolService;
   let mockHttpService = { post: jest.fn() };
-  let mockLibcalApiAuthorizationService = { getAccessToken: jest.fn() };
+  let mockLibcalApiAuthorizationService = {
+    getAccessTokenObservable: jest.fn().mockReturnValue(of('mockToken')),
+  };
+  let mockRetrieveEnvironmentVariablesService = { retrieve: jest.fn() };
 
   /**
    * Create a new instance of the CancelReservationService before each test.
@@ -19,6 +23,7 @@ describe('CancelReservationService', () => {
         CancelReservationToolService,
         { provide: HttpService, useValue: mockHttpService },
         { provide: LibcalAuthorizationService, useValue: mockLibcalApiAuthorizationService },
+        { provide: RetrieveEnvironmentVariablesService, useValue: mockRetrieveEnvironmentVariablesService },
       ],
     }).compile();
 
@@ -42,14 +47,14 @@ describe('CancelReservationService', () => {
     const accessToken = 'access-token';
     const cancelResponse = { success: true };
 
-    mockLibcalApiAuthorizationService.getAccessToken.mockResolvedValue(accessToken);
+    mockLibcalApiAuthorizationService.getAccessTokenObservable.mockResolvedValue(accessToken);
     mockHttpService.post.mockReturnValue(of(cancelResponse));
 
     const result = await service.toolRunForLlm({ bookingID: bookingID });
 
     const expectedAnswer = `Room reservation with ID: ${bookingID} is cancelled successfully\n`;
 
-    expect(mockLibcalApiAuthorizationService.getAccessToken).toHaveBeenCalled();
+    expect(mockLibcalApiAuthorizationService.getAccessTokenObservable).toHaveBeenCalled();
     expect(result).toEqual(expectedAnswer);
   });
 
@@ -61,14 +66,14 @@ describe('CancelReservationService', () => {
     const accessToken = 'access-token';
     const cancelResponse = { data: [{ cancelled: false, error: 'Cancellation failed' }] };
 
-    mockLibcalApiAuthorizationService.getAccessToken.mockResolvedValue(accessToken);
+    mockLibcalApiAuthorizationService.getAccessTokenObservable.mockResolvedValue(accessToken);
     mockHttpService.post.mockReturnValue(of(cancelResponse));
 
     const result = await service.toolRunForLlm({ bookingID: bookingID });
 
     const expectedAnswer = `Room reservation with ID: ${bookingID} is not cancelled unsuccessfully. Error message: Cancellation failed\n`;
 
-    expect(mockLibcalApiAuthorizationService.getAccessToken).toHaveBeenCalled();
+    expect(mockLibcalApiAuthorizationService.getAccessTokenObservable).toHaveBeenCalled();
     expect(result).toEqual(expectedAnswer);
   });
 
@@ -78,10 +83,10 @@ describe('CancelReservationService', () => {
   it('should fail to cancel reservation with null booking ID', async () => {
     const bookingID = null;
     const accessToken = 'access-token';
-    mockLibcalApiAuthorizationService.getAccessToken.mockResolvedValue(accessToken);
+    mockLibcalApiAuthorizationService.getAccessTokenObservable.mockResolvedValue(accessToken);
     const result = await service.toolRunForLlm({ bookingID: bookingID });
     const expectedAnswer = `Booking ID is null. Please provide a valid booking ID.\n`;
-    expect(mockLibcalApiAuthorizationService.getAccessToken).toHaveBeenCalled();
+    expect(mockLibcalApiAuthorizationService.getAccessTokenObservable).toHaveBeenCalled();
     expect(result).toEqual(expectedAnswer);
   });
 

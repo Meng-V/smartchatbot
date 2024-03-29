@@ -4,7 +4,7 @@ import { LibcalAuthorizationService } from '../../../../library-api/libcal-autho
 import { LlmTool } from '../../llm-tool.interface';
 import { HttpService } from '@nestjs/axios';
 import { Subscription } from 'rxjs';
-import { RetrieveEnvironmentVariablesService } from 'src/shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
+import { RetrieveEnvironmentVariablesService } from '../../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
 
 @Injectable()
 export class CancelReservationToolService implements LlmTool {
