@@ -31,7 +31,7 @@ export class LibcalAuthorizationService implements OnModuleInit {
   }
 
   /**
-   * Get the Observable for access token for LibApps API
+   * Get the Observable for access token for LibCal API
    * @returns the Observable of the access token
    * @throws if cannot connect to the authorization API
    */
@@ -40,7 +40,7 @@ export class LibcalAuthorizationService implements OnModuleInit {
   }
 
   /**
-   * Reset the access token for Libapps
+   * Reset the access token for Libcal
    */
   public resetToken(): Promise<void> {
     return new Promise<void>((resolve, reject) => {

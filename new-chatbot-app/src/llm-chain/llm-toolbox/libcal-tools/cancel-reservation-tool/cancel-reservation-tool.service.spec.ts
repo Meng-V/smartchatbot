@@ -8,7 +8,9 @@ import { RetrieveEnvironmentVariablesService } from '../../../../shared/services
 
 describe('CancelReservationService', () => {
   let service: CancelReservationToolService;
-  let mockHttpService = { post: jest.fn() };
+  let mockHttpService = {
+    axiosRef: { post: jest.fn().mockReturnValue(of({ success: true })) },
+  };
   let mockLibcalApiAuthorizationService = {
     getAccessTokenObservable: jest.fn().mockReturnValue(of('mockToken')),
   };
@@ -38,6 +40,35 @@ describe('CancelReservationService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
+
+  /**
+   * Test that the service cannot cancel a reservation due to improper input.
+   */
+  it('should return error message with improper input', async () => {
+    // Null and undefined toolInput
+    let expectedResponse = `Cannot perform booking because missing parameter bookingID. Ask the customer to provide bookingID to perform booking\n`;
+
+    expect(
+      await service.toolRunForLlm({
+        bookingID: null,
+      }),
+    ).toEqual(expectedResponse);
+    expect(
+      await service.toolRunForLlm({
+        bookingID: 'null',
+      }),
+    ).toEqual(expectedResponse);
+    expect(
+      await service.toolRunForLlm({
+        bookingID: undefined,
+      }),
+    ).toEqual(expectedResponse);
+    expect(
+      await service.toolRunForLlm({
+        bookingID: 'undefined',
+      }),
+    ).toEqual(expectedResponse);
+  });
   
   /**
    * Test that the service can cancel a reservation.
@@ -45,10 +76,10 @@ describe('CancelReservationService', () => {
   it('should cancel reservation', async () => {
     const bookingID = '123';
     const accessToken = 'access-token';
-    const cancelResponse = { success: true };
+    const cancelResponse = { data: [{ cancelled: true }] };
 
     mockLibcalApiAuthorizationService.getAccessTokenObservable.mockResolvedValue(accessToken);
-    mockHttpService.post.mockReturnValue(of(cancelResponse));
+    mockHttpService.axiosRef.post.mockResolvedValueOnce(of(cancelResponse));
 
     const result = await service.toolRunForLlm({ bookingID: bookingID });
 
@@ -64,28 +95,15 @@ describe('CancelReservationService', () => {
   it('should fail to cancel reservation', async () => {
     const bookingID = '123';
     const accessToken = 'access-token';
-    const cancelResponse = { data: [{ cancelled: false, error: 'Cancellation failed' }] };
+    const cancelResponse = { data: [{ cancelled: false, error: 'invalid booking id' }] };
 
     mockLibcalApiAuthorizationService.getAccessTokenObservable.mockResolvedValue(accessToken);
-    mockHttpService.post.mockReturnValue(of(cancelResponse));
+    mockHttpService.axiosRef.post.mockResolvedValueOnce(of(cancelResponse));
 
     const result = await service.toolRunForLlm({ bookingID: bookingID });
 
     const expectedAnswer = `Room reservation with ID: ${bookingID} is not cancelled unsuccessfully. Error message: Cancellation failed\n`;
 
-    expect(mockLibcalApiAuthorizationService.getAccessTokenObservable).toHaveBeenCalled();
-    expect(result).toEqual(expectedAnswer);
-  });
-
-  /**
-   * Test that the service fails to cancel a reservation with null booking ID.
-   */
-  it('should fail to cancel reservation with null booking ID', async () => {
-    const bookingID = null;
-    const accessToken = 'access-token';
-    mockLibcalApiAuthorizationService.getAccessTokenObservable.mockResolvedValue(accessToken);
-    const result = await service.toolRunForLlm({ bookingID: bookingID });
-    const expectedAnswer = `Booking ID is null. Please provide a valid booking ID.\n`;
     expect(mockLibcalApiAuthorizationService.getAccessTokenObservable).toHaveBeenCalled();
     expect(result).toEqual(expectedAnswer);
   });

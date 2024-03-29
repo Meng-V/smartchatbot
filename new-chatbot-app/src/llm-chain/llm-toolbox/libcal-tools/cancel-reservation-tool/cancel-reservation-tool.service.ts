@@ -45,7 +45,7 @@ export class CancelReservationToolService implements LlmTool {
    * @param toolInput 
    * @returns
    */
-  public async toolRunForLlm(toolInput: { bookingID: string | null }): Promise<string> {
+  public async toolRunForLlm(toolInput: { bookingID: string | null | undefined }): Promise<string> {
     if (
       toolInput.bookingID === null ||
       toolInput.bookingID === "null" ||

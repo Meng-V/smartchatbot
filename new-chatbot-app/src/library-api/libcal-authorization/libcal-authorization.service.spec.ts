@@ -19,6 +19,7 @@ describe('LibcalAuthorizationService', () => {
     service = module.get<LibcalAuthorizationService>(
       LibcalAuthorizationService
     );
+    httpService = module.get<HttpService>(HttpService);
   });
 
   it('should be defined', () => {
