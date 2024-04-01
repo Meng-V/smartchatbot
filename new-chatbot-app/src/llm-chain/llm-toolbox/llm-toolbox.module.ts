@@ -8,13 +8,7 @@ import { SharedModule } from '../../shared/shared.module';
 
 @Module({
   imports: [LibraryApiModule, HttpModule, SharedModule],
-  providers: [
-    LibrarianSubjectLookupToolService,
-    CitationAssistToolService,
-  ],
-  exports: [
-    LibrarianSubjectLookupToolService,
-    CitationAssistToolService,
-  ],
+  providers: [LibrarianSubjectLookupToolService, CitationAssistToolService],
+  exports: [LibrarianSubjectLookupToolService, CitationAssistToolService],
 })
 export class LlmToolboxModule {}
