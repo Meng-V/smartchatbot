@@ -17,7 +17,7 @@ describe('LibcalAuthorizationService', () => {
     }).compile();
 
     service = module.get<LibcalAuthorizationService>(
-      LibcalAuthorizationService
+      LibcalAuthorizationService,
     );
     httpService = module.get<HttpService>(HttpService);
   });
@@ -78,6 +78,4 @@ describe('LibcalAuthorizationService', () => {
 
     service.resetToken();
   });
-
-
 });

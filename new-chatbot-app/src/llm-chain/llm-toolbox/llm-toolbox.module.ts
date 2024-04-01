@@ -12,7 +12,8 @@ import { SharedModule } from '../../shared/shared.module';
   providers: [
     LibrarianSubjectLookupToolService,
     // CancelReservationToolService,
-    CitationAssistToolService],
+    CitationAssistToolService,
+  ],
   exports: [
     LibrarianSubjectLookupToolService,
     CitationAssistToolService,
