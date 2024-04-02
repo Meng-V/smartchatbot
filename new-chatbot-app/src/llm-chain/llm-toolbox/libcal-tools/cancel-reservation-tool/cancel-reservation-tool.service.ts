@@ -15,7 +15,6 @@ type LibcalAPICancelReservationResponse = {
   error?: string;
 }[];
 
-
 @Injectable()
 export class CancelReservationToolService implements LlmTool {
   // Env Variables
@@ -95,11 +94,12 @@ export class CancelReservationToolService implements LlmTool {
       Authorization: `Bearer ${this.accessToken}`,
     };
     try {
-      const response = await this.httpService.axiosRef.post<LibcalAPICancelReservationResponse>(
-        `${this.CANCEL_URL}/${bookingID}`,
-        {},
-        { headers: header },
-      );
+      const response =
+        await this.httpService.axiosRef.post<LibcalAPICancelReservationResponse>(
+          `${this.CANCEL_URL}/${bookingID}`,
+          {},
+          { headers: header },
+        );
 
       if (response.data[0].cancelled) {
         return { success: true, error: null };
