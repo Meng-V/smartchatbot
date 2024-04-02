@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-
+import { LibcalAuthorizationService } from './libcal-authorization/libcal-authorization.service';
 import { LibappsAuthorizationService } from './libapps-authorization/libapps-authorization.service';
 import { SharedModule } from '../shared/shared.module';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [HttpModule, SharedModule],
-  providers: [LibappsAuthorizationService],
-  exports: [LibappsAuthorizationService],
+  imports: [SharedModule, HttpModule],
+  providers: [LibcalAuthorizationService, LibappsAuthorizationService],
+  exports: [LibcalAuthorizationService, LibappsAuthorizationService],
 })
 export class LibraryApiModule {}
