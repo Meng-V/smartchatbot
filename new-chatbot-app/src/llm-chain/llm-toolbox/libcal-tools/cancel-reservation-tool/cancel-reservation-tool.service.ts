@@ -6,6 +6,16 @@ import { HttpService } from '@nestjs/axios';
 import { Subscription } from 'rxjs';
 import { RetrieveEnvironmentVariablesService } from '../../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
 
+/**
+ * Returned data type from service
+ */
+type LibcalAPICancelReservationResponse = {
+  booking_id: string;
+  cancelled: boolean;
+  error?: string;
+}[];
+
+
 @Injectable()
 export class CancelReservationToolService implements LlmTool {
   // Env Variables
@@ -80,12 +90,12 @@ export class CancelReservationToolService implements LlmTool {
    */
   async run(
     bookingID: string,
-  ): Promise<{ success: boolean; error: string | null }> {
+  ): Promise<{ success: boolean; error: string | null | undefined }> {
     const header = {
       Authorization: `Bearer ${this.accessToken}`,
     };
     try {
-      const response = await this.httpService.axiosRef.post(
+      const response = await this.httpService.axiosRef.post<LibcalAPICancelReservationResponse>(
         `${this.CANCEL_URL}/${bookingID}`,
         {},
         { headers: header },
