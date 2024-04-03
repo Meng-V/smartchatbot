@@ -9,11 +9,11 @@ import { MessageContextProvider } from './context/MessageContextProvider.jsx';
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ChakraProvider>
-      <SocketContextProvider>
-        <MessageContextProvider>
+      <MessageContextProvider>
+        <SocketContextProvider>
           <App />
-        </MessageContextProvider>
-      </SocketContextProvider>
+        </SocketContextProvider>
+      </MessageContextProvider>
     </ChakraProvider>
   </React.StrictMode>,
 );

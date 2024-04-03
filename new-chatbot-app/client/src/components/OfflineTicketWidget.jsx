@@ -9,26 +9,17 @@ const OfflineTicketWidget = () => {
   const [name, setName] = useState('');
   const [details, setDetails] = useState('');
 
-  const { socket } = useContext(SocketContext);
+  const { socketContextValues: scv } = useContext(SocketContext);
 
   const handleTicketSubmit = (e) => {
     e.preventDefault();
-    if (socket) {
-      socket.emit(
-        "createTicket",
-        {
-          question: question,
-          email: email,
-          name: name,
-          details: details,
-          ua: navigator.userAgent,
-        },
-        (responseMessage) => {
-          console.log(responseMessage);
-          setStep("initial");
-        }
-      );
-    }
+    const formData = FormData();
+    formData.append("question", question);
+    formData.append("email", email);
+    formData.append("name", name);
+    formData.append("details", details);
+    formData.append("ua", navigator.userAgent);
+    scv.OfflineTicketSubmit(formData);
   };
 
   return (

@@ -26,69 +26,17 @@ const App = () => {
   const [step, setStep] = useState('initial');
   const toast = useToast();
   const firstSession = useRef(true);
-  const { socket, isConnected, attemptedConnection, setIsConnected, setAttemptedConnection } = useContext(SocketContext);
-  const { setMessage, message, addMessage, setIsTyping, } = useContext(MessageContext);
-
-  useEffect(() => {
-    socket.on('connect', () => {
-      if (firstSession.current) {
-        const welcomeMessage = {
-          text: 'Hi this is the Library Smart Chatbot. How may I help you?',
-          sender: 'chatbot',
-        };
-        setMessage((prevMessages) => {
-          const updatedMessages = [...prevMessages, welcomeMessage];
-          sessionStorage.setItem(
-            'chat_messages',
-            JSON.stringify(updatedMessages),
-          );
-          return updatedMessages;
-        });
-        firstSession.current = false;
-      }
-      setIsConnected(true);
-      setAttemptedConnection(true);
-      setIsTyping(false);
-    });
-
-    socket.on('message', function (message) {
-      setIsTyping(false);
-      addMessage(message, 'chatbot');
-    });
-
-    socket.on('disconnect', function () {
-      setIsConnected(false);
-      setAttemptedConnection(true);
-    });
-
-    socket.on('connect_error', (error) => {
-      console.error('Connection Error:', error);
-      setIsConnected(false);
-      setAttemptedConnection(true);
-    });
-
-    socket.on('connect_timeout', (timeout) => {
-      console.error('Connection Timeout:', timeout);
-      setIsConnected(false);
-      setAttemptedConnection(true);
-    });
-
-    return () => {
-      socket.off('message');
-      socket.off('disconnect');
-      socket.off('connect_error');
-      socket.off('connect_timeout');
-    };
-  }, [isConnected, setMessage]);
+  const { socketContextValues: scv } = useContext(SocketContext);
+  const { messageContextValues: mcv } = useContext(MessageContext);
 
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
-  }, [message]);
+  }, [mcv.message]);
 
   useEffect(() => {
-    if (!isConnected && attemptedConnection) {
+    if (!scv.isConnected && scv.attemptedConnection) {
       toast({
         title: 'Connection Error',
         description:
@@ -99,7 +47,7 @@ const App = () => {
         position: 'bottom-left',
       });
     }
-  }, [isConnected, attemptedConnection, toast]);
+  }, [scv.isConnected, scv.attemptedConnection, toast]);
 
   const handleClose = () => {
     setStep('initial');
