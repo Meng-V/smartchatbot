@@ -7,16 +7,16 @@ import './ChatBotComponent.css';
 
 const ChatBotComponent = () => {
 
-  const { socket, isConnected } = useContext(SocketContext);
-  const { inputMessage, setInputMessage, message, isTyping, setIsTyping, addMessage } = useContext(MessageContext);
+  const { socketContextValues: scv } = useContext(SocketContext);
+  const { messageContextValues: mcv } = useContext(MessageContext);
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    if (inputMessage && socket) {
-      addMessage(inputMessage, 'user');
-      setInputMessage('');
-      setIsTyping(true);
-      socket.emit('message', inputMessage, () => { });
+    if (mcv.inputMessage && scv.socket) {
+      mcv.addMessage(mcv.inputMessage, 'user');
+      mcv.setInputMessage('');
+      mcv.setIsTyping(true);
+      scv.sendUserMessage(mcv.inputMessage);
     }
   };
 
@@ -25,7 +25,7 @@ const ChatBotComponent = () => {
       <Box className="chat">
         <VStack align="start" spacing={4}>
 
-          {message.map((message, index) => {
+          {mcv.message.map((message, index) => {
             const adjustedMessage =
               typeof message.text === 'object'
                 ? message.text.response.join('')
@@ -65,14 +65,14 @@ const ChatBotComponent = () => {
               </Box>
             );
           })}
-          {isTyping && (
+          {mcv.isTyping && (
             <Box>
               <Text>
                 Chatbot is thinking <span className="dots"></span>
               </Text>
             </Box>
           )}
-          {!isConnected && (
+          {!scv.isConnected && (
             <Box
               maxW="350px"
               px={5}
@@ -91,15 +91,15 @@ const ChatBotComponent = () => {
       <form onSubmit={handleFormSubmit}>
         <HStack spacing={3}>
           <Input
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
+            value={mcv.inputMessage}
+            onChange={(e) => mcv.setInputMessage(e.target.value)}
             placeholder="Type your message..."
-            disabled={!isConnected}
+            disabled={!scv.isConnected}
           />
           <Button
             colorScheme="red"
             type="submit"
-            disabled={!isConnected}
+            disabled={!scv.isConnected}
           >
             Send
           </Button>

@@ -1,8 +1,8 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useMemo } from "react";
 
 const MessageContext = createContext();
 
-const MessageContextProvider = (props) => {
+const MessageContextProvider = ({children}) => {
 
   const [message, setMessage] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -20,17 +20,19 @@ const MessageContextProvider = (props) => {
     });
   };
 
+  const messageContextValues = useMemo(() => ({
+    message,
+    setMessage,
+    inputMessage,
+    setInputMessage,
+    isTyping,
+    setIsTyping,
+    addMessage,
+  }), [message, inputMessage, isTyping]);
+
   return (
-    <MessageContext.Provider value={{
-      message,
-      setMessage,
-      inputMessage,
-      setInputMessage,
-      isTyping,
-      setIsTyping,
-      addMessage,
-    }}>
-      {props.children}
+    <MessageContext.Provider value={{messageContextValues}}>
+      {children}
     </MessageContext.Provider>
   )
 
