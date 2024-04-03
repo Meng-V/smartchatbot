@@ -36,6 +36,11 @@ jobs:
           LIBAPPS_CLIENT_ID: ${{ secrets.LIBAPPS_CLIENT_ID }}
           LIBAPPS_CLIENT_SECRET: ${{ secrets.LIBAPPS_CLIENT_SECRET }}
           LIBAPPS_GRANT_TYPE: ${{ secrets.LIBAPPS_GRANT_TYPE }}
+          LIBCAL_OAUTH_URL: ${{ secrets.LIBCAL_OAUTH_URL }}
+          LIBCAL_CLIENT_ID: ${{ secrets.LIBCAL_CLIENT_ID }}
+          LIBCAL_CLIENT_SECRET: ${{ secrets.LIBCAL_CLIENT_SECRET }}
+          LIBCAL_GRANT_TYPE: ${{ secrets.LIBCAL_GRANT_TYPE }}
+          LIBCAL_CANCEL_URL: ${{ secrets.LIBCAL_CANCEL_URL }}
         run: npm test
       
       - name: Check formatting

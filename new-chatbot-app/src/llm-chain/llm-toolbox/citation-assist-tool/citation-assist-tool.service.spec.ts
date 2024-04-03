@@ -79,7 +79,6 @@ describe('CitationAssistToolService', () => {
 
     //Invalid citation type
     expectedResponse = `Error:citationType must be one of ${Object.keys(CitationType)}`;
-    console.log(expectedResponse);
     expect(
       await service.toolRunForLlm({
         citationType: 'Invalid citation',
