@@ -9,7 +9,7 @@ const OfflineTicketWidget = () => {
   const [name, setName] = useState('');
   const [details, setDetails] = useState('');
 
-  const { socketContextValues: scv } = useContext(SocketContext);
+  const { socketContextValues: socketContextValues } = useContext(SocketContext);
 
   const handleTicketSubmit = (e) => {
     e.preventDefault();
@@ -19,7 +19,7 @@ const OfflineTicketWidget = () => {
     formData.append("name", name);
     formData.append("details", details);
     formData.append("ua", navigator.userAgent);
-    scv.OfflineTicketSubmit(formData);
+    socketContextValues.OfflineTicketSubmit(formData);
   };
 
   return (

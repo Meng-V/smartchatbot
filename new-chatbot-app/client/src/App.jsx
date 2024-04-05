@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import {
   Button,
   VStack,
@@ -17,25 +17,16 @@ import OfflineTicketWidget from './components/OfflineTicketWidget';
 import ChatBotComponent from './components/ChatBotComponent';
 import { useToast } from '@chakra-ui/react';
 import { SocketContext } from './context/SocketContextProvider';
-import { MessageContext } from './context/MessageContextProvider';
 
 const App = () => {
 
-  const chatRef = useRef();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [step, setStep] = useState('initial');
   const toast = useToast();
-  const { socketContextValues: scv } = useContext(SocketContext);
-  const { messageContextValues: mcv } = useContext(MessageContext);
+  const { socketContextValues } = useContext(SocketContext);
 
   useEffect(() => {
-    if (chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
-    }
-  }, [mcv.message]);
-
-  useEffect(() => {
-    if (!scv.isConnected && scv.attemptedConnection) {
+    if (!socketContextValues.isConnected && socketContextValues.attemptedConnection) {
       toast({
         title: 'Connection Error',
         description:
@@ -46,7 +37,7 @@ const App = () => {
         position: 'bottom-left',
       });
     }
-  }, [scv.isConnected, scv.attemptedConnection, toast]);
+  }, [socketContextValues.isConnected, socketContextValues.attemptedConnection, toast]);
 
   const handleClose = () => {
     setStep('initial');
