@@ -71,7 +71,7 @@ const SocketContextProvider = ({children}) => {
         socket.current.off('connect_timeout');
       };
     }
-  }, [isConnected, mcv.setMessage]);
+  }, [isConnected]);
 
   const sendUserMessage = (message) => {
     if (socket.current) {
