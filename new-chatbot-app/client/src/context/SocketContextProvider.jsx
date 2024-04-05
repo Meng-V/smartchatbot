@@ -15,7 +15,7 @@ const SocketContextProvider = ({children}) => {
   const firstSession = useRef(true);
   const [isConnected, setIsConnected] = useState(false);
   const [attemptedConnection, setAttemptedConnection] = useState(false);
-  const { messageContextValues: mcv } = useContext(MessageContext);
+  const { messageContextValues } = useContext(MessageContext);
 
   useEffect(() => {
     if (!socket.current) {
@@ -27,7 +27,7 @@ const SocketContextProvider = ({children}) => {
             text: 'Hi this is the Library Smart Chatbot. How may I help you?',
             sender: 'chatbot',
           };
-          mcv.setMessage((prevMessages) => {
+          messageContextValues.setMessage((prevMessages) => {
             const updatedMessages = [...prevMessages, welcomeMessage];
             sessionStorage.setItem(
               'chat_messages',
@@ -39,27 +39,25 @@ const SocketContextProvider = ({children}) => {
         }
         setIsConnected(true);
         setAttemptedConnection(true);
-        mcv.setIsTyping(false);
+        messageContextValues.setIsTyping(false);
       });
   
-      socket.current.on('message', function (message) {
-        mcv.setIsTyping(false);
-        mcv.addMessage(message, 'chatbot');
+      socket.current.on('message', (message) => {
+        messageContextValues.setIsTyping(false);
+        messageContextValues.addMessage(message, 'chatbot');
       });
   
-      socket.current.on('disconnect', function () {
+      socket.current.on('disconnect', () => {
         setIsConnected(false);
         setAttemptedConnection(true);
       });
   
       socket.current.on('connect_error', (error) => {
-        console.error('Connection Error:', error);
         setIsConnected(false);
         setAttemptedConnection(true);
       });
   
       socket.current.on('connect_timeout', (timeout) => {
-        console.error('Connection Timeout:', timeout);
         setIsConnected(false);
         setAttemptedConnection(true);
       });
@@ -71,7 +69,7 @@ const SocketContextProvider = ({children}) => {
         socket.current.off('connect_timeout');
       };
     }
-  }, [isConnected]);
+  }, []);
 
   const sendUserMessage = (message) => {
     if (socket.current) {
