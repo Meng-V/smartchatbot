@@ -1,31 +1,38 @@
 import { Box, VStack, HStack, Input, Button, Text } from "@chakra-ui/react";
 import MessageComponents from './ParseLinks';
-import { useContext } from "react";
+import { useContext, useRef, useEffect } from "react";
 import { SocketContext } from "../context/SocketContextProvider";
 import { MessageContext } from "../context/MessageContextProvider";
 import './ChatBotComponent.css';
 
 const ChatBotComponent = () => {
 
-  const { socketContextValues: scv } = useContext(SocketContext);
-  const { messageContextValues: mcv } = useContext(MessageContext);
+  const { socketContextValues } = useContext(SocketContext);
+  const { messageContextValues } = useContext(MessageContext);
+  const chatRef = useRef();
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    if (mcv.inputMessage && scv.socket) {
-      mcv.addMessage(mcv.inputMessage, 'user');
-      mcv.setInputMessage('');
-      mcv.setIsTyping(true);
-      scv.sendUserMessage(mcv.inputMessage);
+    if (messageContextValues.inputMessage && socketContextValues.socket) {
+      messageContextValues.addMessage(messageContextValues.inputMessage, 'user');
+      messageContextValues.setInputMessage('');
+      messageContextValues.setIsTyping(true);
+      socketContextValues.sendUserMessage(messageContextValues.inputMessage);
     }
   };
 
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [messageContextValues.message]);
+
   return (
     <>
-      <Box className="chat">
+      <Box ref={chatRef} className="chat">
         <VStack align="start" spacing={4}>
 
-          {mcv.message.map((message, index) => {
+          {messageContextValues.message.map((message, index) => {
             const adjustedMessage =
               typeof message.text === 'object'
                 ? message.text.response.join('')
@@ -65,14 +72,14 @@ const ChatBotComponent = () => {
               </Box>
             );
           })}
-          {mcv.isTyping && (
+          {messageContextValues.isTyping && (
             <Box>
               <Text>
                 Chatbot is thinking <span className="dots"></span>
               </Text>
             </Box>
           )}
-          {!scv.isConnected && (
+          {!socketContextValues.isConnected && (
             <Box
               maxW="350px"
               px={5}
@@ -91,15 +98,15 @@ const ChatBotComponent = () => {
       <form onSubmit={handleFormSubmit}>
         <HStack spacing={3}>
           <Input
-            value={mcv.inputMessage}
-            onChange={(e) => mcv.setInputMessage(e.target.value)}
+            value={messageContextValues.inputMessage}
+            onChange={(e) => messageContextValues.setInputMessage(e.target.value)}
             placeholder="Type your message..."
-            disabled={!scv.isConnected}
+            disabled={!socketContextValues.isConnected}
           />
           <Button
             colorScheme="red"
             type="submit"
-            disabled={!scv.isConnected}
+            disabled={!socketContextValues.isConnected}
           >
             Send
           </Button>
