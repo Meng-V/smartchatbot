@@ -82,9 +82,7 @@ const SocketContextProvider = ({children}) => {
       socket.current.emit(
         "createTicket",
         formData,
-        (responseMessage) => {
-          console.log(responseMessage);
-        }
+        () => {}
       )
     }
   };
