@@ -11,74 +11,77 @@ const SocketContext = createContext();
 
 const SocketContextProvider = ({children}) => {
   
-  const socket = io(url, { transports: ['websocket'], upgrade: false });
+  const socket = useRef(null);
+  const firstSession = useRef(true);
   const [isConnected, setIsConnected] = useState(false);
   const [attemptedConnection, setAttemptedConnection] = useState(false);
-
   const { messageContextValues: mcv } = useContext(MessageContext);
-  const firstSession = useRef(true);
 
   useEffect(() => {
-    socket.on('connect', () => {
-      if (firstSession.current) {
-        const welcomeMessage = {
-          text: 'Hi this is the Library Smart Chatbot. How may I help you?',
-          sender: 'chatbot',
-        };
-        mcv.setMessage((prevMessages) => {
-          const updatedMessages = [...prevMessages, welcomeMessage];
-          sessionStorage.setItem(
-            'chat_messages',
-            JSON.stringify(updatedMessages),
-          );
-          return updatedMessages;
-        });
-        firstSession.current = false;
-      }
-      setIsConnected(true);
-      setAttemptedConnection(true);
-      mcv.setIsTyping(false);
-    });
-
-    socket.on('message', function (message) {
-      mcv.setIsTyping(false);
-      mcv.addMessage(message, 'chatbot');
-    });
-
-    socket.on('disconnect', function () {
-      setIsConnected(false);
-      setAttemptedConnection(true);
-    });
-
-    socket.on('connect_error', (error) => {
-      console.error('Connection Error:', error);
-      setIsConnected(false);
-      setAttemptedConnection(true);
-    });
-
-    socket.on('connect_timeout', (timeout) => {
-      console.error('Connection Timeout:', timeout);
-      setIsConnected(false);
-      setAttemptedConnection(true);
-    });
-
-    return () => {
-      socket.off('message');
-      socket.off('disconnect');
-      socket.off('connect_error');
-      socket.off('connect_timeout');
-    };
+    if (!socket.current) {
+      socket.current = io(url, { transports: ['websocket'], upgrade: false });
+    } else {
+      socket.current.on('connect', () => {
+        if (firstSession.current) {
+          const welcomeMessage = {
+            text: 'Hi this is the Library Smart Chatbot. How may I help you?',
+            sender: 'chatbot',
+          };
+          mcv.setMessage((prevMessages) => {
+            const updatedMessages = [...prevMessages, welcomeMessage];
+            sessionStorage.setItem(
+              'chat_messages',
+              JSON.stringify(updatedMessages),
+            );
+            return updatedMessages;
+          });
+          firstSession.current = false;
+        }
+        setIsConnected(true);
+        setAttemptedConnection(true);
+        mcv.setIsTyping(false);
+      });
+  
+      socket.current.on('message', function (message) {
+        mcv.setIsTyping(false);
+        mcv.addMessage(message, 'chatbot');
+      });
+  
+      socket.current.on('disconnect', function () {
+        setIsConnected(false);
+        setAttemptedConnection(true);
+      });
+  
+      socket.current.on('connect_error', (error) => {
+        console.error('Connection Error:', error);
+        setIsConnected(false);
+        setAttemptedConnection(true);
+      });
+  
+      socket.current.on('connect_timeout', (timeout) => {
+        console.error('Connection Timeout:', timeout);
+        setIsConnected(false);
+        setAttemptedConnection(true);
+      });
+  
+      return () => {
+        socket.current.off('message');
+        socket.current.off('disconnect');
+        socket.current.off('connect_error');
+        socket.current.off('connect_timeout');
+      };
+    }
   }, [isConnected, mcv.setMessage]);
 
   const sendUserMessage = (message) => {
-    if (socket) {
-      socket.emit("message", message, () => {});
+    if (socket.current) {
+      socket.current.emit("message", message, () => {});
     }
   }
 
   const offlineTicketSubmit = (formData) => {
-    if (socket) {
-      socket.emit(
+    if (socket.current) {
+      socket.current.emit(
         "createTicket",
         formData,
         (responseMessage) => {
@@ -89,7 +92,7 @@ const SocketContextProvider = ({children}) => {
   };
 
   const socketContextValues = useMemo(() => ({
-    socket,
+    socket: socket.current,
     isConnected,
     setIsConnected,
     attemptedConnection,

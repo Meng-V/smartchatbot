@@ -25,7 +25,6 @@ const App = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [step, setStep] = useState('initial');
   const toast = useToast();
-  const firstSession = useRef(true);
   const { socketContextValues: scv } = useContext(SocketContext);
   const { messageContextValues: mcv } = useContext(MessageContext);
 
