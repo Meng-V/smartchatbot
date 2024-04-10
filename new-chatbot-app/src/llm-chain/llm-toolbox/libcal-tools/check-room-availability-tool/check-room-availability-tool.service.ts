@@ -1,0 +1,182 @@
+import { Injectable } from '@nestjs/common';
+import { LlmTool, LlmToolInput } from '../../llm-tool.interface';
+import { LibcalAuthorizationService } from '../../../../library-api/libcal-authorization/libcal-authorization.service';
+import { Subscription } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
+import { RetrieveEnvironmentVariablesService } from '../../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
+
+type Room = {
+  id: string;
+  roomCodeName: string;
+  capacity: number;
+};
+
+type RoomAvailability = {
+  space: {
+    id: string;
+    name: string;
+    image: string;
+    capacity: number;
+    zoneId: number;
+  };
+  category: {
+    cid: 6672;
+    name: string;
+  };
+  start: string;
+  end: string;
+};
+
+type SearchAvailabilityApiResponse = {
+  exact_matches: RoomAvailability[];
+  other_matches: RoomAvailability[];
+};
+
+@Injectable()
+export class CheckRoomAvailabilityToolService implements LlmTool {
+  public readonly toolName: string = 'CheckRoomAvailabilityTool';
+  public readonly toolDescription: string =
+    "This tool is for checking if there is any available room for any room with the input time range and room capacity.Use Final Answer instead if you don't have enough required parameters(date,startTime,endTime)yet.Don't include any single quotes in the paramter.The year is implicitly the current year";
+
+  public readonly toolParametersStructure: { [parameterName: string]: string } =
+    {
+      date: 'string [REQUIRED][format YYYY-MM-DD]',
+      startTime: 'string[REQUIRED][format HH-MM ranging from 00:00 to 23:59]',
+      endTime: 'string[REQUIRED][format HH-MM ranging from 00:00 to 23:59]',
+      roomCapacity:
+        'string[OPTIONAL][capacity(number of people)of the room you wish to reserve.]',
+    };
+
+  private SEARCH_AVAILABLE_URL =
+    this.retrieveEnvironmentVariablesService.retrieve<string>(
+      'LIBCAL_SEARCH_AVAILABLE_URL',
+    );
+  private accessToken: string = '';
+  private tokenSubscription: Subscription;
+
+  constructor(
+    private libcalAuthorizationService: LibcalAuthorizationService,
+    private httpService: HttpService,
+    private retrieveEnvironmentVariablesService: RetrieveEnvironmentVariablesService,
+  ) {
+    this.tokenSubscription = this.libcalAuthorizationService
+      .getAccessTokenObservable()
+      .subscribe((token) => (this.accessToken = token));
+  }
+
+  /**
+   * Get the capacity range based on capacity
+   * @param capacity
+   * @returns capacityRange
+   */
+  private getCapacityRange(capacity: number | null | undefined): number {
+    if (capacity === null || capacity === undefined) return 0;
+    else if (capacity <= 4) return 1;
+    else if (capacity <= 8) return 2;
+    else if (capacity <= 12) return 3;
+    else return 4;
+  }
+
+  /**
+   * Get the list of rooms available in the input date, time, and capacity
+   * @param date
+   * @param timeStart
+   * @param timeEnd
+   * @param capacity
+   */
+  public async fetchAvailableRooms(
+    date: string,
+    timeStart: string,
+    timeEnd: string,
+    capacity: number | null | undefined,
+  ): Promise<Room[]> {
+    const header = {
+      Authorization: `Bearer ${this.accessToken}`,
+    };
+
+    // The default building is King Library at the moment
+    const buildingId =
+      this.retrieveEnvironmentVariablesService.retrieve('KING_BUILDING');
+    const url = `${this.SEARCH_AVAILABLE_URL}/${buildingId}`;
+
+    const response =
+      await this.httpService.axiosRef.get<SearchAvailabilityApiResponse>(url, {
+        headers: header,
+        params: {
+          date: date,
+          time_start: timeStart,
+          time_end: timeEnd,
+          type: 'space',
+          capacity: this.getCapacityRange(capacity),
+        },
+      });
+
+    const availableRooms = response.data.exact_matches;
+
+    return availableRooms.map<Room>((room: RoomAvailability) => {
+      return {
+        id: room.space.id,
+        roomCodeName: room.space.name,
+        capacity: room.space.capacity,
+      };
+    });
+  }
+
+  /**
+   * Check if any required field is missing from the llmToolInput
+   * @param llmToolInput
+   * @param requiredFields
+   * @returns
+   */
+  private checkLlmInput(
+    llmToolInput: LlmToolInput,
+    requiredFields: string[],
+  ): string[] {
+    let missingFields = [];
+    for (const field of requiredFields) {
+      if (
+        llmToolInput[field] === null ||
+        llmToolInput[field] === 'null' ||
+        llmToolInput[field] === undefined ||
+        llmToolInput[field] === 'undefined'
+      ) {
+        missingFields.push(field);
+      }
+    }
+    return missingFields;
+  }
+  
+  public async toolRunForLlm(llmToolInput: {
+    date: string;
+    startTime: string;
+    endTime: string;
+    roomCapacity?: string;
+  }): Promise<string> {
+    const missingField = this.checkLlmInput(llmToolInput, [
+      'date',
+      'startTime',
+      'endTime',
+    ]);
+
+    if (missingField.length !== 0) {
+      return `Cannot use this tool because missing paramters ${JSON.stringify(missingField)}.Ask the customer to provide these data.`;
+    }
+
+    const availableRooms = await this.fetchAvailableRooms(
+      llmToolInput.date!,
+      llmToolInput.startTime!,
+      llmToolInput.endTime!,
+      parseInt(llmToolInput.roomCapacity!),
+    );
+
+    //Censor roomId before returning to user
+    const availableRoomsCensored = availableRooms.map((room: Room) => {
+      return {
+        roomName: room.roomCodeName,
+        capacity: room.capacity,
+      };
+    });
+
+    return `Rooms satisfy the input conditions:${JSON.stringify(availableRoomsCensored)}`;
+  }
+}
