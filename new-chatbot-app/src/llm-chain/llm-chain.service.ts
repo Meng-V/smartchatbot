@@ -13,6 +13,8 @@ import {
 } from '../shared/services/token-usage/token-usage.service';
 import { LlmModelType } from './llm/llm.module';
 import { CitationAssistToolService } from './llm-toolbox/citation-assist-tool/citation-assist-tool.service';
+import { CheckRoomAvailabilityToolService } from './llm-toolbox/libcal-tools/check-room-availability-tool/check-room-availability-tool.service';
+import { ReserveRoomToolService } from './llm-toolbox/libcal-tools/reserve-room-tool/reserve-room-tool.service';
 
 /**
  * Service for using the LLM Chain
@@ -34,6 +36,8 @@ export class LlmChainService {
     private tokenUsageService: TokenUsageService,
     private librarianSubjectLookupToolService: LibrarianSubjectLookupToolService,
     private citationAssistToolService: CitationAssistToolService,
+    private checkRoomAvailabilityToolService: CheckRoomAvailabilityToolService,
+    private reserveRoomToolService: ReserveRoomToolService,
   ) {
     this.memoryService.setMaxContextWindow(6);
     this.memoryService.setConversationBufferSize(3);
@@ -44,6 +48,8 @@ export class LlmChainService {
       new Set<LlmTool>([
         this.librarianSubjectLookupToolService,
         this.citationAssistToolService,
+        this.checkRoomAvailabilityToolService,
+        this.reserveRoomToolService,
       ]),
     );
   }

@@ -47,8 +47,8 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
       \"Action\": The action to take,should always be one of [${tools.map(
         (toolDocumentation) => toolDocumentation.toolName,
       )}].If you don't need to use any tool,put "null" here,
-      \"Action Input\":{parameter1:value1,parameter2:value2,parameter3:value3,etc}.If Action is not null,do not ever put null here.Put null here if Action is null,
-      \"Final Answer\": Provide your polite final answer for the input question from the input question or the LlmTool Response (if it exists).Always put "null" here if you decide to use any tools,
+      \"Action Input\":Input paramters for the tool used in Action{parameter1:value1,parameter2:value2,parameter3:value3,etc}.If Action is using any tool,DO NOT ever put null here.Put null here ONLY if Action is null.If you don't have enought parameters to put in, ASK the customer to provide them in Final Answer,
+      \"Final Answer\": Provide your polite final answer for the input question from the input question or the LlmTool Response (if it exists).ASK the customer if any tool input parameters are missing.Put null here if both Action and Action Input are not null.
       }\n\n`;
     return reActModelDescription;
   }

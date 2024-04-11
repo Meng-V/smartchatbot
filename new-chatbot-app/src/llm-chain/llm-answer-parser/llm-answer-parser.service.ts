@@ -36,27 +36,29 @@ export class LlmAnswerParserService {
     if (typeof outputObj === 'string') {
       outputObj = JSON.parse(outputObj);
     }
-
     if (
+      outputObj['Final Answer'] &&
+      outputObj['Final Answer'] !== 'null' &&
+      outputObj['Final Answer'] !== 'undefined'
+    ) {
+      return {
+        outputType: 'final',
+        thought: this.trimText(outputObj['Thought']),
+        finalAnswer: this.trimText(outputObj['Final Answer']),
+      };
+    } else if (
       outputObj['Action'] &&
       outputObj['Action Input'] &&
       outputObj['Action'] !== 'null' &&
-      outputObj['Action Input'] !== 'null'
+      outputObj['Action Input'] !== 'null' &&
+      outputObj['Action'] !== 'undefined' &&
+      outputObj['Action Input'] !== 'undefined'
     ) {
       return {
         outputType: 'action',
         thought: this.trimText(outputObj['Thought']),
         action: this.trimText(outputObj['Action']),
         actionInput: outputObj['Action Input'],
-      };
-    } else if (
-      outputObj['Final Answer'] &&
-      outputObj['Final Answer'] !== 'null'
-    ) {
-      return {
-        outputType: 'final',
-        thought: this.trimText(outputObj['Thought']),
-        finalAnswer: this.trimText(outputObj['Final Answer']),
       };
     } else {
       throw new Error('Error in parsing LLM output');
