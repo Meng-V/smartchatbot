@@ -174,8 +174,8 @@ export class DatabaseService {
 
   /**
    * Updating message rating
-   * @param messageId 
-   * @param isPositiveRated 
+   * @param messageId
+   * @param isPositiveRated
    */
   async updateMessageRating(
     messageId: string,
