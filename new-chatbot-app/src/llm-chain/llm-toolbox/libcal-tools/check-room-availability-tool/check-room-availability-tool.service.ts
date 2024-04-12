@@ -160,12 +160,7 @@ export class CheckRoomAvailabilityToolService
     return missingFields;
   }
 
-  public async toolRunForLlm(llmToolInput: {
-    date: string;
-    startTime: string;
-    endTime: string;
-    roomCapacity?: string;
-  }): Promise<string> {
+  public async toolRunForLlm(llmToolInput: LlmToolInput): Promise<string> {
     const missingField = this.checkLlmInput(llmToolInput, [
       'date',
       'startTime',
