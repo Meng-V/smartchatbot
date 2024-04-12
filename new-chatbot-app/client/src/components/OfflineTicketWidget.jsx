@@ -9,7 +9,7 @@ const OfflineTicketWidget = () => {
   const [name, setName] = useState('');
   const [details, setDetails] = useState('');
 
-  const { socketContextValues: socketContextValues } = useContext(SocketContext);
+  const { socketContextValues } = useContext(SocketContext);
 
   const handleTicketSubmit = (e) => {
     e.preventDefault();

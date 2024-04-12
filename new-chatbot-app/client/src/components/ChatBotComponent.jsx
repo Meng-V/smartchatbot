@@ -3,6 +3,7 @@ import MessageComponents from './ParseLinks';
 import { useContext, useRef, useEffect } from "react";
 import { SocketContext } from "../context/SocketContextProvider";
 import { MessageContext } from "../context/MessageContextProvider";
+import MessageRatingComponent from "./MessageRatingComponent";
 import './ChatBotComponent.css';
 
 const ChatBotComponent = () => {
@@ -40,15 +41,6 @@ const ChatBotComponent = () => {
             return (
               <Box
                 key={index}
-                maxW="md"
-                px={5}
-                py={3}
-                rounded="md"
-                bg={message.sender === 'user' ? 'white' : 'gray.200'}
-                border={message.sender === 'user' ? '1px' : '0px'}
-                borderColor={
-                  message.sender === 'user' ? 'red.400' : ' '
-                }
                 alignSelf={
                   message.sender === 'user'
                     ? 'flex-end'
@@ -56,19 +48,35 @@ const ChatBotComponent = () => {
                 }
               >
                 <Box
-                  color={
-                    message.sender === 'user' ? 'red.600' : 'black'
+                  maxW="md"
+                  px={5}
+                  py={3}
+                  rounded="md"
+                  bg={message.sender === 'user' ? 'white' : 'gray.200'}
+                  border={message.sender === 'user' ? '1px' : '0px'}
+                  borderColor={
+                    message.sender === 'user' ? 'red.400' : ' '
                   }
-                  whiteSpace="pre-line"
                 >
-                  {typeof message.text === 'object' ? (
-                    <div className="half-line-height">
+                  <Box
+                    color={
+                      message.sender === 'user' ? 'red.600' : 'black'
+                    }
+                    whiteSpace="pre-line"
+                  >
+                    {typeof message.text === 'object' ? (
+                      <div className="half-line-height">
+                        <MessageComponents msg={adjustedMessage} />
+
+                      </div>
+                    ) : (
                       <MessageComponents msg={adjustedMessage} />
-                    </div>
-                  ) : (
-                    <MessageComponents msg={adjustedMessage} />
-                  )}
+                    )}
+                  </Box>
                 </Box>
+                {message.sender !== 'user' && index !== 0 && (
+                  <MessageRatingComponent msg={adjustedMessage} />
+                )}
               </Box>
             );
           })}

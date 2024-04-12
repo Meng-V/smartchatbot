@@ -10,6 +10,7 @@ import {
   ModalCloseButton,
   ModalBody,
   IconButton,
+  Flex,
 } from '@chakra-ui/react';
 import { ArrowBackIcon, ChatIcon } from '@chakra-ui/icons';
 import RealLibrarianWidget from './components/RealLibrarianWidget';
@@ -17,6 +18,7 @@ import OfflineTicketWidget from './components/OfflineTicketWidget';
 import ChatBotComponent from './components/ChatBotComponent';
 import { useToast } from '@chakra-ui/react';
 import { SocketContext } from './context/SocketContextProvider';
+import FeedbackFormComponent from './components/FeedbackFormComponent';
 
 const App = () => {
 
@@ -62,7 +64,7 @@ const App = () => {
         <ModalContent
           maxW="350px"
           position="fixed"
-          bottom="60px"
+          bottom="30px"
           right="10"
           borderRadius="md"
         >
@@ -81,20 +83,24 @@ const App = () => {
             Smart Chatbot
           </ModalHeader>
           <ModalCloseButton />
-
-          {step !== 'initial' && (
-            <Button
-              leftIcon={<ArrowBackIcon />}
-              colorScheme="red"
-              variant="outline"
-              width="20%"
-              size="xs"
-              ml={'7%'}
-              onClick={() => setStep('initial')}
-            >
-              Back
-            </Button>
-          )}
+          <Flex justify="space-between">
+            {step !== 'initial' && (
+              <Button
+                leftIcon={<ArrowBackIcon />}
+                colorScheme="red"
+                variant="outline"
+                width="20%"
+                size="xs"
+                ml={'7%'}
+                onClick={() => setStep('initial')}
+              >
+                Back
+              </Button>
+            )}
+            {step === 'services' && (
+              <FeedbackFormComponent />
+            )}
+          </Flex>
           <ModalBody py={5}>
             {step === 'initial' && (
               <VStack>
