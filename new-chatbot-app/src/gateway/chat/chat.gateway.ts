@@ -62,12 +62,29 @@ export class ChatGateway implements OnGatewayDisconnect {
       await this.llmConnnectionGateway.getLlmChainForCurrentSocket(client.id);
 
     const modelResponse: string = await llmChain.getModelResponse(userMessage);
-    client.emit('message', modelResponse);
+    const [modelMessageId, conversationId] =
+      await this.databaseService.addMessageToDatabase(
+        Role.AIAgent,
+        modelResponse,
+        this.clientIdToConversationDataMapping.get(client.id)?.conversationId,
+      );
+    client.emit('message', {
+      messageId: modelMessageId,
+      message: modelResponse,
+    });
+  }
 
-    await this.databaseService.addMessageToDatabase(
-      Role.AIAgent,
-      modelResponse,
-      this.clientIdToConversationDataMapping.get(client.id)?.conversationId,
+  @SubscribeMessage('messageRating')
+  async handleMessageRating(
+    @MessageBody()
+    messageRating: {
+      messageId: string;
+      isPositiveRated: boolean;
+    },
+  ) {
+    this.databaseService.updateMessageRating(
+      messageRating.messageId,
+      messageRating.isPositiveRated,
     );
   }
 

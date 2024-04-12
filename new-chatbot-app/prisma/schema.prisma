@@ -17,12 +17,13 @@ datasource db {
 }
 
 model Message {
-  id             String       @id @default(uuid())
-  type           String       @db.VarChar(10)
-  content        String
-  timestamp      DateTime     @default(now())
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  conversationId String
+  id              String       @id @default(uuid())
+  type            String       @db.VarChar(10)
+  content         String
+  timestamp       DateTime     @default(now())
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+  conversationId  String
+  isPositiveRated Boolean?
 }
 
 model Conversation {

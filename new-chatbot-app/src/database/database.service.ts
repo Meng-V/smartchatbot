@@ -171,4 +171,23 @@ export class DatabaseService {
       throw error;
     }
   }
+
+  /**
+   * Updating message rating
+   * @param messageId 
+   * @param isPositiveRated 
+   */
+  async updateMessageRating(
+    messageId: string,
+    isPositiveRated: boolean,
+  ): Promise<void> {
+    try {
+      await this.prismaService.message.update({
+        where: { id: messageId },
+        data: { isPositiveRated: isPositiveRated },
+      });
+    } catch (error) {
+      this.logger.error('Error updating message:', error);
+    }
+  }
 }
