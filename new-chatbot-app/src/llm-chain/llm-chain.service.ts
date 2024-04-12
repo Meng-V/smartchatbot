@@ -93,7 +93,7 @@ export class LlmChainService {
    * @returns model response. Format: Array with each element is a line of answer
    */
   public async getModelResponse(userMessage: string): Promise<string> {
-    this.memoryService.addToConversation(Role.Customer, userMessage);
+    this.memoryService.addToConversation(Role.Customer, this.stripDoubleQuotes(userMessage));
     let { response: llmResponse, tokenUsage } =
       await this.llmService.getModelResponse(
         this.promptService,
@@ -139,7 +139,7 @@ export class LlmChainService {
     }
 
     //Add AI response to conversation
-    this.memoryService.addToConversation(Role.AIAgent, llmResponse);
+    this.memoryService.addToConversation(Role.AIAgent, this.stripDoubleQuotes(llmResponse));
 
     //Update total llm token usage
     this.totalLlmTokenUsage = this.tokenUsageService.combineTokenUsage(
@@ -170,4 +170,13 @@ export class LlmChainService {
   public getToolsUsed(): Iterable<string> {
     return this.toolsUsed;
   }
+
+  /**
+   * Replace double quote with single quote
+   * @param input 
+   * @returns 
+   */
+  private stripDoubleQuotes(input: string): string {
+    return input.replace(/"/g, "'");
+}
 }
