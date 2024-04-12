@@ -86,8 +86,80 @@ describe('CheckOpenHourToolService', () => {
     const checkOpenHourResponse = {
       data: [
         {
+          lid: 8113,
+          name: 'King Library',
+          category: 'library',
+          desc: '',
+          url: 'https://www.lib.miamioh.edu/about/locations/king-library/',
+          contact: '',
+          lat: '39.508786',
+          long: '-84.737978',
+          color: '#781320',
+          fn: '',
           dates: {
-            '2024-04-09': { hours: [{ from: '7:00am', to: '1:00am' }] },
+            '2024-04-08': {
+              status: 'open',
+              hours: [
+                {
+                  from: '7:00am',
+                  to: '1:00am',
+                },
+              ],
+            },
+            '2024-04-09': {
+              status: 'open',
+              hours: [
+                {
+                  from: '7:00am',
+                  to: '1:00am',
+                },
+              ],
+            },
+            '2024-04-10': {
+              status: 'open',
+              hours: [
+                {
+                  from: '7:00am',
+                  to: '1:00am',
+                },
+              ],
+            },
+            '2024-04-11': {
+              status: 'open',
+              hours: [
+                {
+                  from: '7:00am',
+                  to: '1:00am',
+                },
+              ],
+            },
+            '2024-04-12': {
+              status: 'open',
+              hours: [
+                {
+                  from: '7:00am',
+                  to: '1:00am',
+                },
+              ],
+            },
+            '2024-04-13': {
+              status: 'open',
+              hours: [
+                {
+                  from: '7:00am',
+                  to: '1:00am',
+                },
+              ],
+            },
+            '2024-04-14': {
+              status: 'open',
+              hours: [
+                {
+                  from: '7:00am',
+                  to: '1:00am',
+                },
+              ],
+            },
           },
         },
       ],
@@ -100,16 +172,17 @@ describe('CheckOpenHourToolService', () => {
 
     const result = await service.toolRunForLlm({ date: '2024-04-09' });
 
-    const expectedResponse = `
-      Open Hour of the requested week:       
-      [
-        {
-          "from": "7:00am",
-          "to": "1:00am"
-        }
-      ]
-      If any day does not exist in the array, the library does not open that day. Always answer with both open hour and close hour to the customer.\n
-    `;
+    const expectedResponse = `Open Hour of the requested week: ${JSON.stringify(
+      {
+        monday: [{ from: '7:00am', to: '1:00am' }],
+        tuesday: [{ from: '7:00am', to: '1:00am' }],
+        wednesday: [{ from: '7:00am', to: '1:00am' }],
+        thursday: [{ from: '7:00am', to: '1:00am' }],
+        friday: [{ from: '7:00am', to: '1:00am' }],
+        saturday: [{ from: '7:00am', to: '1:00am' }],
+        sunday: [{ from: '7:00am', to: '1:00am' }],
+      },
+    )}.\nIf any day does not exist in the array, the library does not open that day. Always answer with both open hour and close hour to the customer.\n`;
 
     expect(
       mockLibcalApiAuthorizationService.getAccessTokenObservable,

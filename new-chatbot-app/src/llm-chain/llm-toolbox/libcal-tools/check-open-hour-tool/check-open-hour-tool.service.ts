@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 import { LlmTool } from '../../llm-tool.interface';
 import { LibcalAuthorizationService } from '../../../../library-api/libcal-authorization/libcal-authorization.service';
 import { RetrieveEnvironmentVariablesService } from '../../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
+import { compileFunction } from 'vm';
 
 type WeekDay =
   | 'monday'
@@ -108,9 +109,8 @@ export class CheckOpenHourToolService implements LlmTool {
     }
 
     try {
-      const response = `Open Hour of the requested week:
-      ${JSON.stringify(
-        await this.run(toolInput.date),
+      const response = `Open Hour of the requested week: ${JSON.stringify(
+        await this.runHttpService(toolInput.date),
       )}.\nIf any day does not exist in the array, the library does not open that day. Always answer with both open hour and close hour to the customer.\n`;
       return response;
     } catch (error: any) {
@@ -124,7 +124,7 @@ export class CheckOpenHourToolService implements LlmTool {
    * @param date
    * @returns
    */
-  async run(date: string): Promise<WeekAvailability> {
+  async runHttpService(date: string): Promise<WeekAvailability> {
     const header = {
       Authorization: `Bearer ${this.accessToken}`,
     };
@@ -152,6 +152,8 @@ export class CheckOpenHourToolService implements LlmTool {
         },
       );
 
+      // Filter the data to only include the hours
+      // for the days of the week (Monday to Sunday)
       let filteredData = weekdays.reduce(
         (prevObj, currentDay, currentIndex) => {
           return {
@@ -162,14 +164,6 @@ export class CheckOpenHourToolService implements LlmTool {
         {},
       );
 
-      //   if (dayData && dayData.status === 'open') {
-      //     acc[dayName] = {
-      //       from: dayData.hours[0].from,
-      //       to: dayData.hours[0].to,
-      //     };
-      //   }
-      //   return acc; // Add this line to return the accumulator
-      // }, {} as WeekAvailability); // Specify the initial value as an empty object of type WeekAvailability
       return filteredData as WeekAvailability;
     } catch (error: any) {
       this.logger.error(error);
