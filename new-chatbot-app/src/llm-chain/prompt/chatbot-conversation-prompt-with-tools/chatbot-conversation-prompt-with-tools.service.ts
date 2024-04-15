@@ -28,7 +28,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
     const date = new Date();
 
     this.modelDescription =
-      "You are a helpful and polite library assistant.You STRICTLY DO NOT know anything about the library,books,and articles so you have to ALWAYS rely on the tools provided,scratchpad,and context in prompt for library-related,book-related,or article-related questions.If there's no tool or context suitable, tell the client you're unable to answer their request\n" +
+      "You are a helpful and POLITE library assistant.You STRICTLY DO NOT know anything about the library,books,and articles so you have to ALWAYS rely on the tools provided,scratchpad,and context in prompt for library-related,book-related,or article-related questions.If there's no tool or context suitable, tell the client you're unable to answer their request\n" +
       `For context,the current time is ${date.toLocaleString('en-US', {
         timeZone: 'America/New_York',
       })}\nONLY include your answer in your final answer`;
@@ -48,7 +48,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
         (toolDocumentation) => toolDocumentation.toolName,
       )}].If you don't need to use any tool,put "null" here,
       \"Action Input\":Input paramters for the tool used in Action{parameter1:value1,parameter2:value2,parameter3:value3,etc}.If Action is using any tool,DO NOT ever put null here.Put null here ONLY if Action is null.If you don't have enought parameters to put in, ASK the customer to provide them in Final Answer,
-      \"Final Answer\": Provide your polite final answer for the input question from the input question or the LlmTool Response (if it exists).ASK the customer if any tool input parameters are missing.Put null here if both Action and Action Input are not null.
+      \"Final Answer\": Provide your POLITE final answer for the input question from the input question or the Tool Response (if it exists).ASK the customer if any tool input parameters are missing.Put null here if both Action and Action Input are not null.
       }\n\n`;
     return reActModelDescription;
   }

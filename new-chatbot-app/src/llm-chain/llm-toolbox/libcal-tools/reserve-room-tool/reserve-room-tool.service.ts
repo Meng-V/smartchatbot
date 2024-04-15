@@ -8,6 +8,7 @@ import { HttpService } from '@nestjs/axios';
 import { LibcalAuthorizationService } from '../../../../library-api/libcal-authorization/libcal-authorization.service';
 import { Subscription } from 'rxjs';
 import { AxiosResponse } from 'axios';
+import { DatabaseService } from '../../../../database/database.service';
 
 @Injectable()
 export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
@@ -33,15 +34,20 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
     this.retrieveEnvironmentVariablesService.retrieve<string>(
       'LIBCAL_RESERVATION_URL',
     );
+  // The default building is King Library at the moment
+  private DEFAULT_BUILDING_ID =
+    this.retrieveEnvironmentVariablesService.retrieve<string>('KING_BUILDING');
+
   private accessToken: string = '';
   private tokenSubscription: Subscription;
   private readonly TIMEZONE = 'EST';
 
   constructor(
+    private httpService: HttpService,
+    private databaseService: DatabaseService,
     private retrieveEnvironmentVariablesService: RetrieveEnvironmentVariablesService,
     private libcalAuthorizationService: LibcalAuthorizationService,
     private checkRoomAvailabilityToolService: CheckRoomAvailabilityToolService,
-    private httpService: HttpService,
   ) {
     this.tokenSubscription = this.libcalAuthorizationService
       .getAccessTokenObservable()
@@ -108,9 +114,9 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
     bookingId?: string;
     message?: string;
   }> {
-    const isDevelopmentMode =
+    const isProductionMode =
       this.retrieveEnvironmentVariablesService.retrieve('NODE_ENV') ===
-      'development'
+      'production'
         ? 1
         : 0;
 
@@ -125,7 +131,7 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
           to: endTimestamp.toISOString(),
         },
       ],
-      test: isDevelopmentMode,
+      test: !isProductionMode,
     };
     const header = {
       Authorization: `Bearer ${this.accessToken}`,
@@ -163,9 +169,7 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
 
     return {
       succeed: true,
-      bookingId: isDevelopmentMode
-        ? 'testBookingId'
-        : response!.data.booking_id,
+      bookingId: isProductionMode ? response!.data.booking_id : 'testBookingId',
     };
   }
 
@@ -199,18 +203,33 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
       return 'roomCapacity and roomCodeName cannot be both empty.Ask customer to specify one of them.';
     }
 
-    const availableRooms =
-      await this.checkRoomAvailabilityToolService.fetchAvailableRooms(
-        llmToolInput.date,
-        llmToolInput.startTime,
-        llmToolInput.endTime,
-        parseInt(llmToolInput.roomCapacity!),
+    let selectedRoom: { id: string; roomCodeName: string; capacity: number };
+
+    //Filter room based on roomCodeName
+    if (!this.isNullAndUndefined(llmToolInput.roomCodeName)) {
+      const roomResult = await this.databaseService.getRoomIdFromRoomCodeName(
+        llmToolInput.roomCodeName!,
+        this.DEFAULT_BUILDING_ID,
       );
-    if (availableRooms.length === 0) return 'No room satisfies';
-    //Select the room with smallest capacity to save space
-    const selectedRoom = availableRooms.reduce((minRoom, currentRoom) => {
-      return currentRoom.capacity < minRoom.capacity ? currentRoom : minRoom;
-    }, availableRooms[0]);
+      if (roomResult === null) {
+        return `There is no room called ${llmToolInput.roomCodeName}`;
+      }
+      selectedRoom = roomResult;
+    } else {
+      //Filter room based on roomCapacity
+      const availableRooms =
+        await this.checkRoomAvailabilityToolService.fetchAvailableRooms(
+          llmToolInput.date,
+          llmToolInput.startTime,
+          llmToolInput.endTime,
+          parseInt(llmToolInput.roomCapacity!),
+        );
+      if (availableRooms.length === 0) return 'No room satisfies';
+      //Select the room with smallest capacity to save space
+      selectedRoom = availableRooms.reduce((minRoom, currentRoom) => {
+        return currentRoom.capacity < minRoom.capacity ? currentRoom : minRoom;
+      }, availableRooms[0]);
+    }
 
     const startTimestamp: Date = Date.parse(
       `${llmToolInput.date} ${llmToolInput.startTime} ${this.TIMEZONE}`,

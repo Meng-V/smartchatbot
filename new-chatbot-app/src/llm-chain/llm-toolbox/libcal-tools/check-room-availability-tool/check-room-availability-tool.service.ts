@@ -53,6 +53,10 @@ export class CheckRoomAvailabilityToolService
     this.retrieveEnvironmentVariablesService.retrieve<string>(
       'LIBCAL_SEARCH_AVAILABLE_URL',
     );
+  // The default building is King Library at the moment
+  private DEFAULT_BUILDING_ID =
+    this.retrieveEnvironmentVariablesService.retrieve<string>('KING_BUILDING');
+
   private accessToken: string = '';
   private tokenSubscription: Subscription;
 
@@ -71,9 +75,8 @@ export class CheckRoomAvailabilityToolService
    * @param capacity
    * @returns capacityRange
    */
-  private getCapacityRange(capacity: number | null | undefined): number {
-    if (capacity === null || capacity === undefined) return 0;
-    else if (capacity <= 4) return 1;
+  private getCapacityRange(capacity: number | null): number {
+    if (capacity === null || capacity === undefined || capacity <= 4) return 1;
     else if (capacity <= 8) return 2;
     else return 3;
   }
@@ -89,16 +92,13 @@ export class CheckRoomAvailabilityToolService
     date: string,
     timeStart: string,
     timeEnd: string,
-    capacity: number | null | undefined,
+    capacity: number | null,
   ): Promise<Room[]> {
     const header = {
       Authorization: `Bearer ${this.accessToken}`,
     };
 
-    // The default building is King Library at the moment
-    const buildingId =
-      this.retrieveEnvironmentVariablesService.retrieve('KING_BUILDING');
-    const url = `${this.SEARCH_AVAILABLE_URL}/${buildingId}`;
+    const url = `${this.SEARCH_AVAILABLE_URL}/${this.DEFAULT_BUILDING_ID}`;
 
     //Try bigger room if no available rooms for the current capacity
     let availableRooms: RoomAvailability[] = [];
@@ -170,13 +170,28 @@ export class CheckRoomAvailabilityToolService
     if (missingField.length !== 0) {
       return `Cannot use this tool because missing paramters ${JSON.stringify(missingField)}.Ask the customer to provide these data.`;
     }
+    let roomCapacity: number | null;
+    if (
+      !(
+        llmToolInput.roomCapacity === null ||
+        llmToolInput.roomCapacity === undefined ||
+        llmToolInput.roomCapacity === 'null' ||
+        llmToolInput.roomCapacity === 'undefined'
+      )
+    ) {
+      roomCapacity = parseInt(llmToolInput.roomCapacity);
+    } else {
+      roomCapacity = null;
+    }
 
     const availableRooms = await this.fetchAvailableRooms(
       llmToolInput.date!,
       llmToolInput.startTime!,
       llmToolInput.endTime!,
-      parseInt(llmToolInput.roomCapacity!),
+      roomCapacity,
     );
+    if (availableRooms.length === 0)
+      return 'No room available for the input at that time.';
 
     //Censor roomId before returning to user
     const availableRoomsCensored = availableRooms
