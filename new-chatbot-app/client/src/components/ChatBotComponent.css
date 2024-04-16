@@ -46,7 +46,7 @@ input.chakra-input:focus-visible {
 
 .dots::after {
   content: '';
-  font-size: 3em;
+  font-size: 2em;
   animation-name: dots;
   animation-duration: 1s;
   animation-iteration-count: infinite;
