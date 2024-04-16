@@ -44,11 +44,11 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
     const reActModelDescription: string = `Your job is to complete the scratchpad and use the previous scratchpad to guide yourself toward the answer.The scractchpad has data about the results from the tools you previously used. For the scratchpad,format your answer as in the JSON structure below.Format your response as a JSON string,with keys and values both enclosed in double quotes.Example: "{\"key\":\"value\"}".\n\
     {
       \"Thought\": Put your thought here for your thought.You should ALWAYS think before doing anything,
-      \"Action\": The action to take,should always be one of [${tools.map(
+      \"Tool\": The tool to use,should always be one of [${tools.map(
         (toolDocumentation) => toolDocumentation.toolName,
-      )}].If you don't need to use any tool,put "null" here,
-      \"Action Input\":Input paramters for the tool used in Action{parameter1:value1,parameter2:value2,parameter3:value3,etc}.If Action is using any tool,DO NOT ever put null here.Put null here ONLY if Action is null.If you don't have enought parameters to put in, ASK the customer to provide them in Final Answer,
-      \"Final Answer\": Provide your POLITE final answer for the input question from the input question or the Tool Response (if it exists).ASK the customer if any tool input parameters are missing.Put null here if both Action and Action Input are not null.
+      )}].If you don't need to use any tool,put "null" here.DO NOT use the tool if the scratchpad says the tool cannot be used,
+      \"Tool Input\":Input paramters for the tool used in Tool{parameter1:value1,parameter2:value2,parameter3:value3,etc}.If Tool is using any tool,DO NOT ever put null here.Put null here ONLY if Tool is null.If you don't have enought parameters to put in, ASK the customer to provide them in Final Answer,
+      \"Final Answer\": Provide your POLITE final answer for the input question from the input question or the Tool Response (if it exists).ASK the customer if any tool input parameters are missing.ALWAYS format this to be human readable.Put null here if both Tool and Tool Input are not null.
       }\n\n`;
     return reActModelDescription;
   }
@@ -76,7 +76,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
           `- ${currentToolDescription.toolName}: ${currentToolDescription.toolDescription}.Parameters names and types:\n${toolParamtersDescription}`
         );
       },
-      "\nYou have access to these tools(delimited by triple backticks)to assist you.Don't tell the customer the tool's name.These tools are also useful when customer ask what you can do to help them:\n",
+      "\nYou have access to these tools(delimited by triple backticks)to assist you.Don't tell the customer the tool's name.Every parameter has to be provided by the customer;ASK them if they have not provided.NEVER predict!These tools are also useful when customer ask what you can do to help them:\n",
     );
 
     return toolsDescription;
@@ -188,7 +188,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
 
     const wholePrompt: string =
       `\nThis is the conversation so far(delimited by the triple dashes)\n---\n${conversationString}\n---\n` +
-      `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;
+      `This is your SCRATCHPAD:\n"""\n${this.modelScratchpad}\n"""\n`;
     return wholePrompt;
   }
 

@@ -4,7 +4,6 @@ export type AgentOutput =
   // The final answer from the agent to the user's question input
   | {
       outputType: 'final';
-      thought: string;
       finalAnswer: string;
     }
   // The agent's response to the user's action request input
@@ -43,22 +42,21 @@ export class LlmAnswerParserService {
     ) {
       return {
         outputType: 'final',
-        thought: this.trimText(outputObj['Thought']),
         finalAnswer: this.trimText(outputObj['Final Answer']),
       };
     } else if (
-      outputObj['Action'] &&
-      outputObj['Action Input'] &&
-      outputObj['Action'] !== 'null' &&
-      outputObj['Action Input'] !== 'null' &&
-      outputObj['Action'] !== 'undefined' &&
-      outputObj['Action Input'] !== 'undefined'
+      outputObj['Tool'] &&
+      outputObj['Tool Input'] &&
+      outputObj['Tool'] !== 'null' &&
+      outputObj['Tool Input'] !== 'null' &&
+      outputObj['Tool'] !== 'undefined' &&
+      outputObj['Tool Input'] !== 'undefined'
     ) {
       return {
         outputType: 'action',
         thought: this.trimText(outputObj['Thought']),
-        action: this.trimText(outputObj['Action']),
-        actionInput: outputObj['Action Input'],
+        action: this.trimText(outputObj['Tool']),
+        actionInput: outputObj['Tool Input'],
       };
     } else {
       throw new Error('Error in parsing LLM output');
@@ -72,5 +70,14 @@ export class LlmAnswerParserService {
    */
   private trimText(text: string) {
     return text.replace(/^\s+|\s+$/g, '');
+  }
+
+  /**
+   * Replace double quote with single quote
+   * @param input
+   * @returns
+   */
+  public trimDoubleQuotes(input: string): string {
+    return input.replace(/"/g, "'");
   }
 }

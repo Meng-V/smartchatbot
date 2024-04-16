@@ -42,7 +42,7 @@ const SocketContextProvider = ({children}) => {
         messageContextValues.setIsTyping(false);
       });
   
-      socket.current.on('message', (message) => {
+      socket.current.on('message', ({messageId, message}) => {
         messageContextValues.setIsTyping(false);
         messageContextValues.addMessage(message, 'chatbot');
       });

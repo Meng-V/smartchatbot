@@ -82,7 +82,7 @@ describe('ChatbotConversationPromptWithToolsService', () => {
 
     const expectedPrompt =
       '\nThis is the conversation so far(delimited by the triple dashes)\n---\nMock Conversation String\n---\n' +
-      'This is your scratchpad:\n"""\nMocked Scratchpad\n"""\n';
+      'This is your SCRATCHPAD:\n"""\nMocked Scratchpad\n"""\n';
 
     expect(await chatbotConversationPromptService.getPrompt()).toEqual(
       expectedPrompt,
