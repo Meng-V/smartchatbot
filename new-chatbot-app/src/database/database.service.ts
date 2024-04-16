@@ -26,10 +26,9 @@ export class DatabaseService {
     const rooms: Room[] = await this.prismaService
       .$queryRaw`SELECT * FROM "Room" WHERE "buildingId" = ${buildingId} AND "codeName" LIKE ${`%${roomCodeName}%`}`;
 
-    if ((rooms.length = 0)) {
+    if (rooms.length === 0) {
       return null;
     }
-
     return {
       id: rooms[0].id,
       roomCodeName: rooms[0].codeName,

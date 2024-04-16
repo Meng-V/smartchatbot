@@ -24,20 +24,22 @@ describe('CitationAssistToolService', () => {
     const toolInput = {
       citationType: 'MLA',
     };
-    let expectedResponse = `Explain these links to the customer: ${JSON.stringify({
-      'General Reference': 'libguides.lib.miamioh.edu/citation/mla',
-      'In-text Citations':
-        'libguides.lib.miamioh.edu/citation/mla_in-text_citations',
-      'Example Citations-Print':
-        'libguides.lib.miamioh.edu/citation/mla_print-examples',
-      'Example Citations-Online,Electronic':
-        'libguides.lib.miamioh.edu/citation/ama_online',
-      'Example Citations-Images,Video,Audio':
-        'libguides.lib.miamioh.edu/citation/mla_multimedia-examples',
-      'Example Citations-Business Database':
-        'libguides.lib.miamioh.edu/citation/mla_business',
-      Handbook: 'libguides.lib.miamioh.edu/citation/mla_business',
-    })}.Student can consider using CitationManager:Zotero,Mendeley,EndNote for ease.Read more:https://libguides.lib.miamioh.edu/CitationManagers.`;
+    let expectedResponse = `Explain these links to the customer: ${JSON.stringify(
+      {
+        'General Reference': 'libguides.lib.miamioh.edu/citation/mla',
+        'In-text Citations':
+          'libguides.lib.miamioh.edu/citation/mla_in-text_citations',
+        'Example Citations-Print':
+          'libguides.lib.miamioh.edu/citation/mla_print-examples',
+        'Example Citations-Online,Electronic':
+          'libguides.lib.miamioh.edu/citation/ama_online',
+        'Example Citations-Images,Video,Audio':
+          'libguides.lib.miamioh.edu/citation/mla_multimedia-examples',
+        'Example Citations-Business Database':
+          'libguides.lib.miamioh.edu/citation/mla_business',
+        Handbook: 'libguides.lib.miamioh.edu/citation/mla_business',
+      },
+    )}.Student can consider using CitationManager:Zotero,Mendeley,EndNote for ease.Read more:https://libguides.lib.miamioh.edu/CitationManagers.`;
     expect(await service.toolRunForLlm(toolInput)).toEqual(expectedResponse);
 
     //Test for Chicago styling

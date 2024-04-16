@@ -15,19 +15,25 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
   private readonly logger = new Logger(ReserveRoomToolService.name);
   public readonly toolName: string = 'StudyRoomReservationTool';
   public readonly toolDescription: string =
-    "This tool is for study room reservation.No need to use tool CheckRoomAvailabilityTool before using this tool.Use Final Answer instead if you don't have enough required parameters yet.Don't include any single quotes in the paramter.Disclaimer: This tool assumes startDate is as same as endDate";
+    "This tool is for study room reservation.No need to use tool CheckRoomAvailabilityTool before using this tool.Use Final Answer instead if you don't have enough required parameters yet.Every parameter has to be provided by the customer;ASK them if they have not provided.NEVER predict!Don't include any single quotes in the paramter.";
 
   public readonly toolParametersStructure: { [parameterName: string]: string } =
     {
-      firstName: 'string[REQUIRED]',
-      lastName: 'string[REQUIRED]',
+      firstName:
+        'string[REQUIRED][This has to be provided by the customer.Ask them if they have not provided.NEVER predict!]',
+      lastName:
+        'string[REQUIRED][This has to be provided by the customer.Ask them if they have not provided.NEVER predict!]',
       email:
-        'string[REQUIRED][@miamioh.edu email][Always ask for email.Never predict.]',
-      date: 'string[REQUIRED][format YYYY-MM-DD]',
-      startTime: 'string[REQUIRED][format HH-MM ranging from 00:00 to 23:59]',
-      endTime: 'string[REQUIRED][format HH-MM ranging from 00:00 to 23:59]',
+        'string[REQUIRED][@miamioh.edu email][This has to be provided by the customer.Ask them if they have not provided.NEVER predict!]',
+      date: 'string[REQUIRED][format YYYY-MM-DD][This has to be provided by the customer.Ask them if they have not provided.NEVER predict!]',
+      startTime:
+        'string[REQUIRED][format HH-MM ranging from 00:00 to 23:59][This has to be provided by the customer.Ask them if they have not provided.NEVER predict!]',
+      endTime:
+        'string[REQUIRED][format HH-MM ranging from 00:00 to 23:59][This has to be provided by the customer.Ask them if they have not provided.NEVER predict!]',
       roomCapacity:
         'string[OPTIONAL][capacity(number of people using the room)of the room you wish to reserve.]',
+      roomCodeName:
+        'string|null[OPTIONAL][such as: 145, 211, 297A, 108C, etc.]',
     };
 
   private readonly ROOM_RESERVATION_URL =
@@ -137,32 +143,40 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
       Authorization: `Bearer ${this.accessToken}`,
     };
 
-    let response: AxiosResponse<{
-      booking_id: string;
-      cost: number;
-    }>;
-
     //Axios post
-    try {
-      response = await this.httpService.axiosRef.post<{
-        booking_id: string;
-        cost: number;
-      }>(this.ROOM_RESERVATION_URL, payload, { headers: header });
-    } catch (error: any) {
-      if (error.response) {
-        const errorData = error.response.data as string;
-        if (
-          errorData.includes('not a valid starting slot') ||
-          errorData.includes('not a valid ending slot')
-        ) {
-          return {
-            succeed: false,
-            message:
-              'Room reservation is unsuccessful.Time slot is not available for your room',
-          };
-        } else {
-          this.logger.error(error);
-          throw error;
+    const HTTP_UNAUTHORIZED = 403;
+    let response:
+      | AxiosResponse<{
+          booking_id: string;
+          cost: number;
+        }>
+      | undefined;
+    while (response === undefined || response.status === HTTP_UNAUTHORIZED) {
+      try {
+        response = await this.httpService.axiosRef.post<{
+          booking_id: string;
+          cost: number;
+        }>(this.ROOM_RESERVATION_URL, payload, { headers: header });
+      } catch (error: any) {
+        if (error.response.status === HTTP_UNAUTHORIZED) {
+          this.libcalAuthorizationService.resetToken();
+          continue;
+        }
+        if (error.response !== undefined && error.response.data !== undefined) {
+          const errorData = error.response.data as string;
+          if (
+            errorData.includes('not a valid starting slot') ||
+            errorData.includes('not a valid ending slot')
+          ) {
+            return {
+              succeed: false,
+              message:
+                'Room reservation is unsuccessful.Time slot is not available for your room',
+            };
+          } else {
+            this.logger.error(error);
+            throw error;
+          }
         }
       }
     }
@@ -173,16 +187,7 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
     };
   }
 
-  public async toolRunForLlm(llmToolInput: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    date: string;
-    startTime: string;
-    endTime: string;
-    roomCapacity?: string;
-    roomCodeName?: string;
-  }): Promise<string> {
+  public async toolRunForLlm(llmToolInput: LlmToolInput): Promise<string> {
     const missingField = this.checkLlmInput(llmToolInput, [
       'firstName',
       'lastName',
@@ -219,9 +224,9 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
       //Filter room based on roomCapacity
       const availableRooms =
         await this.checkRoomAvailabilityToolService.fetchAvailableRooms(
-          llmToolInput.date,
-          llmToolInput.startTime,
-          llmToolInput.endTime,
+          llmToolInput.date!,
+          llmToolInput.startTime!,
+          llmToolInput.endTime!,
           parseInt(llmToolInput.roomCapacity!),
         );
       if (availableRooms.length === 0) return 'No room satisfies';
@@ -241,9 +246,9 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
     const { succeed, bookingId, message } = await this.reserveRoomWithApi(
       startTimestamp,
       endTimestamp,
-      llmToolInput.firstName,
-      llmToolInput.lastName,
-      llmToolInput.email,
+      llmToolInput.firstName!,
+      llmToolInput.lastName!,
+      llmToolInput.email!,
       selectedRoom.id,
     );
 

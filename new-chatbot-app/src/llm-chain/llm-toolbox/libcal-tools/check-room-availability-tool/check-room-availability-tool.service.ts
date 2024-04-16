@@ -4,6 +4,7 @@ import { LibcalAuthorizationService } from '../../../../library-api/libcal-autho
 import { Subscription } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { RetrieveEnvironmentVariablesService } from '../../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
+import { AxiosResponse } from 'axios';
 
 type Room = {
   id: string;
@@ -97,7 +98,6 @@ export class CheckRoomAvailabilityToolService
     const header = {
       Authorization: `Bearer ${this.accessToken}`,
     };
-
     const url = `${this.SEARCH_AVAILABLE_URL}/${this.DEFAULT_BUILDING_ID}`;
 
     //Try bigger room if no available rooms for the current capacity
@@ -107,20 +107,34 @@ export class CheckRoomAvailabilityToolService
       capacityRange <= 3;
       capacityRange++
     ) {
-      const response =
-        await this.httpService.axiosRef.get<SearchAvailabilityApiResponse>(
-          url,
-          {
-            headers: header,
-            params: {
-              date: date,
-              time_start: timeStart,
-              time_end: timeEnd,
-              type: 'space',
-              capacity: capacityRange,
-            },
-          },
-        );
+      const HTTP_UNAUTHORIZED = 403;
+      let response: AxiosResponse<SearchAvailabilityApiResponse> | undefined;
+      while (response === undefined || response.status === HTTP_UNAUTHORIZED) {
+        try {
+          response =
+            await this.httpService.axiosRef.get<SearchAvailabilityApiResponse>(
+              url,
+              {
+                headers: header,
+                params: {
+                  date: date,
+                  time_start: timeStart,
+                  time_end: timeEnd,
+                  type: 'space',
+                  capacity: capacityRange,
+                },
+              },
+            );
+        } catch (error: any) {
+          if (error.response.status === HTTP_UNAUTHORIZED) {
+            this.libcalAuthorizationService.resetToken();
+            continue;
+          } else {
+            throw error;
+          }
+        }
+      }
+
       availableRooms = response.data.exact_matches;
       if (availableRooms.length > 0) {
         break;
