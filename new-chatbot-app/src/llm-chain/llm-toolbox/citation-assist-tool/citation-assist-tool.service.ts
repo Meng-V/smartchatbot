@@ -27,7 +27,7 @@ type CitationReference = {
 export class CitationAssistToolService implements LlmTool {
   public readonly toolName: string = 'CitationAssistTool';
   public readonly toolDescription: string =
-    'This tool is for providing resources for citation.Student can consider using CitationManager:Zotero,Mendeley,EndNote for ease.Read more:https://libguides.lib.miamioh.edu/CitationManagers';
+    'This tool is for providing resources for citation.';
 
   public readonly toolParametersStructure: { [parameterName: string]: string } =
     {
@@ -134,6 +134,6 @@ export class CitationAssistToolService implements LlmTool {
     const citationType = toolInput.citationType as CitationType;
     const quickLinks = this.quickLinkMapping[citationType];
 
-    return `Here're some quick links: ${JSON.stringify(quickLinks)}.Explain these links with the customer.`;
+    return `Explain these links to the customer: ${JSON.stringify(quickLinks)}.Student can consider using CitationManager:Zotero,Mendeley,EndNote for ease.Read more:https://libguides.lib.miamioh.edu/CitationManagers.`;
   }
 }

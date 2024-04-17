@@ -24,25 +24,27 @@ describe('CitationAssistToolService', () => {
     const toolInput = {
       citationType: 'MLA',
     };
-    let expectedResponse = `Here're some quick links: ${JSON.stringify({
-      'General Reference': 'libguides.lib.miamioh.edu/citation/mla',
-      'In-text Citations':
-        'libguides.lib.miamioh.edu/citation/mla_in-text_citations',
-      'Example Citations-Print':
-        'libguides.lib.miamioh.edu/citation/mla_print-examples',
-      'Example Citations-Online,Electronic':
-        'libguides.lib.miamioh.edu/citation/ama_online',
-      'Example Citations-Images,Video,Audio':
-        'libguides.lib.miamioh.edu/citation/mla_multimedia-examples',
-      'Example Citations-Business Database':
-        'libguides.lib.miamioh.edu/citation/mla_business',
-      Handbook: 'libguides.lib.miamioh.edu/citation/mla_business',
-    })}.Explain these links with the customer.`;
+    let expectedResponse = `Explain these links to the customer: ${JSON.stringify(
+      {
+        'General Reference': 'libguides.lib.miamioh.edu/citation/mla',
+        'In-text Citations':
+          'libguides.lib.miamioh.edu/citation/mla_in-text_citations',
+        'Example Citations-Print':
+          'libguides.lib.miamioh.edu/citation/mla_print-examples',
+        'Example Citations-Online,Electronic':
+          'libguides.lib.miamioh.edu/citation/ama_online',
+        'Example Citations-Images,Video,Audio':
+          'libguides.lib.miamioh.edu/citation/mla_multimedia-examples',
+        'Example Citations-Business Database':
+          'libguides.lib.miamioh.edu/citation/mla_business',
+        Handbook: 'libguides.lib.miamioh.edu/citation/mla_business',
+      },
+    )}.Student can consider using CitationManager:Zotero,Mendeley,EndNote for ease.Read more:https://libguides.lib.miamioh.edu/CitationManagers.`;
     expect(await service.toolRunForLlm(toolInput)).toEqual(expectedResponse);
 
     //Test for Chicago styling
     toolInput.citationType = 'Chicago';
-    expectedResponse = `Here're some quick links: ${JSON.stringify({
+    expectedResponse = `Explain these links to the customer: ${JSON.stringify({
       'General Reference': 'libguides.lib.miamioh.edu/citation/chicago',
       'In-text Citations':
         'libguides.lib.miamioh.edu/citation/chicago_in-text_citations',
@@ -54,7 +56,7 @@ describe('CitationAssistToolService', () => {
         'libguides.lib.miamioh.edu/citation/chicago_electronic-examples',
       'Example Citations-Images,Video,Audio':
         'libguides.lib.miamioh.edu/citation/chicago_multimedia-examples',
-    })}.Explain these links with the customer.`;
+    })}.Student can consider using CitationManager:Zotero,Mendeley,EndNote for ease.Read more:https://libguides.lib.miamioh.edu/CitationManagers.`;
     expect(await service.toolRunForLlm(toolInput)).toEqual(expectedResponse);
   });
 
