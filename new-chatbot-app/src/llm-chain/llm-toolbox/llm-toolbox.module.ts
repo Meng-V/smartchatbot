@@ -10,6 +10,8 @@ import { SharedModule } from '../../shared/shared.module';
 import { CheckRoomAvailabilityToolService } from './libcal-tools/check-room-availability-tool/check-room-availability-tool.service';
 import { ReserveRoomToolService } from './libcal-tools/reserve-room-tool/reserve-room-tool.service';
 import { DatabaseModule } from '../../database/database.module';
+import { GoogleSiteSearchToolService } from './google-site-search-tool/google-site-search-tool.service';
+import { KingLibrarySiteSearchService } from './google-site-search-tool/king-library-site-search.service';
 
 @Module({
   imports: [DatabaseModule, LibraryApiModule, HttpModule, SharedModule],
@@ -20,6 +22,8 @@ import { DatabaseModule } from '../../database/database.module';
     ReserveRoomToolService,
     CancelReservationToolService,
     CheckOpenHourToolService,
+    GoogleSiteSearchToolService,
+    KingLibrarySiteSearchService,
   ],
   exports: [
     LibrarianSubjectLookupToolService,
@@ -28,6 +32,7 @@ import { DatabaseModule } from '../../database/database.module';
     ReserveRoomToolService,
     CancelReservationToolService,
     CheckOpenHourToolService,
+    GoogleSiteSearchToolService,
   ],
 })
 export class LlmToolboxModule {}
