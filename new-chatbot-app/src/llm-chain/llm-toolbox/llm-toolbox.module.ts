@@ -5,6 +5,7 @@ import { LibrarianSubjectLookupToolService } from './libapps-tools/librarian-sub
 import { LibraryApiModule } from '../../library-api/library-api.module';
 import { CitationAssistToolService } from './citation-assist-tool/citation-assist-tool.service';
 import { CancelReservationToolService } from './libcal-tools/cancel-reservation-tool/cancel-reservation-tool.service';
+import { CheckOpenHourToolService } from './libcal-tools/check-open-hour-tool/check-open-hour-tool.service';
 import { SharedModule } from '../../shared/shared.module';
 
 @Module({
@@ -13,11 +14,13 @@ import { SharedModule } from '../../shared/shared.module';
     LibrarianSubjectLookupToolService,
     CitationAssistToolService,
     CancelReservationToolService,
+    CheckOpenHourToolService,
   ],
   exports: [
     LibrarianSubjectLookupToolService,
     CitationAssistToolService,
     CancelReservationToolService,
+    CheckOpenHourToolService,
   ],
 })
 export class LlmToolboxModule {}
