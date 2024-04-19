@@ -8,13 +8,13 @@ const MessageContextProvider = ({children}) => {
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
-  const addMessage = (message, sender) => {
+  const addMessage = (message, sender, id = undefined) => {
     const messageText =
       typeof message === 'object' && message.response
         ? message.response.join('\n')
         : message;
     setMessage((prevMessages) => {
-      const updatedMessages = [...prevMessages, { text: messageText, sender }];
+      const updatedMessages = [...prevMessages, { text: messageText, sender, messageId: id }];
       sessionStorage.setItem('chat_messages', JSON.stringify(updatedMessages));
       return updatedMessages;
     });

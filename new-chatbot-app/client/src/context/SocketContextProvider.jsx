@@ -44,7 +44,7 @@ const SocketContextProvider = ({children}) => {
   
       socket.current.on('message', ({messageId, message}) => {
         messageContextValues.setIsTyping(false);
-        messageContextValues.addMessage(message, 'chatbot');
+        messageContextValues.addMessage(message, 'chatbot', messageId);
       });
   
       socket.current.on('disconnect', () => {
@@ -73,7 +73,7 @@ const SocketContextProvider = ({children}) => {
 
   const sendUserMessage = (message) => {
     if (socket.current) {
-      socket.current.emit("message", message, () => {});
+      socket.current.emit("message", message);
     }
   }
 
@@ -82,10 +82,27 @@ const SocketContextProvider = ({children}) => {
       socket.current.emit(
         "createTicket",
         formData,
-        () => {}
       )
     }
   };
+
+  const sendMessageRating = (messageRating) => {
+    if (socket.current) {
+      socket.current.emit(
+        "messageRating",
+        messageRating,
+      )
+    }
+  }
+
+  const sendUserFeedback = (userFeedback) => {
+    if (socket.current) {
+      socket.current.emit(
+        "userFeedback",
+        userFeedback,
+      )
+    }
+  }
 
   const socketContextValues = useMemo(() => ({
     socket: socket.current,
@@ -95,6 +112,8 @@ const SocketContextProvider = ({children}) => {
     setAttemptedConnection,
     sendUserMessage,
     offlineTicketSubmit,
+    sendMessageRating,
+    sendUserFeedback,
   }), [isConnected, attemptedConnection])
 
   return (

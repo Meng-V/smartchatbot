@@ -75,7 +75,7 @@ const ChatBotComponent = () => {
                   </Box>
                 </Box>
                 {message.sender !== 'user' && index !== 0 && (
-                  <MessageRatingComponent msg={message} />
+                  <MessageRatingComponent message={message} />
                 )}
               </Box>
             );

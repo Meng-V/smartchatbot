@@ -1,11 +1,36 @@
-import { Box, Button } from "@chakra-ui/react";
+import { Box, Button, useToast } from "@chakra-ui/react";
 import { FiThumbsUp } from "react-icons/fi";
 import { FiThumbsDown } from "react-icons/fi";
+import { SocketContext } from "../context/SocketContextProvider";
+import { useContext, useRef, useState } from "react";
 
-const MessageRatingComponent = (msg) => {
+const MessageRatingComponent = ({ message }) => {
 
-  const handleClick = () => {
-    console.log(msg);
+  const toast = useToast();
+  const [isDisabled, setIsDisabled] = useState(false);
+  const isRated = useRef(false);
+  const { socketContextValues } = useContext(SocketContext);
+
+  const handleClick = (isPositiveRated) => {
+    if (!isRated.current) {
+      isRated.current = true;
+      setIsDisabled(true);
+      socketContextValues.sendMessageRating(
+        {
+          messageId: message.messageId,
+          isPositiveRated: isPositiveRated,
+        }
+      );
+      toast({
+        title: 'Thank you for your feedback!',
+        description:
+          'We will use this information to improve user experience.',
+        status: 'success',
+        duration: 2000,
+        isClosable: true,
+        position: 'bottom-left',
+      });
+    }
   }
 
   return (
@@ -18,9 +43,10 @@ const MessageRatingComponent = (msg) => {
         bg="gray.200"
         size="sm"
         marginRight="1"
-        onClick={handleClick}
+        isDisabled={isDisabled}
+        onClick={() => handleClick(true)}
       >
-        <FiThumbsUp/>
+        <FiThumbsUp />
       </Button>
       <Button
         _hover={{
@@ -29,7 +55,8 @@ const MessageRatingComponent = (msg) => {
         }}
         bg="gray.200"
         size="sm"
-        onClick={handleClick}
+        isDisabled={isDisabled}
+        onClick={() => handleClick(false)}
       >
         <FiThumbsDown />
       </Button>
