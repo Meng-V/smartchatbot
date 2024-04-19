@@ -29,7 +29,7 @@ export class CheckOpenHourToolService implements LlmTool {
 
   public readonly toolName: string = 'CheckOpenHourService';
   readonly toolDescription: string =
-    'This tool is for checking the open hours of the library.';
+    'This tool is for checking the open hours of the library.Currently,this tool only supports King Library Building;if the customer mentions about any other building,tell them you cannot support them.';
   readonly toolParametersStructure: { [parameterName: string]: string } = {
     date: 'string [REQUIRED][format YYYY-MM-DD]',
   };
