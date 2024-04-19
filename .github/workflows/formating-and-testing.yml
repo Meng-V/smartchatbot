@@ -41,6 +41,7 @@ jobs:
           LIBCAL_CLIENT_SECRET: ${{ secrets.LIBCAL_CLIENT_SECRET }}
           LIBCAL_GRANT_TYPE: ${{ secrets.LIBCAL_GRANT_TYPE }}
           LIBCAL_CANCEL_URL: ${{ secrets.LIBCAL_CANCEL_URL }}
+          LIBCAL_HOUR_URL: ${{ secrets.LIBCAL_HOUR_URL }}
           LIBCAL_SEARCH_AVAILABLE_URL: ${{ secrets.LIBCAL_SEARCH_AVAILABLE_URL }}
           LIBCAL_RESERVATION_URL: ${{ secrets.LIBCAL_RESERVATION_URL }}
           KING_BUILDING: ${{ secrets.KING_BUILDING }}
