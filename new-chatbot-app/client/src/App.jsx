@@ -62,7 +62,7 @@ const App = () => {
       <Modal isOpen={isOpen} onClose={handleClose}>
         <ModalOverlay />
         <ModalContent
-          maxW="350px"
+          maxW="400px"
           position="fixed"
           bottom="30px"
           right="10"
@@ -119,6 +119,17 @@ const App = () => {
             {step === 'realLibrarian' && <RealLibrarianWidget />}
             {step === 'ticket' && <OfflineTicketWidget />}
           </ModalBody>
+          {step == 'services' && (
+            <Button
+              colorScheme="red"
+              position="fixed"
+              bottom={10}
+              right={250}
+              onClick={() => setStep('realLibrarian')}
+            >
+              Librarian Assistance
+            </Button>
+          )}
         </ModalContent>
       </Modal>
     </>

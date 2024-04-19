@@ -81,7 +81,14 @@ const ChatBotComponent = () => {
             );
           })}
           {messageContextValues.isTyping && (
-            <Box>
+            <Box
+              maxW="md"
+              px={5}
+              py={3}
+              rounded="md"
+              bg={'gray.200'}
+              border={'0px'}
+            >
               <Text>
                 Chatbot is thinking <span className="dots"></span>
               </Text>

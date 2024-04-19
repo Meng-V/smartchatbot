@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown'
 import gfm from 'remark-gfm'
+import './ChatBotComponent.css';
 
 /**
  * This component is used to parse links in the chat messages

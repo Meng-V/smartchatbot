@@ -84,7 +84,6 @@ const RealLibrarianWidget = () => {
         )
       }
     </div>
-
   )
 }
 
