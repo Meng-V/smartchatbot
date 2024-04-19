@@ -170,8 +170,7 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
           ) {
             return {
               succeed: false,
-              message:
-                'Room reservation is unsuccessful.Time slot is not available for your room',
+              message: 'Time slot is not available for your room',
             };
           } else if (
             errorData.includes('this exceeds the 120 minute booking limit')
@@ -179,7 +178,7 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
             return {
               succeed: false,
               message:
-                'Room reservation is unsuccessful.Booking exceeds the 120 minute booking limit.Each person only has 120 minute booking limit everyday.',
+                'Booking exceeds the 120 minute booking limit.Each person only has 120 minute booking limit everyday.',
             };
           } else {
             this.logger.error(error);

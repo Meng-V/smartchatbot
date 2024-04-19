@@ -2,10 +2,11 @@ import { ReserveRoomToolService } from './reserve-room-tool.service';
 import { CheckRoomAvailabilityToolService } from '../check-room-availability-tool/check-room-availability-tool.service';
 import { HttpService } from '@nestjs/axios';
 import { LibcalAuthorizationService } from '../../../../library-api/libcal-authorization/libcal-authorization.service';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SharedModule } from '../../../../shared/shared.module';
 import { DatabaseService } from '../../../../database/database.service';
+import { HttpException } from '@nestjs/common';
 
 describe('ReserveRoomToolService', () => {
   let service: ReserveRoomToolService;
@@ -24,17 +25,9 @@ describe('ReserveRoomToolService', () => {
 
   beforeEach(async () => {
     const accessToken = 'test_token';
-    const httpResult = {
-      data: {
-        booking_id: 'testBookingId',
-        cost: 0,
-      },
-    };
-
     mockLibcalApiAuthorizationService.getAccessTokenObservable = jest
       .fn()
       .mockReturnValue(of(accessToken));
-    mockHttpService.axiosRef.post = jest.fn().mockResolvedValue(httpResult);
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [SharedModule],
@@ -61,6 +54,64 @@ describe('ReserveRoomToolService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  it('should notify that booking is not available', async () => {
+    let errorResponse = {
+      status: 400,
+      statusText: 'Bad Request',
+      headers: {},
+      config: {},
+      data: "booking 6 'from' is not a valid starting slot",
+    };
+    mockHttpService.axiosRef.post.mockRejectedValue(
+      new HttpException(errorResponse, 400),
+    );
+
+    mockDatabaseService.getRoomIdFromRoomCodeName.mockResolvedValue({
+      id: 1111,
+      roomCodeName: 'King 111',
+      capacity: 8,
+    });
+
+    expect(
+      await service.toolRunForLlm({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'johndoe@miamioh.edu',
+        date: '2024-06-07',
+        startTime: '17:00',
+        endTime: '18:00',
+        roomCodeName: '111',
+      }),
+    ).toEqual(
+      'Booking unsuccessfully.Time slot is not available for your room',
+    );
+
+
+    errorResponse = {
+      status: 400,
+      statusText: 'Bad Request',
+      headers: {},
+      config: {},
+      data: "<p>King 240: Sorry, this exceeds the 120 minute booking limit.</p>",
+    };
+    mockHttpService.axiosRef.post.mockRejectedValue(
+      new HttpException(errorResponse, 400),
+    );
+    expect(
+      await service.toolRunForLlm({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'johndoe@miamioh.edu',
+        date: '2024-06-07',
+        startTime: '17:00',
+        endTime: '18:00',
+        roomCodeName: '111',
+      }),
+    ).toEqual(
+      'Booking unsuccessfully.Booking exceeds the 120 minute booking limit.Each person only has 120 minute booking limit everyday.',
+    );
   });
 
   it('should say no room available', async () => {
@@ -128,6 +179,14 @@ describe('ReserveRoomToolService', () => {
   });
 
   it('shoud successfully book room with roomCodeName', async () => {
+    const httpResult = {
+      data: {
+        booking_id: 'testBookingId',
+        cost: 0,
+      },
+    };
+    mockHttpService.axiosRef.post.mockResolvedValue(httpResult);
+
     mockDatabaseService.getRoomIdFromRoomCodeName.mockResolvedValue({
       id: 1111,
       roomCodeName: 'King 111',
@@ -153,6 +212,14 @@ describe('ReserveRoomToolService', () => {
   });
 
   it('should successfully book room with roomCapacity', async () => {
+    const httpResult = {
+      data: {
+        booking_id: 'testBookingId',
+        cost: 0,
+      },
+    };
+    mockHttpService.axiosRef.post.mockResolvedValue(httpResult);
+
     const roomAvailabilityResponse = [
       {
         id: 1111,
