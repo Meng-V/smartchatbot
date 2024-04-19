@@ -88,13 +88,12 @@ describe('ReserveRoomToolService', () => {
       'Booking unsuccessfully.Time slot is not available for your room',
     );
 
-
     errorResponse = {
       status: 400,
       statusText: 'Bad Request',
       headers: {},
       config: {},
-      data: "<p>King 240: Sorry, this exceeds the 120 minute booking limit.</p>",
+      data: '<p>King 240: Sorry, this exceeds the 120 minute booking limit.</p>',
     };
     mockHttpService.axiosRef.post.mockRejectedValue(
       new HttpException(errorResponse, 400),
