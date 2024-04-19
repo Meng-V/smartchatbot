@@ -15,7 +15,6 @@ import { KingLibrarySiteSearchService } from './google-site-search-tool/king-lib
 
 @Module({
   imports: [DatabaseModule, LibraryApiModule, HttpModule, SharedModule],
-  imports: [DatabaseModule, LibraryApiModule, HttpModule, SharedModule],
   providers: [
     LibrarianSubjectLookupToolService,
     CitationAssistToolService,
