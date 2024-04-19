@@ -26,18 +26,18 @@ describe('CitationAssistToolService', () => {
     };
     let expectedResponse = `Explain these links to the customer: ${JSON.stringify(
       {
-        'General Reference': 'libguides.lib.miamioh.edu/citation/mla',
+        'General Reference': 'https://libguides.lib.miamioh.edu/citation/mla',
         'In-text Citations':
-          'libguides.lib.miamioh.edu/citation/mla_in-text_citations',
+          'https://libguides.lib.miamioh.edu/citation/mla_in-text_citations',
         'Example Citations-Print':
-          'libguides.lib.miamioh.edu/citation/mla_print-examples',
+          'https://libguides.lib.miamioh.edu/citation/mla_print-examples',
         'Example Citations-Online,Electronic':
-          'libguides.lib.miamioh.edu/citation/ama_online',
+          'https://libguides.lib.miamioh.edu/citation/ama_online',
         'Example Citations-Images,Video,Audio':
-          'libguides.lib.miamioh.edu/citation/mla_multimedia-examples',
+          'https://libguides.lib.miamioh.edu/citation/mla_multimedia-examples',
         'Example Citations-Business Database':
-          'libguides.lib.miamioh.edu/citation/mla_business',
-        Handbook: 'libguides.lib.miamioh.edu/citation/mla_business',
+          'https://libguides.lib.miamioh.edu/citation/mla_business',
+        Handbook: 'https://libguides.lib.miamioh.edu/citation/mla_business',
       },
     )}.Student can consider using CitationManager:Zotero,Mendeley,EndNote for ease.Read more:https://libguides.lib.miamioh.edu/CitationManagers.`;
     expect(await service.toolRunForLlm(toolInput)).toEqual(expectedResponse);
@@ -45,17 +45,17 @@ describe('CitationAssistToolService', () => {
     //Test for Chicago styling
     toolInput.citationType = 'Chicago';
     expectedResponse = `Explain these links to the customer: ${JSON.stringify({
-      'General Reference': 'libguides.lib.miamioh.edu/citation/chicago',
+      'General Reference': 'https://libguides.lib.miamioh.edu/citation/chicago',
       'In-text Citations':
-        'libguides.lib.miamioh.edu/citation/chicago_in-text_citations',
+        'https://libguides.lib.miamioh.edu/citation/chicago_in-text_citations',
       'In-text Citations-AuthorDate':
-        'libguides.lib.miamioh.edu/citation/chicago_in-text_author-date',
+        'https://libguides.lib.miamioh.edu/citation/chicago_in-text_author-date',
       'Example Citations-Print':
-        'libguides.lib.miamioh.edu/citation/chicago_print-examples',
+        'https://libguides.lib.miamioh.edu/citation/chicago_print-examples',
       'Example Citations-Online,Electronic':
-        'libguides.lib.miamioh.edu/citation/chicago_electronic-examples',
+        'https://libguides.lib.miamioh.edu/citation/chicago_electronic-examples',
       'Example Citations-Images,Video,Audio':
-        'libguides.lib.miamioh.edu/citation/chicago_multimedia-examples',
+        'https://libguides.lib.miamioh.edu/citation/chicago_multimedia-examples',
     })}.Student can consider using CitationManager:Zotero,Mendeley,EndNote for ease.Read more:https://libguides.lib.miamioh.edu/CitationManagers.`;
     expect(await service.toolRunForLlm(toolInput)).toEqual(expectedResponse);
   });

@@ -25,7 +25,7 @@ export class CancelReservationToolService implements LlmTool {
   // From LlmTool interface
   public readonly toolName: string = 'CancelReservationService';
   readonly toolDescription: string =
-    'This tool is for cancelling study room reservation.';
+    'This tool is for cancelling study room reservation.Currently,this tool only supports King Library Building;if the customer mentions about any other building,tell them you cannot support them.';
   readonly toolParametersStructure: { [parameterName: string]: string } = {
     bookingID: 'string [REQUIRED]',
   };

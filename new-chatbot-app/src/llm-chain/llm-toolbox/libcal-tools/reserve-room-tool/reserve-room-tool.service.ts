@@ -15,7 +15,7 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
   private readonly logger = new Logger(ReserveRoomToolService.name);
   public readonly toolName: string = 'StudyRoomReservationTool';
   public readonly toolDescription: string =
-    "This tool is for study room reservation.No need to use tool CheckRoomAvailabilityTool before using this tool.Use Final Answer instead if you don't have enough required parameters yet.Every parameter has to be provided by the customer;ASK them if they have not provided.NEVER predict!Don't include any single quotes in the paramter.";
+    "This tool is for study room reservation.Currently,this tool only supports King Library Building;if the customer mentions about any other building,tell them you cannot support them.No need to use tool CheckRoomAvailabilityTool before using this tool.Use Final Answer instead if you don't have enough required parameters yet.Every parameter has to be provided by the customer;ASK them if they have not provided.NEVER predict!Don't include any single quotes in the paramter.";
 
   public readonly toolParametersStructure: { [parameterName: string]: string } =
     {

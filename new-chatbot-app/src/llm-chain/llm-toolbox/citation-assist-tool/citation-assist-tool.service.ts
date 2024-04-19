@@ -36,71 +36,73 @@ export class CitationAssistToolService implements LlmTool {
 
   private quickLinkMapping: { [key in CitationType]: CitationReference } = {
     APA: {
-      'General Reference': 'libguides.lib.miamioh.edu/citation/apa',
+      'General Reference':
+        'https://https://libguides.lib.miamioh.edu/citation/apa',
       'In-text Citations':
-        'libguides.lib.miamioh.edu/citation/apa_in-text_citations',
+        'https://libguides.lib.miamioh.edu/citation/apa_in-text_citations',
       'Example Citations-Print':
-        'libguides.lib.miamioh.edu/citation/apa_print-examples',
+        'https://libguides.lib.miamioh.edu/citation/apa_print-examples',
       'Example Citations-Online,Electronic':
-        'libguides.lib.miamioh.edu/citation/apa_electronic-examples',
+        'https://libguides.lib.miamioh.edu/citation/apa_electronic-examples',
       'Example Citations-Images,Video,Audio':
-        'libguides.lib.miamioh.edu/citation/apa_multimedia-examples',
+        'https://libguides.lib.miamioh.edu/citation/apa_multimedia-examples',
       'Example Citations-Business Database':
-        'libguides.lib.miamioh.edu/citation/apa_business-examples',
-      'Paper Format': 'libguides.lib.miamioh.edu/c.php?g=320744&p=9188521',
+        'https://libguides.lib.miamioh.edu/citation/apa_business-examples',
+      'Paper Format':
+        'https://libguides.lib.miamioh.edu/c.php?g=320744&p=9188521',
     },
     MLA: {
-      'General Reference': 'libguides.lib.miamioh.edu/citation/mla',
+      'General Reference': 'https://libguides.lib.miamioh.edu/citation/mla',
       'In-text Citations':
-        'libguides.lib.miamioh.edu/citation/mla_in-text_citations',
+        'https://libguides.lib.miamioh.edu/citation/mla_in-text_citations',
       'Example Citations-Print':
-        'libguides.lib.miamioh.edu/citation/mla_print-examples',
+        'https://libguides.lib.miamioh.edu/citation/mla_print-examples',
       'Example Citations-Online,Electronic':
-        'libguides.lib.miamioh.edu/citation/ama_online',
+        'https://libguides.lib.miamioh.edu/citation/ama_online',
       'Example Citations-Images,Video,Audio':
-        'libguides.lib.miamioh.edu/citation/mla_multimedia-examples',
+        'https://libguides.lib.miamioh.edu/citation/mla_multimedia-examples',
       'Example Citations-Business Database':
-        'libguides.lib.miamioh.edu/citation/mla_business',
-      Handbook: 'libguides.lib.miamioh.edu/citation/mla_business',
+        'https://libguides.lib.miamioh.edu/citation/mla_business',
+      Handbook: 'https://libguides.lib.miamioh.edu/citation/mla_business',
     },
     Chicago: {
-      'General Reference': 'libguides.lib.miamioh.edu/citation/chicago',
+      'General Reference': 'https://libguides.lib.miamioh.edu/citation/chicago',
       'In-text Citations':
-        'libguides.lib.miamioh.edu/citation/chicago_in-text_citations',
-      'In-text Citations-AuthorDate':
-        'libguides.lib.miamioh.edu/citation/chicago_in-text_author-date',
-      'Example Citations-Print':
-        'libguides.lib.miamioh.edu/citation/chicago_print-examples',
-      'Example Citations-Online,Electronic':
-        'libguides.lib.miamioh.edu/citation/chicago_electronic-examples',
-      'Example Citations-Images,Video,Audio':
-        'libguides.lib.miamioh.edu/citation/chicago_multimedia-examples',
-    },
-    Turabian: {
-      'General Reference': 'libguides.lib.miamioh.edu/citation/chicago',
-      'In-text Citations':
-        'libguides.lib.miamioh.edu/citation/chicago_in-text_citations',
-      'In-text Citations-AuthorDate':
-        'libguides.lib.miamioh.edu/citation/chicago_in-text_author-date',
-      'Example Citations-Print':
-        'libguides.lib.miamioh.edu/citation/chicago_print-examples',
-      'Example Citations-Online,Electronic':
-        'libguides.lib.miamioh.edu/citation/chicago_electronic-examples',
-      'Example Citations-Images,Video,Audio':
-        'libguides.lib.miamioh.edu/citation/chicago_multimedia-examples',
-    },
-    AMA: {
-      'General Reference': 'libguides.lib.miamioh.edu/citation/ama',
-      'In-text Citations':
-        'libguides.lib.miamioh.edu/citation/chicago_in-text_citations',
+        'https://libguides.lib.miamioh.edu/citation/chicago_in-text_citations',
       'In-text Citations-AuthorDate':
         'https://libguides.lib.miamioh.edu/citation/chicago_in-text_author-date',
       'Example Citations-Print':
-        'libguides.lib.miamioh.edu/citation/chicago_print-examples',
+        'https://libguides.lib.miamioh.edu/citation/chicago_print-examples',
       'Example Citations-Online,Electronic':
-        'libguides.lib.miamioh.edu/citation/chicago_electronic-examples',
+        'https://libguides.lib.miamioh.edu/citation/chicago_electronic-examples',
       'Example Citations-Images,Video,Audio':
-        'libguides.lib.miamioh.edu/citation/chicago_multimedia-examples',
+        'https://libguides.lib.miamioh.edu/citation/chicago_multimedia-examples',
+    },
+    Turabian: {
+      'General Reference': 'https://libguides.lib.miamioh.edu/citation/chicago',
+      'In-text Citations':
+        'https://libguides.lib.miamioh.edu/citation/chicago_in-text_citations',
+      'In-text Citations-AuthorDate':
+        'https://libguides.lib.miamioh.edu/citation/chicago_in-text_author-date',
+      'Example Citations-Print':
+        'https://libguides.lib.miamioh.edu/citation/chicago_print-examples',
+      'Example Citations-Online,Electronic':
+        'https://libguides.lib.miamioh.edu/citation/chicago_electronic-examples',
+      'Example Citations-Images,Video,Audio':
+        'https://libguides.lib.miamioh.edu/citation/chicago_multimedia-examples',
+    },
+    AMA: {
+      'General Reference': 'https://libguides.lib.miamioh.edu/citation/ama',
+      'In-text Citations':
+        'https://libguides.lib.miamioh.edu/citation/chicago_in-text_citations',
+      'In-text Citations-AuthorDate':
+        'https://https://libguides.lib.miamioh.edu/citation/chicago_in-text_author-date',
+      'Example Citations-Print':
+        'https://libguides.lib.miamioh.edu/citation/chicago_print-examples',
+      'Example Citations-Online,Electronic':
+        'https://libguides.lib.miamioh.edu/citation/chicago_electronic-examples',
+      'Example Citations-Images,Video,Audio':
+        'https://libguides.lib.miamioh.edu/citation/chicago_multimedia-examples',
     },
   };
 

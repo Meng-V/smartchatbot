@@ -39,7 +39,7 @@ export class CheckRoomAvailabilityToolService
 {
   public readonly toolName: string = 'CheckRoomAvailabilityTool';
   public readonly toolDescription: string =
-    "This tool is for checking if there is any available room for any room with the input time range and room capacity.Use Final Answer instead if you don't have enough required parameters(date,startTime,endTime)yet.Don't include any single quotes in the paramter.The year is implicitly the current year";
+    "This tool is for checking if there is any available room for any room with the input time range and room capacity.Currently,this tool only supports King Library Building;if the customer mentions about any other building,tell them you cannot support them.Use Final Answer instead if you don't have enough required parameters(date,startTime,endTime)yet.Don't include any single quotes in the paramter.The year is implicitly the current year";
 
   public readonly toolParametersStructure: { [parameterName: string]: string } =
     {
