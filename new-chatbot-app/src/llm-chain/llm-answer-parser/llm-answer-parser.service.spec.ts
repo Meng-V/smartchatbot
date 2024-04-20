@@ -13,14 +13,14 @@ describe('LlmAnswerParserService', () => {
   it('should parse LLM output with action', () => {
     const llmOutput = `{
       "Thought": "Some thought",
-      "Action": "Some action",
-      "Action Input": { "key": "value" }
+      "Tool": "Some tool",
+      "Tool Input": { "key": "value" }
     }`;
 
     const expectedOutput: AgentOutput = {
       outputType: 'action',
       thought: 'Some thought',
-      action: 'Some action',
+      action: 'Some tool',
       actionInput: { key: 'value' },
     };
 
@@ -35,7 +35,6 @@ describe('LlmAnswerParserService', () => {
 
     const expectedOutput: AgentOutput = {
       outputType: 'final',
-      thought: 'Some thought',
       finalAnswer: 'Some final answer',
     };
 

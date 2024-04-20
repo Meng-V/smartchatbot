@@ -13,6 +13,8 @@ import {
 } from '../shared/services/token-usage/token-usage.service';
 import { LlmModelType } from './llm/llm.module';
 import { CitationAssistToolService } from './llm-toolbox/citation-assist-tool/citation-assist-tool.service';
+import { CheckRoomAvailabilityToolService } from './llm-toolbox/libcal-tools/check-room-availability-tool/check-room-availability-tool.service';
+import { ReserveRoomToolService } from './llm-toolbox/libcal-tools/reserve-room-tool/reserve-room-tool.service';
 
 /**
  * Service for using the LLM Chain
@@ -35,6 +37,8 @@ export class LlmChainService {
     private tokenUsageService: TokenUsageService,
     private librarianSubjectLookupToolService: LibrarianSubjectLookupToolService,
     private citationAssistToolService: CitationAssistToolService,
+    private checkRoomAvailabilityToolService: CheckRoomAvailabilityToolService,
+    private reserveRoomToolService: ReserveRoomToolService,
   ) {
     this.memoryService.setMaxContextWindow(6);
     this.memoryService.setConversationBufferSize(3);
@@ -45,6 +49,8 @@ export class LlmChainService {
       new Set<LlmTool>([
         this.librarianSubjectLookupToolService,
         this.citationAssistToolService,
+        this.checkRoomAvailabilityToolService,
+        this.reserveRoomToolService,
       ]),
     );
   }
@@ -95,14 +101,13 @@ export class LlmChainService {
   public async getModelResponse(userMessage: string): Promise<string> {
     this.memoryService.addToConversation(
       Role.Customer,
-      this.stripDoubleQuotes(userMessage),
+      this.llmAnswerParserService.trimDoubleQuotes(userMessage),
     );
     let { response: llmResponse, tokenUsage } =
       await this.llmService.getModelResponse(
         this.promptService,
         this.LLM_TYPE_TO_USE,
       );
-
     let outputParsed = this.llmAnswerParserService.parseLLMOutput(llmResponse);
     let llmCallNum = 1;
 
@@ -119,16 +124,16 @@ export class LlmChainService {
       );
 
       this.promptService.updateScratchpad(`Thought: ${outputParsed.thought}\n`);
-      this.promptService.updateScratchpad(`Action: ${outputParsed.action}\n`);
+      this.promptService.updateScratchpad(`Tool: ${outputParsed.action}\n`);
       this.promptService.updateScratchpad(
-        `Action Input: ${JSON.stringify(outputParsed.actionInput)}\n`,
+        `Tool Input: ${JSON.stringify(outputParsed.actionInput)}\n`,
       );
       const toolResponse = await this.accessToolBox(
         outputParsed.action,
         outputParsed.actionInput,
       );
 
-      this.promptService.updateScratchpad(`Tool Response: ${toolResponse}`);
+      this.promptService.updateScratchpad(`Tool Result: ${toolResponse}`);
 
       //Get answer from the llm again with the new information from tools
       ({ response: llmResponse, tokenUsage } =
@@ -144,8 +149,11 @@ export class LlmChainService {
     //Add AI response to conversation
     this.memoryService.addToConversation(
       Role.AIAgent,
-      this.stripDoubleQuotes(llmResponse),
+      this.llmAnswerParserService.trimDoubleQuotes(outputParsed.finalAnswer),
     );
+
+    //Clear scratchpad to prepare for a new message
+    this.promptService.emptyScratchpad();
 
     //Update total llm token usage
     this.totalLlmTokenUsage = this.tokenUsageService.combineTokenUsage(
@@ -175,14 +183,5 @@ export class LlmChainService {
    */
   public getToolsUsed(): Iterable<string> {
     return this.toolsUsed;
-  }
-
-  /**
-   * Replace double quote with single quote
-   * @param input
-   * @returns
-   */
-  private stripDoubleQuotes(input: string): string {
-    return input.replace(/"/g, "'");
   }
 }

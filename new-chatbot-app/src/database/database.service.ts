@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Message, ModelTokenUsage } from '@prisma/client';
+import { Message, ModelTokenUsage, Room } from '@prisma/client';
 import { UserFeedback } from '../gateway/chat/chat.gateway';
 import { Role } from '../llm-chain/memory/memory.interface';
 import { LlmModelType } from 'src/llm-chain/llm/llm.module';
@@ -12,6 +12,30 @@ import { PrismaService } from './prisma-service/prisma.service';
 export class DatabaseService {
   private readonly logger = new Logger(DatabaseService.name);
   constructor(private readonly prismaService: PrismaService) {}
+
+  /**
+   * Get room ID from the database by fuzzy matching the roomCodeName and exact matching the buildingId
+   * @param roomCodeName
+   * @param buildingId
+   * @returns if no room satisfies the input condition, return null
+   */
+  async getRoomIdFromRoomCodeName(
+    roomCodeName: string,
+    buildingId: string,
+  ): Promise<{ id: string; roomCodeName: string; capacity: number } | null> {
+    const rooms: Room[] = await this.prismaService
+      .$queryRaw`SELECT * FROM "Room" WHERE "buildingId" = ${buildingId} AND "codeName" LIKE ${`%${roomCodeName}%`}`;
+
+    if (rooms.length === 0) {
+      return null;
+    }
+    return {
+      id: rooms[0].id,
+      roomCodeName: rooms[0].codeName,
+      capacity: rooms[0].capacity,
+    };
+  }
+
   /**
    *
    * @param messageType

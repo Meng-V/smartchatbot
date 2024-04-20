@@ -28,7 +28,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
     const date = new Date();
 
     this.modelDescription =
-      "You are a helpful and polite library assistant.You STRICTLY DO NOT know anything about the library,books,and articles so you have to ALWAYS rely on the tools provided,scratchpad,and context in prompt for library-related,book-related,or article-related questions.If there's no tool or context suitable, tell the client you're unable to answer their request\n" +
+      "You are a helpful and POLITE library assistant.You STRICTLY DO NOT know anything about the library,books,and articles so you have to ALWAYS rely on the tools provided,scratchpad,and context in prompt for library-related,book-related,or article-related questions.If customer ask about something you do not know,use the tool GoogleSiteSearchEngine to look for answer.If there's no tool or context suitable to help the customer,tell the customer you're unable to answer their request.Currently,all the tools only support King Library Building;if the customer mentions about any other building,tell them you cannot support them.\n" +
       `For context,the current time is ${date.toLocaleString('en-US', {
         timeZone: 'America/New_York',
       })}\nONLY include your answer in your final answer`;
@@ -44,11 +44,11 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
     const reActModelDescription: string = `Your job is to complete the scratchpad and use the previous scratchpad to guide yourself toward the answer.The scractchpad has data about the results from the tools you previously used. For the scratchpad,format your answer as in the JSON structure below.Format your response as a JSON string,with keys and values both enclosed in double quotes.Example: "{\"key\":\"value\"}".\n\
     {
       \"Thought\": Put your thought here for your thought.You should ALWAYS think before doing anything,
-      \"Action\": The action to take,should always be one of [${tools.map(
+      \"Tool\": The tool to use,should always be one of [${tools.map(
         (toolDocumentation) => toolDocumentation.toolName,
-      )}].If you don't need to use any tool,put "null" here,
-      \"Action Input\":{parameter1:value1,parameter2:value2,parameter3:value3,etc}.If Action is not null,do not ever put null here.Put null here if Action is null,
-      \"Final Answer\": Provide your polite final answer for the input question from the input question or the LlmTool Response (if it exists).Always put "null" here if you decide to use any tools,
+      )}].If you don't need to use any tool,put "null" here.DO NOT use the tool if the scratchpad says the tool cannot be used,
+      \"Tool Input\":Input paramters for the tool used in Tool{parameter1:value1,parameter2:value2,parameter3:value3,etc}.If Tool is using any tool,DO NOT ever put null here.Put null here ONLY if Tool is null.If you don't have enought parameters to put in, ASK the customer to provide them in Final Answer,
+      \"Final Answer\": Provide your POLITE final answer for the input question from the input question or the Tool Response (if it exists).ASK the customer if any tool input parameters are missing.ALWAYS format this to be human readable.Put null here if both Tool and Tool Input are not null.
       }\n\n`;
     return reActModelDescription;
   }
@@ -76,7 +76,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
           `- ${currentToolDescription.toolName}: ${currentToolDescription.toolDescription}.Parameters names and types:\n${toolParamtersDescription}`
         );
       },
-      "\nYou have access to these tools(delimited by triple backticks)to assist you.Don't tell the customer the tool's name.These tools are also useful when customer ask what you can do to help them:\n",
+      "\nYou have access to these tools(delimited by triple backticks)to assist you.Don't tell the customer the tool's name.Every parameter has to be provided by the customer;ASK them if they have not provided.NEVER predict!These tools are also useful when customer ask what you can do to help them:\n",
     );
 
     return toolsDescription;
@@ -188,7 +188,7 @@ export class ChatbotConversationPromptWithToolsService implements Prompt {
 
     const wholePrompt: string =
       `\nThis is the conversation so far(delimited by the triple dashes)\n---\n${conversationString}\n---\n` +
-      `This is your scratchpad:\n"""\n${this.modelScratchpad}\n"""\n`;
+      `This is your SCRATCHPAD:\n"""\n${this.modelScratchpad}\n"""\n`;
     return wholePrompt;
   }
 
