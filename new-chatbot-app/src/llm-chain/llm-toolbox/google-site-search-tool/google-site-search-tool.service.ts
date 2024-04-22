@@ -6,7 +6,7 @@ import { KingLibrarySiteSearchService } from './king-library-site-search.service
 
 @Injectable()
 export class GoogleSiteSearchToolService implements LlmTool {
-  public readonly toolName = 'GoogleSiteSearchEngine';
+  public readonly toolName = 'GoogleSiteSearchTool';
   public readonly toolDescription: string =
     'This tool is for searching relevant general documents specifically about King Library.This tool should be always the last solution you should consider if other tools are not appropriate for the task.';
   public readonly toolParametersStructure: { [parameterName: string]: string } =
