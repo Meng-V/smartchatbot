@@ -1,10 +1,11 @@
-import { Injectable, Logger, Scope } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, Scope } from '@nestjs/common';
 import { NetworkService } from 'src/shared/services/network/network.service';
 import { LibcalAuthorizationService } from '../../../../library-api/libcal-authorization/libcal-authorization.service';
 import { LlmTool } from '../../llm-tool.interface';
 import { HttpService } from '@nestjs/axios';
 import { Subscription } from 'rxjs';
 import { RetrieveEnvironmentVariablesService } from '../../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
+import { AxiosResponse } from 'axios';
 
 /**
  * Returned data type from service
@@ -16,14 +17,14 @@ type LibcalAPICancelReservationResponse = {
 }[];
 
 @Injectable()
-export class CancelReservationToolService implements LlmTool {
+export class CancelReservationToolService implements LlmTool, OnModuleDestroy {
   // Env Variables
   private readonly CANCEL_URL =
     this.retrieveEnvironmentVariablesService.retrieve<string>(
       'LIBCAL_CANCEL_URL',
     );
   // From LlmTool interface
-  public readonly toolName: string = 'CancelReservationService';
+  public readonly toolName: string = 'CancelReservationTool';
   readonly toolDescription: string =
     'This tool is for cancelling study room reservation.Currently,this tool only supports King Library Building;if the customer mentions about any other building,tell them you cannot support them.';
   readonly toolParametersStructure: { [parameterName: string]: string } = {
@@ -93,22 +94,30 @@ export class CancelReservationToolService implements LlmTool {
     const header = {
       Authorization: `Bearer ${this.accessToken}`,
     };
-    try {
-      const response =
-        await this.httpService.axiosRef.post<LibcalAPICancelReservationResponse>(
-          `${this.CANCEL_URL}/${bookingID}`,
-          {},
-          { headers: header },
-        );
-
-      if (response.data[0].cancelled) {
-        return { success: true, error: null };
-      } else {
-        return { success: false, error: response.data[0].error };
+    const HTTP_UNAUTHORIZED = 403;
+    let response: AxiosResponse<LibcalAPICancelReservationResponse> | undefined;
+    while (response === undefined || response.status === HTTP_UNAUTHORIZED) {
+      try {
+        response =
+          await this.httpService.axiosRef.post<LibcalAPICancelReservationResponse>(
+            `${this.CANCEL_URL}/${bookingID}`,
+            {},
+            { headers: header },
+          );
+      } catch (error: any) {
+        if (error.response.status === HTTP_UNAUTHORIZED) {
+          this.libcalAuthorizationService.resetToken();
+          continue;
+        } else {
+          this.logger.error(error);
+          throw error;
+        }
       }
-    } catch (error: any) {
-      this.logger.error(error);
-      throw new Error(error);
+    }
+    if (response.data[0].cancelled) {
+      return { success: true, error: null };
+    } else {
+      return { success: false, error: response.data[0].error };
     }
   }
 
