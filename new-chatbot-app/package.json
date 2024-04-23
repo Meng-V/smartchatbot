@@ -22,6 +22,7 @@
     "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@googleapis/customsearch": "^1.1.0",
     "@neondatabase/serverless": "^0.9.0",
     "@nestjs/axios": "^3.0.2",
     "@nestjs/common": "^10.0.0",

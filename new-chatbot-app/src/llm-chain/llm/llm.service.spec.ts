@@ -73,7 +73,6 @@ describe('LlmService', () => {
       promptMock,
       OpenAiModelType.GPT_4,
       0.3,
-      0.1,
     );
 
     expect(actualResponse).toEqual(expectedResponse);

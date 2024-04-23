@@ -15,6 +15,9 @@ import { LlmModelType } from './llm/llm.module';
 import { CitationAssistToolService } from './llm-toolbox/citation-assist-tool/citation-assist-tool.service';
 import { CheckRoomAvailabilityToolService } from './llm-toolbox/libcal-tools/check-room-availability-tool/check-room-availability-tool.service';
 import { ReserveRoomToolService } from './llm-toolbox/libcal-tools/reserve-room-tool/reserve-room-tool.service';
+import { GoogleSiteSearchToolService } from './llm-toolbox/google-site-search-tool/google-site-search-tool.service';
+import { CancelReservationToolService } from './llm-toolbox/libcal-tools/cancel-reservation-tool/cancel-reservation-tool.service';
+import { CheckOpenHourToolService } from './llm-toolbox/libcal-tools/check-open-hour-tool/check-open-hour-tool.service';
 
 /**
  * Service for using the LLM Chain
@@ -37,8 +40,11 @@ export class LlmChainService {
     private tokenUsageService: TokenUsageService,
     private librarianSubjectLookupToolService: LibrarianSubjectLookupToolService,
     private citationAssistToolService: CitationAssistToolService,
+    private checkOpenHourToolService: CheckOpenHourToolService,
     private checkRoomAvailabilityToolService: CheckRoomAvailabilityToolService,
     private reserveRoomToolService: ReserveRoomToolService,
+    private cancelReservationToolService: CancelReservationToolService,
+    private googleSiteSearchToolService: GoogleSiteSearchToolService,
   ) {
     this.memoryService.setMaxContextWindow(6);
     this.memoryService.setConversationBufferSize(3);
@@ -49,8 +55,11 @@ export class LlmChainService {
       new Set<LlmTool>([
         this.librarianSubjectLookupToolService,
         this.citationAssistToolService,
+        this.checkOpenHourToolService,
         this.checkRoomAvailabilityToolService,
+        this.cancelReservationToolService,
         this.reserveRoomToolService,
+        this.googleSiteSearchToolService,
       ]),
     );
   }
