@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { LlmTool, LlmToolInput } from '../../llm-tool.interface';
+import { LlmTool } from '../../llm-tool.interface';
 
 import * as synonymJSON from './subject-synonyms.json';
 import { LibappsAuthorizationService } from '../../../../library-api/libapps-authorization/libapps-authorization.service';
@@ -69,7 +69,7 @@ export class LibrarianSubjectLookupToolService
     [key: string]: string[];
   }): Map<string, string> {
     const synonymMapping: Map<string, string> = new Map<string, string>();
-    for (let choice in synonymData) {
+    for (const choice in synonymData) {
       if (
         Array.isArray(synonymData[choice]) &&
         synonymData[choice].length > 0
@@ -98,7 +98,7 @@ export class LibrarianSubjectLookupToolService
     const m = text1.length;
     const n = text2.length;
 
-    let dp: number[][] = Array.from({ length: n + 1 }, () =>
+    const dp: number[][] = Array.from({ length: n + 1 }, () =>
       new Array(m + 1).fill(0),
     );
 
@@ -145,7 +145,7 @@ export class LibrarianSubjectLookupToolService
     numberOfResult: number = 2,
     threshold: number = 0.45,
   ): [number, string][] {
-    let result: [number, string][] = [];
+    const result: [number, string][] = [];
     query = query.toLowerCase().trim();
     // Check for exact matches first
     if (this.synonymMapping.has(query)) {
@@ -153,7 +153,7 @@ export class LibrarianSubjectLookupToolService
     }
 
     // Fallback to fuzzy matching using Levenshtein distance
-    for (let choice of choices) {
+    for (const choice of choices) {
       const matchScore = Math.max(
         1 -
           this.levenshteinDistance(query, choice) /

@@ -180,7 +180,7 @@ export class CheckOpenHourToolService implements LlmTool, OnModuleDestroy {
 
       // Filter the data to only include the hours
       // for the days of the week (Monday to Sunday)
-      let filteredData = weekdays.reduce(
+      const filteredData = weekdays.reduce(
         (prevObj, currentDay, currentIndex) => {
           return {
             ...prevObj,

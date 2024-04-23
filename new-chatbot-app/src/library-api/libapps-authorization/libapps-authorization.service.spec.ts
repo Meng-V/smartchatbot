@@ -1,8 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LibappsAuthorizationService } from './libapps-authorization.service';
 import { HttpModule, HttpService } from '@nestjs/axios';
-import { RetrieveEnvironmentVariablesService } from '../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
-import { BehaviorSubject, of } from 'rxjs';
+import { of } from 'rxjs';
 import { AxiosResponse } from 'axios';
 import { LibraryApiModule } from '../library-api.module';
 import { SharedModule } from '../../shared/shared.module';

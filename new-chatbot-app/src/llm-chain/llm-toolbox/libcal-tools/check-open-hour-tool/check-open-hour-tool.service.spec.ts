@@ -8,13 +8,13 @@ import { RetrieveEnvironmentVariablesService } from '../../../../shared/services
 
 describe('CheckOpenHourToolService', () => {
   let service: CheckOpenHourToolService;
-  let mockHttpService = {
+  const mockHttpService = {
     axiosRef: { get: jest.fn().mockReturnValue(of()) },
   };
-  let mockLibcalApiAuthorizationService = {
+  const mockLibcalApiAuthorizationService = {
     getAccessTokenObservable: jest.fn().mockReturnValue(of('mockToken')),
   };
-  let mockRetrieveEnvironmentVariablesService = { retrieve: jest.fn() };
+  const mockRetrieveEnvironmentVariablesService = { retrieve: jest.fn() };
 
   /**
    * Create a new instance of the CheckOpenHourToolService before each test.
@@ -47,7 +47,7 @@ describe('CheckOpenHourToolService', () => {
 
   it('should return error message with improper input', async () => {
     // Null and undefined and empty toolInput
-    let expectedResponse =
+    const expectedResponse =
       'Cannot check the building hour without a date. Ask the customer to provide the date before checking.\n';
 
     expect(
@@ -81,7 +81,6 @@ describe('CheckOpenHourToolService', () => {
    * Test that the service can check the open hours of the library.
    */
   it('should output correct open hours for input date', async () => {
-    const buildingID = '8113';
     const accessToken = 'accessToken';
     const checkOpenHourResponse = {
       data: [

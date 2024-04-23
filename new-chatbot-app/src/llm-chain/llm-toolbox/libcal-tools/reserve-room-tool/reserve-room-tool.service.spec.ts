@@ -2,7 +2,7 @@ import { ReserveRoomToolService } from './reserve-room-tool.service';
 import { CheckRoomAvailabilityToolService } from '../check-room-availability-tool/check-room-availability-tool.service';
 import { HttpService } from '@nestjs/axios';
 import { LibcalAuthorizationService } from '../../../../library-api/libcal-authorization/libcal-authorization.service';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SharedModule } from '../../../../shared/shared.module';
 import { DatabaseService } from '../../../../database/database.service';
@@ -10,16 +10,16 @@ import { HttpException } from '@nestjs/common';
 
 describe('ReserveRoomToolService', () => {
   let service: ReserveRoomToolService;
-  let mockHttpService = {
+  const mockHttpService = {
     axiosRef: { post: jest.fn() },
   };
-  let mockLibcalApiAuthorizationService = {
+  const mockLibcalApiAuthorizationService = {
     getAccessTokenObservable: jest.fn(),
   };
-  let mockCheckRoomAvailabilityToolService = {
+  const mockCheckRoomAvailabilityToolService = {
     fetchAvailableRooms: jest.fn(),
   };
-  let mockDatabaseService = {
+  const mockDatabaseService = {
     getRoomIdFromRoomCodeName: jest.fn(),
   };
 

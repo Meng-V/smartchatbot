@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ContextId, ContextIdFactory, ModuleRef } from '@nestjs/core';
 import { LlmChainService } from '../../llm-chain/llm-chain.service';
-import { RetrieveEnvironmentVariablesService } from '../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
 
 @Injectable()
 export class LlmConnectionGateway {

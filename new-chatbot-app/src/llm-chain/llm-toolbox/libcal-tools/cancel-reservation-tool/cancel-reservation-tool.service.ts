@@ -1,5 +1,4 @@
-import { Injectable, Logger, OnModuleDestroy, Scope } from '@nestjs/common';
-import { NetworkService } from 'src/shared/services/network/network.service';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { LibcalAuthorizationService } from '../../../../library-api/libcal-authorization/libcal-authorization.service';
 import { LlmTool } from '../../llm-tool.interface';
 import { HttpService } from '@nestjs/axios';

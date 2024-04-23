@@ -8,13 +8,13 @@ import { RetrieveEnvironmentVariablesService } from '../../../../shared/services
 
 describe('CancelReservationService', () => {
   let service: CancelReservationToolService;
-  let mockHttpService = {
+  const mockHttpService = {
     axiosRef: { post: jest.fn().mockReturnValue(of({ success: true })) },
   };
-  let mockLibcalApiAuthorizationService = {
+  const mockLibcalApiAuthorizationService = {
     getAccessTokenObservable: jest.fn().mockReturnValue(of('mockToken')),
   };
-  let mockRetrieveEnvironmentVariablesService = { retrieve: jest.fn() };
+  const mockRetrieveEnvironmentVariablesService = { retrieve: jest.fn() };
 
   /**
    * Create a new instance of the CancelReservationService before each test.
@@ -52,7 +52,7 @@ describe('CancelReservationService', () => {
    */
   it('should return error message with improper input', async () => {
     // Null and undefined toolInput
-    let expectedResponse = `Cannot perform booking because missing parameter bookingID. Ask the customer to provide bookingID to perform booking\n`;
+    const expectedResponse = `Cannot perform booking because missing parameter bookingID. Ask the customer to provide bookingID to perform booking\n`;
 
     expect(
       await service.toolRunForLlm({

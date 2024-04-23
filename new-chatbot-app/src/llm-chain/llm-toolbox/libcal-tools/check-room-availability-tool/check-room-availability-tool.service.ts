@@ -160,7 +160,7 @@ export class CheckRoomAvailabilityToolService
     llmToolInput: LlmToolInput,
     requiredFields: string[],
   ): string[] {
-    let missingFields = [];
+    const missingFields = [];
     for (const field of requiredFields) {
       if (
         llmToolInput[field] === null ||

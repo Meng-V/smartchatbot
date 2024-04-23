@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Scope } from '@nestjs/common';
+import { Injectable, Scope } from '@nestjs/common';
 import { LlmService } from './llm/llm.service';
 import { ChatbotConversationPromptWithToolsService } from './prompt/chatbot-conversation-prompt-with-tools/chatbot-conversation-prompt-with-tools.service';
 import { ConversationMemoryService } from './memory/conversation-memory/conversation-memory.service';
