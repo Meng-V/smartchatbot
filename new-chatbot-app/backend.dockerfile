@@ -28,5 +28,11 @@ RUN npx prisma generate
 RUN npm install @prisma/adapter-neon @neondatabase/serverless ws
 RUN npm install --save-dev @types/ws
 
+# Expose the port the app runs on
+EXPOSE 3000
+
+# Build the app
+RUN npm run build
+
 # Run the migrations and start the server
-CMD npx prisma migrate dev --preview-feature && npm run start
+CMD npx prisma migrate dev --preview-feature && npm run start:prod

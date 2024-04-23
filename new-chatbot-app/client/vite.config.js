@@ -7,11 +7,11 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     preview: {
-      port: 8080,
+      port: 5173,
       strictPort: true,
     },
     server: {
-      port: 8080,
+      port: 5173,
       host: true,
     },
     define: {
