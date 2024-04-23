@@ -44,5 +44,5 @@ jobs:
         tags: tranhvloc/chatbot-app-frontend:latest
 
     - name: Run Backend Tests
-      run: npm test
+      run: npm run test
       working-directory: ./new-chatbot-app
