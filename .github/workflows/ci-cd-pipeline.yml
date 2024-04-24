@@ -27,6 +27,10 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
     
+    - name: Install Backend Dependencies
+      run: npm install
+      working-directory: ./new-chatbot-app
+
     - name: Build and push Backend Docker image
       uses: docker/build-push-action@v2
       with:
@@ -34,6 +38,10 @@ jobs:
         file: ./new-chatbot-app/backend.dockerfile
         push: true
         tags: tranhvloc/chatbot-app-backend:latest
+
+    - name: Install Frontend Dependencies
+      run: npm install
+      working-directory: ./new-chatbot-app/client
 
     - name: Build and push Frontend Docker image
       uses: docker/build-push-action@v2
