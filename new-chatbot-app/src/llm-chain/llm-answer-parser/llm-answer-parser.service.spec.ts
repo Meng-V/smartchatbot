@@ -41,13 +41,20 @@ describe('LlmAnswerParserService', () => {
     expect(service.parseLLMOutput(llmOutput)).toEqual(expectedOutput);
   });
 
-  it('should throw error for invalid LLM output', () => {
-    const llmOutput = `{
+  it('should return null for invalid LLM output', () => {
+    let llmOutput = `{
+      "Thought": "Output",
+      "Tool": null,
+      "Tool Input": null,
+      "Final Answer": null
+    }`;
+
+    expect(service.parseLLMOutput(llmOutput)).toEqual(null);
+
+    llmOutput = `{
       "Invalid": "Output"
     }`;
 
-    expect(() => service.parseLLMOutput(llmOutput)).toThrow(
-      'Error in parsing LLM output',
-    );
+    expect(service.parseLLMOutput(llmOutput)).toEqual(null);
   });
 });

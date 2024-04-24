@@ -25,7 +25,7 @@ export class LlmAnswerParserService {
    * @param llmOutput the string output from the LLM
    * @returns AgentOutput
    */
-  parseLLMOutput(llmOutput: string): AgentOutput {
+  parseLLMOutput(llmOutput: string): AgentOutput | null {
     const jsonString = llmOutput
       .replace(/'/g, '') // Remove single quotes
       .replace(/\+/g, '') // Remove "+" signs
@@ -59,7 +59,7 @@ export class LlmAnswerParserService {
         actionInput: outputObj['Tool Input'],
       };
     } else {
-      throw new Error('Error in parsing LLM output');
+      return null;
     }
   }
   /**
