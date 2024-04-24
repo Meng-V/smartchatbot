@@ -3,7 +3,6 @@ import MessageComponents from './ParseLinks';
 import { useContext, useRef, useEffect } from "react";
 import { SocketContext } from "../context/SocketContextProvider";
 import { MessageContext } from "../context/MessageContextProvider";
-import MessageRatingComponent from "./MessageRatingComponent";
 import './ChatBotComponent.css';
 
 const ChatBotComponent = () => {
@@ -41,6 +40,15 @@ const ChatBotComponent = () => {
             return (
               <Box
                 key={index}
+                maxW="md"
+                px={5}
+                py={3}
+                rounded="md"
+                bg={message.sender === 'user' ? 'white' : 'gray.200'}
+                border={message.sender === 'user' ? '1px' : '0px'}
+                borderColor={
+                  message.sender === 'user' ? 'red.400' : ' '
+                }
                 alignSelf={
                   message.sender === 'user'
                     ? 'flex-end'
@@ -48,47 +56,24 @@ const ChatBotComponent = () => {
                 }
               >
                 <Box
-                  maxW="md"
-                  px={5}
-                  py={3}
-                  rounded="md"
-                  bg={message.sender === 'user' ? 'white' : 'gray.200'}
-                  border={message.sender === 'user' ? '1px' : '0px'}
-                  borderColor={
-                    message.sender === 'user' ? 'red.400' : ' '
+                  color={
+                    message.sender === 'user' ? 'red.600' : 'black'
                   }
+                  whiteSpace="pre-line"
                 >
-                  <Box
-                    color={
-                      message.sender === 'user' ? 'red.600' : 'black'
-                    }
-                    whiteSpace="pre-line"
-                  >
-                    {typeof message.text === 'object' ? (
-                      <div className="half-line-height">
-                        <MessageComponents msg={adjustedMessage} />
-
-                      </div>
-                    ) : (
+                  {typeof message.text === 'object' ? (
+                    <div className="half-line-height">
                       <MessageComponents msg={adjustedMessage} />
-                    )}
-                  </Box>
+                    </div>
+                  ) : (
+                    <MessageComponents msg={adjustedMessage} />
+                  )}
                 </Box>
-                {message.sender !== 'user' && index !== 0 && (
-                  <MessageRatingComponent message={message} />
-                )}
               </Box>
             );
           })}
           {messageContextValues.isTyping && (
-            <Box
-              maxW="md"
-              px={5}
-              py={3}
-              rounded="md"
-              bg={'gray.200'}
-              border={'0px'}
-            >
+            <Box>
               <Text>
                 Chatbot is thinking <span className="dots"></span>
               </Text>

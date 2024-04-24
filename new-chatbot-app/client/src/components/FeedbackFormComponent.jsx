@@ -15,10 +15,11 @@ import {
   Textarea,
 } from '@chakra-ui/react';
 import { FaStar } from 'react-icons/fa';
-import { useContext, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import { SocketContext } from '../context/SocketContextProvider';
 
 const FeedbackFormComponent = () => {
+
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [hover, setHover] = useState(null);
   const [rating, setRating] = useState(0);
@@ -36,10 +37,12 @@ const FeedbackFormComponent = () => {
   }
 
   const handleFormSubmit = () => {
-    socketContextValues.sendUserFeedback({
-      userRating: rating,
-      userComment: details,
-    });
+    socketContextValues.sendUserFeedback(
+      {
+        userRating: rating,
+        userComment: details,
+      }
+    );
     onClose();
   }
 
