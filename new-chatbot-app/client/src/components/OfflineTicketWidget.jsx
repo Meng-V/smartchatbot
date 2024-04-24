@@ -12,13 +12,13 @@ const OfflineTicketWidget = () => {
 
   const handleTicketSubmit = (e) => {
     e.preventDefault();
-    const formData = FormData();
+    const formData = new FormData();
     formData.append('question', question);
     formData.append('email', email);
     formData.append('name', name);
     formData.append('details', details);
     formData.append('ua', navigator.userAgent);
-    socketContextValues.OfflineTicketSubmit(formData);
+    socketContextValues.offlineTicketSubmit(formData);
   };
 
   return (
