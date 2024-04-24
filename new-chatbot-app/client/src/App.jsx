@@ -121,13 +121,15 @@ const App = () => {
           </ModalBody>
           {step == 'services' && (
             <Button
+              size="sm"
               colorScheme="red"
               position="fixed"
               bottom={10}
-              right={250}
+              right={20}
+              mr={4}
               onClick={() => setStep('realLibrarian')}
             >
-              Librarian Assistance
+              Chat with a real librarian
             </Button>
           )}
         </ModalContent>
