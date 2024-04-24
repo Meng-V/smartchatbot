@@ -1,8 +1,8 @@
-import { Box, Button, FormControl, FormLabel, Input } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { Box, Button, FormControl, FormLabel, Input } from '@chakra-ui/react';
+import { useEffect, useState } from 'react';
 
 /**
- * Functional component that renders a form to collect user info 
+ * Functional component that renders a form to collect user info
  */
 const UserInfoForm = ({ onFormSubmit }) => {
   const [name, setName] = useState('');
@@ -19,7 +19,7 @@ const UserInfoForm = ({ onFormSubmit }) => {
       <FormControl>
         <FormLabel>Name</FormLabel>
         <Input
-          placeholder="Enter your name..."
+          placeholder='Enter your name...'
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -27,20 +27,21 @@ const UserInfoForm = ({ onFormSubmit }) => {
       <FormControl mt={2}>
         <FormLabel>Email</FormLabel>
         <Input
-          placeholder="Enter your email..."
+          placeholder='Enter your email...'
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
       </FormControl>
-      <Button type="submit" mt={2}>Submit</Button>
+      <Button type='submit' mt={2}>
+        Submit
+      </Button>
     </form>
   );
 };
 
-
 /**
  * Functional component that renders the LibAnswers chat widget
- * @returns 
+ * @returns
  */
 const RealLibrarianWidget = () => {
   // State to determine whether to show the form or the widget
@@ -55,14 +56,17 @@ const RealLibrarianWidget = () => {
     setName(name);
     setEmail(email);
     setShowForm(false); // Hide the form
-  }
+  };
 
   useEffect(() => {
-    const baseURL = "https://libanswers.lib.miamioh.edu/chat/widget/a24a929728c7ee2cfdef2df20cbbc2ee";
+    const baseURL =
+      'https://libanswers.lib.miamioh.edu/chat/widget/a24a929728c7ee2cfdef2df20cbbc2ee';
     // If the user has entered their name and email, add them to the URL
     // Before that, encode the name variable so that it can be safely included in a URL
     if (email !== '' && name !== '') {
-      setFormURL(`${baseURL}?patron_name=${encodeURIComponent(name)}&patron_email=${encodeURIComponent(email)}`);
+      setFormURL(
+        `${baseURL}?patron_name=${encodeURIComponent(name)}&patron_email=${encodeURIComponent(email)}`,
+      );
     } else if (email !== '') {
       setFormURL(`${baseURL}?patron_email=${encodeURIComponent(email)}`);
     } else if (name !== '') {
@@ -70,21 +74,24 @@ const RealLibrarianWidget = () => {
     } else {
       setFormURL(baseURL);
     }
-  }, [showForm])
+  }, [showForm]);
 
   return (
     <div>
-      {
-        showForm ? (
-          <UserInfoForm onFormSubmit={handleFormSubmit} />
-        ) : (
-          <Box height="60vh" overflowY="auto">
-            <iframe src={formURL} title="Chat Widget" onScroll={false} height="100%" />
-          </Box>
-        )
-      }
+      {showForm ? (
+        <UserInfoForm onFormSubmit={handleFormSubmit} />
+      ) : (
+        <Box height='60vh' overflowY='auto'>
+          <iframe
+            src={formURL}
+            title='Chat Widget'
+            onScroll={false}
+            height='100%'
+          />
+        </Box>
+      )}
     </div>
-  )
-}
+  );
+};
 
 export default RealLibrarianWidget;

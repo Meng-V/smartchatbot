@@ -53,7 +53,7 @@ const FeedbackFormComponent = () => {
       <Button
         isDisabled={messageContextValues.message.length < 3}
         onClick={handleFormOpen}
-        size="xs"
+        size='xs'
         mr={'7%'}
       >
         Rate this conversation
@@ -61,12 +61,12 @@ const FeedbackFormComponent = () => {
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader display="flex" alignItems="center" ps={2}>
+          <ModalHeader display='flex' alignItems='center' ps={2}>
             <img
-              src="https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png"
+              src='https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png'
               height={50}
               width={120}
-              alt="library logo"
+              alt='library logo'
             />
             <Box ml={3}>Smart Chatbot</Box>
           </ModalHeader>
@@ -79,7 +79,7 @@ const FeedbackFormComponent = () => {
                     const ratingValue = index + 1;
                     return (
                       <Box
-                        as="label"
+                        as='label'
                         key={index}
                         color={
                           ratingValue <= (hover || rating)
@@ -90,15 +90,15 @@ const FeedbackFormComponent = () => {
                         onMouseLeave={() => setHover(null)}
                       >
                         <Radio
-                          name="rating"
+                          name='rating'
                           onChange={() => handleRating(ratingValue)}
                           value={ratingValue}
-                          display="none"
+                          display='none'
                         />
                         <FaStar
                           cursor={'pointer'}
                           size={20}
-                          transition="color 200ms"
+                          transition='color 200ms'
                         />
                       </Box>
                     );
@@ -108,12 +108,12 @@ const FeedbackFormComponent = () => {
               <FormControl mt={4} mb={3}>
                 <FormLabel>Details</FormLabel>
                 <Textarea
-                  placeholder="Enter details about your rating..."
+                  placeholder='Enter details about your rating...'
                   value={details}
                   onChange={(e) => setDetails(e.target.value)}
                 />
               </FormControl>
-              <Text color="red" fontSize={14} as="i">
+              <Text color='red' fontSize={14} as='i'>
                 * Submitting this form will restart your session!
               </Text>
             </form>
@@ -122,7 +122,7 @@ const FeedbackFormComponent = () => {
             <Button mr={3} onClick={onClose}>
               Close
             </Button>
-            <Button colorScheme="red" onClick={handleFormSubmit}>
+            <Button colorScheme='red' onClick={handleFormSubmit}>
               Submit
             </Button>
           </ModalFooter>

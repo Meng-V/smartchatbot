@@ -21,14 +21,16 @@ import { SocketContext } from './context/SocketContextProvider';
 import FeedbackFormComponent from './components/FeedbackFormComponent';
 
 const App = () => {
-
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [step, setStep] = useState('initial');
   const toast = useToast();
   const { socketContextValues } = useContext(SocketContext);
 
   useEffect(() => {
-    if (!socketContextValues.isConnected && socketContextValues.attemptedConnection) {
+    if (
+      !socketContextValues.isConnected &&
+      socketContextValues.attemptedConnection
+    ) {
       toast({
         title: 'Connection Error',
         description:
@@ -39,7 +41,11 @@ const App = () => {
         position: 'bottom-left',
       });
     }
-  }, [socketContextValues.isConnected, socketContextValues.attemptedConnection, toast]);
+  }, [
+    socketContextValues.isConnected,
+    socketContextValues.attemptedConnection,
+    toast,
+  ]);
 
   const handleClose = () => {
     setStep('initial');
@@ -52,7 +58,7 @@ const App = () => {
         boxSize={6}
         onClick={onOpen}
         icon={<ChatIcon />}
-        position="fixed"
+        position='fixed'
         bottom={10}
         right={10}
         width={30}
@@ -62,44 +68,42 @@ const App = () => {
       <Modal isOpen={isOpen} onClose={handleClose}>
         <ModalOverlay />
         <ModalContent
-          maxW="400px"
-          position="fixed"
-          bottom="30px"
-          right="10"
-          borderRadius="md"
+          maxW='400px'
+          position='fixed'
+          bottom='30px'
+          right='10'
+          borderRadius='md'
         >
           <ModalHeader
-            display="flex"
-            alignItems="center"
+            display='flex'
+            alignItems='center'
             justifyContent={'space-evenly'}
             ps={0}
           >
             <img
-              src="https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png"
+              src='https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png'
               height={50}
               width={120}
-              alt="library logo"
+              alt='library logo'
             />
             Smart Chatbot
           </ModalHeader>
           <ModalCloseButton />
-          <Flex justify="space-between">
+          <Flex justify='space-between'>
             {step !== 'initial' && (
               <Button
                 leftIcon={<ArrowBackIcon />}
-                colorScheme="red"
-                variant="outline"
-                width="20%"
-                size="xs"
+                colorScheme='red'
+                variant='outline'
+                width='20%'
+                size='xs'
                 ml={'7%'}
                 onClick={() => setStep('initial')}
               >
                 Back
               </Button>
             )}
-            {step === 'services' && (
-              <FeedbackFormComponent />
-            )}
+            {step === 'services' && <FeedbackFormComponent />}
           </Flex>
           <ModalBody py={5}>
             {step === 'initial' && (
@@ -121,9 +125,9 @@ const App = () => {
           </ModalBody>
           {step == 'services' && (
             <Button
-              size="sm"
-              colorScheme="red"
-              position="fixed"
+              size='sm'
+              colorScheme='red'
+              position='fixed'
               bottom={10}
               right={20}
               mr={4}

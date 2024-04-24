@@ -1,13 +1,12 @@
-import { Box, VStack, HStack, Input, Button, Text } from "@chakra-ui/react";
+import { Box, VStack, HStack, Input, Button, Text } from '@chakra-ui/react';
 import MessageComponents from './ParseLinks';
-import { useContext, useRef, useEffect } from "react";
-import { SocketContext } from "../context/SocketContextProvider";
-import { MessageContext } from "../context/MessageContextProvider";
-import MessageRatingComponent from "./MessageRatingComponent";
+import { useContext, useRef, useEffect } from 'react';
+import { SocketContext } from '../context/SocketContextProvider';
+import { MessageContext } from '../context/MessageContextProvider';
+import MessageRatingComponent from './MessageRatingComponent';
 import './ChatBotComponent.css';
 
 const ChatBotComponent = () => {
-
   const { socketContextValues } = useContext(SocketContext);
   const { messageContextValues } = useContext(MessageContext);
   const chatRef = useRef();
@@ -15,7 +14,10 @@ const ChatBotComponent = () => {
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (messageContextValues.inputMessage && socketContextValues.socket) {
-      messageContextValues.addMessage(messageContextValues.inputMessage, 'user');
+      messageContextValues.addMessage(
+        messageContextValues.inputMessage,
+        'user',
+      );
       messageContextValues.setInputMessage('');
       messageContextValues.setIsTyping(true);
       socketContextValues.sendUserMessage(messageContextValues.inputMessage);
@@ -30,9 +32,8 @@ const ChatBotComponent = () => {
 
   return (
     <>
-      <Box ref={chatRef} className="chat">
-        <VStack align="start" spacing={4}>
-
+      <Box ref={chatRef} className='chat'>
+        <VStack align='start' spacing={4}>
           {messageContextValues.message.map((message, index) => {
             const adjustedMessage =
               typeof message.text === 'object'
@@ -42,32 +43,25 @@ const ChatBotComponent = () => {
               <Box
                 key={index}
                 alignSelf={
-                  message.sender === 'user'
-                    ? 'flex-end'
-                    : 'flex-start'
+                  message.sender === 'user' ? 'flex-end' : 'flex-start'
                 }
               >
                 <Box
-                  maxW="md"
+                  maxW='md'
                   px={5}
                   py={3}
-                  rounded="md"
+                  rounded='md'
                   bg={message.sender === 'user' ? 'white' : 'gray.200'}
                   border={message.sender === 'user' ? '1px' : '0px'}
-                  borderColor={
-                    message.sender === 'user' ? 'red.400' : ' '
-                  }
+                  borderColor={message.sender === 'user' ? 'red.400' : ' '}
                 >
                   <Box
-                    color={
-                      message.sender === 'user' ? 'red.600' : 'black'
-                    }
-                    whiteSpace="pre-line"
+                    color={message.sender === 'user' ? 'red.600' : 'black'}
+                    whiteSpace='pre-line'
                   >
                     {typeof message.text === 'object' ? (
-                      <div className="half-line-height">
+                      <div className='half-line-height'>
                         <MessageComponents msg={adjustedMessage} />
-
                       </div>
                     ) : (
                       <MessageComponents msg={adjustedMessage} />
@@ -82,29 +76,29 @@ const ChatBotComponent = () => {
           })}
           {messageContextValues.isTyping && (
             <Box
-              maxW="md"
+              maxW='md'
               px={5}
               py={3}
-              rounded="md"
+              rounded='md'
               bg={'gray.200'}
               border={'0px'}
             >
               <Text>
-                Chatbot is thinking <span className="dots"></span>
+                Chatbot is thinking <span className='dots'></span>
               </Text>
             </Box>
           )}
           {!socketContextValues.isConnected && (
             <Box
-              maxW="350px"
+              maxW='350px'
               px={5}
               py={3}
-              rounded="md"
+              rounded='md'
               bg={'gray.200'}
               alignSelf={'flex-start'}
             >
-              <Text color={"black"}>
-                Connecting to the chatbot <span className="dots"></span>
+              <Text color={'black'}>
+                Connecting to the chatbot <span className='dots'></span>
               </Text>
             </Box>
           )}
@@ -114,13 +108,15 @@ const ChatBotComponent = () => {
         <HStack spacing={3}>
           <Input
             value={messageContextValues.inputMessage}
-            onChange={(e) => messageContextValues.setInputMessage(e.target.value)}
-            placeholder="Type your message..."
+            onChange={(e) =>
+              messageContextValues.setInputMessage(e.target.value)
+            }
+            placeholder='Type your message...'
             disabled={!socketContextValues.isConnected}
           />
           <Button
-            colorScheme="red"
-            type="submit"
+            colorScheme='red'
+            type='submit'
             disabled={!socketContextValues.isConnected}
           >
             Send
@@ -129,7 +125,6 @@ const ChatBotComponent = () => {
       </form>
     </>
   );
-
-}
+};
 
 export default ChatBotComponent;
