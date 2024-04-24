@@ -13,10 +13,12 @@ import {
   FormControl,
   FormLabel,
   Textarea,
+  Text,
 } from '@chakra-ui/react';
 import { FaStar } from 'react-icons/fa';
-import { useContext, useRef, useState } from 'react';
+import { useContext, useState } from 'react';
 import { SocketContext } from '../context/SocketContextProvider';
+import { MessageContext } from '../context/MessageContextProvider';
 
 const FeedbackFormComponent = () => {
 
@@ -25,6 +27,7 @@ const FeedbackFormComponent = () => {
   const [rating, setRating] = useState(0);
   const [details, setDetails] = useState(undefined);
   const { socketContextValues } = useContext(SocketContext);
+  const { messageContextValues } = useContext(MessageContext);
 
   const handleFormOpen = () => {
     onOpen();
@@ -49,6 +52,7 @@ const FeedbackFormComponent = () => {
   return (
     <>
       <Button
+        isDisabled={messageContextValues.message.length < 3}
         onClick={handleFormOpen}
         size="xs"
         mr={'7%'}
@@ -106,7 +110,7 @@ const FeedbackFormComponent = () => {
                   })}
                 </HStack>
               </FormControl>
-              <FormControl mt={4}>
+              <FormControl mt={4} mb={3}>
                 <FormLabel>Details</FormLabel>
                 <Textarea
                   placeholder="Enter details about your rating..."
@@ -114,6 +118,13 @@ const FeedbackFormComponent = () => {
                   onChange={(e) => setDetails(e.target.value)}
                 />
               </FormControl>
+              <Text
+                color="red"
+                fontSize={14}
+                as="i"
+              >
+                * Submitting this form will restart your session!
+              </Text>
             </form>
           </ModalBody>
           <ModalFooter>
