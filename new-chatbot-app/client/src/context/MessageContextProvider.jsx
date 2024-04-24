@@ -8,6 +8,12 @@ const MessageContextProvider = ({children}) => {
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
+  const resetState = () => {
+    setMessage([]);
+    setInputMessage("");
+    setIsTyping(false);
+  }
+
   const addMessage = (message, sender, id = undefined) => {
     const messageText =
       typeof message === 'object' && message.response
@@ -28,6 +34,7 @@ const MessageContextProvider = ({children}) => {
     isTyping,
     setIsTyping,
     addMessage,
+    resetState
   }), [message, inputMessage, isTyping]);
 
   return (

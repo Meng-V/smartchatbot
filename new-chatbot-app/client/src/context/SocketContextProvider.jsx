@@ -12,7 +12,7 @@ const SocketContext = createContext();
 const SocketContextProvider = ({children}) => {
   
   const socket = useRef(null);
-  const firstSession = useRef(true);
+  const curSession = useRef(true);
   const [isConnected, setIsConnected] = useState(false);
   const [attemptedConnection, setAttemptedConnection] = useState(false);
   const { messageContextValues } = useContext(MessageContext);
@@ -22,7 +22,7 @@ const SocketContextProvider = ({children}) => {
       socket.current = io(url, { transports: ['websocket'], upgrade: false });
     } else {
       socket.current.on('connect', () => {
-        if (firstSession.current) {
+        if (curSession.current) {
           const welcomeMessage = {
             text: 'Hi this is the Library Smart Chatbot. How may I help you?',
             sender: 'chatbot',
@@ -35,7 +35,7 @@ const SocketContextProvider = ({children}) => {
             );
             return updatedMessages;
           });
-          firstSession.current = false;
+          curSession.current = false;
         }
         setIsConnected(true);
         setAttemptedConnection(true);
@@ -47,9 +47,15 @@ const SocketContextProvider = ({children}) => {
         messageContextValues.addMessage(message, 'chatbot', messageId);
       });
   
-      socket.current.on('disconnect', () => {
-        setIsConnected(false);
-        setAttemptedConnection(true);
+      socket.current.on('disconnect', (reason) => {
+        if (reason === "io client disconnect") {
+          messageContextValues.resetState();
+          curSession.current = true;
+          socket.current.connect();
+        } else {
+          setIsConnected(false);
+          setAttemptedConnection(true);
+        }
       });
   
       socket.current.on('connect_error', (error) => {
@@ -100,7 +106,8 @@ const SocketContextProvider = ({children}) => {
       socket.current.emit(
         "userFeedback",
         userFeedback,
-      )
+      );
+      socket.current.disconnect();
     }
   }
 
