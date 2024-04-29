@@ -1,10 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { Subscription } from 'rxjs';
 import { LlmTool } from '../../llm-tool.interface';
 import { LibcalAuthorizationService } from '../../../../library-api/libcal-authorization/libcal-authorization.service';
 import { RetrieveEnvironmentVariablesService } from '../../../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
-import { compileFunction } from 'vm';
+import { AxiosResponse } from 'axios';
 
 type WeekDay =
   | 'monday'
@@ -19,15 +19,28 @@ type WeekAvailability = {
   [day in WeekDay]: { from: string; to: string };
 };
 
+type OpenHourApiResponse = {
+  [key: string]: any;
+  dates: {
+    [date: string]: {
+      status: any;
+      hours: {
+        from: string;
+        to: string;
+      }[];
+    };
+  };
+}[];
+
 @Injectable()
-export class CheckOpenHourToolService implements LlmTool {
+export class CheckOpenHourToolService implements LlmTool, OnModuleDestroy {
   // Env Variables
   private readonly OPEN_HOUR_URL =
     this.retrieveEnvironmentVariablesService.retrieve<string>(
       'LIBCAL_HOUR_URL',
     );
 
-  public readonly toolName: string = 'CheckOpenHourService';
+  public readonly toolName: string = 'CheckOpenHourTool';
   readonly toolDescription: string =
     'This tool is for checking the open hours of the library.Currently,this tool only supports King Library Building;if the customer mentions about any other building,tell them you cannot support them.';
   readonly toolParametersStructure: { [parameterName: string]: string } = {
@@ -141,24 +154,37 @@ export class CheckOpenHourToolService implements LlmTool {
         'sunday',
       ];
 
-      const response = await this.httpService.axiosRef.get(
-        `${this.OPEN_HOUR_URL}/8113`,
-        {
-          params: {
-            from: weekdays[0],
-            to: weekdays[weekdays.length - 1],
-          },
-          headers: header,
-        },
-      );
+      const HTTP_UNAUTHORIZED = 403;
+      let response: AxiosResponse<OpenHourApiResponse> | undefined;
+      while (response === undefined || response.status === HTTP_UNAUTHORIZED) {
+        try {
+          response = await this.httpService.axiosRef.get<OpenHourApiResponse>(
+            `${this.OPEN_HOUR_URL}/8113`,
+            {
+              params: {
+                from: weekdays[0],
+                to: weekdays[weekdays.length - 1],
+              },
+              headers: header,
+            },
+          );
+        } catch (error: any) {
+          if (error.response.status === HTTP_UNAUTHORIZED) {
+            this.libcalAuthorizationService.resetToken();
+            continue;
+          } else {
+            throw error;
+          }
+        }
+      }
 
       // Filter the data to only include the hours
       // for the days of the week (Monday to Sunday)
-      let filteredData = weekdays.reduce(
+      const filteredData = weekdays.reduce(
         (prevObj, currentDay, currentIndex) => {
           return {
             ...prevObj,
-            [dayNames[currentIndex]]: response.data[0].dates[currentDay].hours,
+            [dayNames[currentIndex]]: response!.data[0].dates[currentDay].hours,
           };
         },
         {},

@@ -46,6 +46,7 @@ export class LlmService {
     prompt: Prompt,
     modelType: LlmModelType,
     temperature: number = 0.0,
+    responseFormat: 'text' | 'json_object' = 'text',
   ): Promise<{ response: string; tokenUsage: TokenUsage }> {
     //Get the appropriate model
     let model: LlmInterface;
@@ -61,6 +62,7 @@ export class LlmService {
         prompt.getSystemDescription(),
         modelType,
         temperature,
+        responseFormat,
       );
     return {
       response: response,

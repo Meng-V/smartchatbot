@@ -1,6 +1,6 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { Subject, Observable, map, tap } from 'rxjs';
+import { Subject, Observable, map } from 'rxjs';
 
 import { RetrieveEnvironmentVariablesService } from '../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
 import { AxiosResponse } from 'axios';

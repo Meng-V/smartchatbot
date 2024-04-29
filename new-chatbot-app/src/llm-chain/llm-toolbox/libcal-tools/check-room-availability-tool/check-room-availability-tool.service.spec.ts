@@ -63,7 +63,7 @@ describe('CheckRoomAvailabilityToolService', () => {
       },
     } as AxiosResponse;
 
-    const { unit, unitRef } = TestBed.create(CheckRoomAvailabilityToolService)
+    const { unit } = TestBed.create(CheckRoomAvailabilityToolService)
       .mock(HttpService)
       .using({ axiosRef: { get: async () => apiResponse } })
       .mock(LibcalAuthorizationService)
@@ -101,7 +101,7 @@ describe('CheckRoomAvailabilityToolService', () => {
   it('should return the correct available room', async () => {
     const date = '2024-04-15';
 
-    let expectedResponse = `Some rooms satisfy the input conditions:${JSON.stringify(
+    const expectedResponse = `Some rooms satisfy the input conditions:${JSON.stringify(
       [
         {
           roomName: 'King 103',

@@ -5,7 +5,6 @@ import {
 } from './librarian-subject-lookup-tool.service';
 import { HttpModule } from '@nestjs/axios';
 import { LibraryApiModule } from '../../../../library-api/library-api.module';
-import AxiosResponse from 'axios';
 
 describe('LibrarianSubjectLookupToolService', () => {
   let service: LibrarianSubjectLookupToolService;
@@ -27,7 +26,7 @@ describe('LibrarianSubjectLookupToolService', () => {
 
   it('should return error message with improper input', async () => {
     //Null and undefined toolInput
-    let expectedResponse = `Cannot use this tool because missing paramter subjectName.Ask the customer to provide this data.`;
+    const expectedResponse = `Cannot use this tool because missing paramter subjectName.Ask the customer to provide this data.`;
 
     expect(
       await service.toolRunForLlm({

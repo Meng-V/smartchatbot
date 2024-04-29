@@ -57,7 +57,7 @@ describe('ChatbotConversationPromptWithToolsService', () => {
   });
 
   it('should update Scratchpad correctly', () => {
-    let currentScratchpad = chatbotConversationPromptService.getScratchpad();
+    const currentScratchpad = chatbotConversationPromptService.getScratchpad();
     const line1 = 'line 1 ';
     chatbotConversationPromptService.updateScratchpad(line1);
     expect(chatbotConversationPromptService.getScratchpad()).toEqual(

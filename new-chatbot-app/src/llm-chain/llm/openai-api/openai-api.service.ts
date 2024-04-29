@@ -59,6 +59,7 @@ export class OpenaiApiService implements LlmInterface {
     systemPrompt?: string,
     modelName: OpenAiModelType = OpenAiModelType.GPT_4,
     temperature: number = 0.0,
+    responseFormat: 'text' | 'json_object' = 'text',
   ): Promise<{ response: string; tokenUsage: TokenUsage }> {
     let modelResponse;
     try {
@@ -68,7 +69,9 @@ export class OpenaiApiService implements LlmInterface {
             const chatResponse = await this.openai.chat.completions.create({
               model: modelName as string,
               temperature: temperature,
-              response_format: { type: 'json_object' },
+              response_format: {
+                type: responseFormat,
+              },
               messages: [
                 {
                   role: 'system',

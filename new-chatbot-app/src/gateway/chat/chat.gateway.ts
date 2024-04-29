@@ -13,7 +13,6 @@ import { DatabaseService } from '../../database/database.service';
 import { Role } from '../../llm-chain/memory/memory.interface';
 import { TokenUsage } from '../../shared/services/token-usage/token-usage.service';
 import { LlmModelType } from '../../llm-chain/llm/llm.module';
-import { LlmTool } from 'src/llm-chain/llm-toolbox/llm-tool.interface';
 
 export type UserFeedback = {
   userRating: number;
@@ -46,7 +45,7 @@ export class ChatGateway implements OnGatewayDisconnect {
       client.id,
     );
 
-    const [_, newConversationId] =
+    const [, newConversationId] =
       await this.databaseService.addMessageToDatabase(
         Role.Customer,
         userMessage,
@@ -62,12 +61,11 @@ export class ChatGateway implements OnGatewayDisconnect {
       await this.llmConnnectionGateway.getLlmChainForCurrentSocket(client.id);
 
     const modelResponse: string = await llmChain.getModelResponse(userMessage);
-    const [modelMessageId, conversationId] =
-      await this.databaseService.addMessageToDatabase(
-        Role.AIAgent,
-        modelResponse,
-        this.clientIdToConversationDataMapping.get(client.id)?.conversationId,
-      );
+    const [modelMessageId] = await this.databaseService.addMessageToDatabase(
+      Role.AIAgent,
+      modelResponse,
+      this.clientIdToConversationDataMapping.get(client.id)?.conversationId,
+    );
     client.emit('message', {
       messageId: modelMessageId,
       message: modelResponse,
@@ -100,7 +98,7 @@ export class ChatGateway implements OnGatewayDisconnect {
       this.logger.error(error);
       throw error;
     }
-    let conversationData = this.clientIdToConversationDataMapping.get(
+    const conversationData = this.clientIdToConversationDataMapping.get(
       client.id,
     )!;
 

@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Scope } from '@nestjs/common';
+import { Injectable, Scope } from '@nestjs/common';
 import { LlmService } from './llm/llm.service';
 import { ChatbotConversationPromptWithToolsService } from './prompt/chatbot-conversation-prompt-with-tools/chatbot-conversation-prompt-with-tools.service';
 import { ConversationMemoryService } from './memory/conversation-memory/conversation-memory.service';
@@ -24,6 +24,8 @@ import { CheckOpenHourToolService } from './llm-toolbox/libcal-tools/check-open-
  */
 @Injectable({ scope: Scope.REQUEST })
 export class LlmChainService {
+  private readonly DEFAULT_LLM_ANSWER =
+    'Please let me know if you need any help';
   private readonly LLM_CALL_LIMIT = 5;
   private readonly LLM_TYPE_TO_USE: LlmModelType =
     OpenAiModelType.GPT_3_5_TURBO;
@@ -116,8 +118,20 @@ export class LlmChainService {
       await this.llmService.getModelResponse(
         this.promptService,
         this.LLM_TYPE_TO_USE,
+        undefined,
+        'json_object',
       );
     let outputParsed = this.llmAnswerParserService.parseLLMOutput(llmResponse);
+
+    if (outputParsed === null) {
+      this.memoryService.addToConversation(
+        Role.AIAgent,
+        this.DEFAULT_LLM_ANSWER,
+      );
+      this.promptService.emptyScratchpad();
+      return this.DEFAULT_LLM_ANSWER;
+    }
+
     let llmCallNum = 1;
 
     // Handle cases when model doesn't output either actions and final answer
@@ -149,8 +163,18 @@ export class LlmChainService {
         await this.llmService.getModelResponse(
           this.promptService,
           this.LLM_TYPE_TO_USE,
+          undefined,
+          'json_object',
         ));
       outputParsed = this.llmAnswerParserService.parseLLMOutput(llmResponse);
+      if (outputParsed === null) {
+        this.memoryService.addToConversation(
+          Role.AIAgent,
+          this.DEFAULT_LLM_ANSWER,
+        );
+        this.promptService.emptyScratchpad();
+        return this.DEFAULT_LLM_ANSWER;
+      }
 
       llmCallNum++;
     }
