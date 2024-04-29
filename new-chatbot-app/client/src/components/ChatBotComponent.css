@@ -1,5 +1,5 @@
 input.chakra-input:focus-visible {
-  border-color: #C41230 !important;
+  border-color: #c41230 !important;
   box-shadow: 0 0 0 1px #c3142d;
 }
 
@@ -23,7 +23,7 @@ input.chakra-input:focus-visible {
 
 .user {
   text-align: right;
-  background-color: #C41230;
+  background-color: #c41230;
   color: white;
 }
 
@@ -38,10 +38,18 @@ input.chakra-input:focus-visible {
 }
 
 @keyframes dots {
-  0% { content: '.'; }
-  33% { content: '..'; }
-  66% { content: '...'; }
-  100% { content: '.'; }
+  0% {
+    content: '.';
+  }
+  33% {
+    content: '..';
+  }
+  66% {
+    content: '...';
+  }
+  100% {
+    content: '.';
+  }
 }
 
 .dots::after {
@@ -63,6 +71,8 @@ input.chakra-input:focus-visible {
 }
 
 .chat-message-container {
+  display: inline-block;
+  word-break: break-word;
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
