@@ -6,6 +6,14 @@ import process from 'process';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
+    preview: {
+      port: 5173,
+      strictPort: true,
+    },
+    server: {
+      port: 5173,
+      host: true,
+    },
     define: {
       'process.env.SOME_KEY': JSON.stringify(env.SOME_KEY)
     },
