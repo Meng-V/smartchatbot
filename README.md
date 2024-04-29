@@ -32,7 +32,7 @@
 $ npm install
 ```
 
-## Running the app
+## Running the backend
 
 ```bash
 # development
@@ -43,6 +43,12 @@ $ npm run start:dev
 
 # production mode
 $ npm run start:prod
+```
+
+## Running the frontend
+```bash
+# development
+$ npm run start
 ```
 
 ## Test
