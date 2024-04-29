@@ -16,7 +16,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ./new-chatbot-app
+        working-directory: ./
 
     steps:
       - name: Checkout code
