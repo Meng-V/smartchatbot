@@ -1,0 +1,53 @@
+name: Code format checking and unit testing
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_ORGANIZATION_ID: ${{ secrets.OPENAI_ORGANIZATION_ID }}
+          LIBAPPS_OAUTH_URL: ${{ secrets.LIBAPPS_OAUTH_URL }}
+          LIBAPPS_CLIENT_ID: ${{ secrets.LIBAPPS_CLIENT_ID }}
+          LIBAPPS_CLIENT_SECRET: ${{ secrets.LIBAPPS_CLIENT_SECRET }}
+          LIBAPPS_GRANT_TYPE: ${{ secrets.LIBAPPS_GRANT_TYPE }}
+          LIBCAL_OAUTH_URL: ${{ secrets.LIBCAL_OAUTH_URL }}
+          LIBCAL_CLIENT_ID: ${{ secrets.LIBCAL_CLIENT_ID }}
+          LIBCAL_CLIENT_SECRET: ${{ secrets.LIBCAL_CLIENT_SECRET }}
+          LIBCAL_GRANT_TYPE: ${{ secrets.LIBCAL_GRANT_TYPE }}
+          LIBCAL_CANCEL_URL: ${{ secrets.LIBCAL_CANCEL_URL }}
+          LIBCAL_HOUR_URL: ${{ secrets.LIBCAL_HOUR_URL }}
+          LIBCAL_SEARCH_AVAILABLE_URL: ${{ secrets.LIBCAL_SEARCH_AVAILABLE_URL }}
+          LIBCAL_RESERVATION_URL: ${{ secrets.LIBCAL_RESERVATION_URL }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_LIBRARY_SEARCH_CSE_ID: ${{ secrets.GOOGLE_LIBRARY_SEARCH_CSE_ID }}
+          KING_BUILDING: ${{ secrets.KING_BUILDING }}
+        run: npm test
+
+      - name: Check formatting
+        run: npm run format:check

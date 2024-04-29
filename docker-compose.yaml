@@ -1,20 +1,19 @@
-version: '3.7'
 services:
   frontend:
     build:
-      context: ./chatbot-app
+      context: ./client
       dockerfile: frontend.dockerfile
     ports:
       - '${FRONTEND_PORT}:${FRONTEND_PORT}'
     depends_on:
       - backend
-    # env_file:
-    #   - .env
+    env_file:
+      - .env
     environment:
-      - REACT_APP_BACKEND_PORT=3602
-      - PORT=3601
+      - VITE_BACKEND_PORT=3000
+      - PORT=5173
       #- REACT_APP_BACKEND_URL=http://ulblwebt03.lib.miamioh.edu
-      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+      - VITE_BACKEND_URL=${URL}
     restart: unless-stopped
   backend:
     build: 
@@ -22,43 +21,9 @@ services:
       dockerfile: backend.dockerfile
     ports:
       - '${BACKEND_PORT}:${BACKEND_PORT}'
-    depends_on:
-      - db
-      # - redis
     env_file:
       - .env
     # volumes:
     # - ./:/app
     restart: unless-stopped
 
-  db:
-    image: postgres:16
-    restart: always
-    env_file:
-      - .env
-    ports:
-      - '${POSTGRES_PORT}:${POSTGRES_PORT}'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-
-  weaviate:
-    command:
-    - --host
-    - 0.0.0.0
-    - --port
-    - '8080'
-    - --scheme
-    - http
-    image: semitechnologies/weaviate:1.20.1
-    ports:
-    - 8080:8080
-    restart: unless-stopped
-    environment:
-      QUERY_DEFAULTS_LIMIT: 25
-      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
-      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
-      DEFAULT_VECTORIZER_MODULE: text2vec-openai
-      ENABLE_MODULES: text2vec-openai
-      CLUSTER_HOSTNAME: 'node1'
-volumes:
-  postgres_data:

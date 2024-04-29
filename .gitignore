@@ -1,37 +1,62 @@
-# Ignore node_modules directory
-node_modules/
+.fuse_hidden*
+#visualization
+graph.png
+graph.jpg
+graph.jpeg
 
-# Ignore compiled JavaScript and TypeScript files
-*.js
-*.js.map
-*.d.ts
+# compiled output
+/dist
+/node_modules
+/build
 
-# Ignore logs
-logs/
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
-# Ignore environment-specific files
+# OS
+.DS_Store
+
+# Tests
+/coverage
+/.nyc_output
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# dotenv environment variable files
 .env
-config.ini
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
 
-# Ignore built output
-dist/
+# temp directory
+.temp
+.tmp
 
-# Ignore editor-specific files
-.vscode/
-.idea/
-*.sublime-*
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# Ignore npm/yarn lock files
-package-lock.json
-yarn.lock
-
-run.ts
-# **/openai.ts
-src/index-chatbox-popup.html
-
-libcal.ipynb
-src/index.ts
-**/chatbox-test.html
-log.csv
-
-KILL.ps1
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
