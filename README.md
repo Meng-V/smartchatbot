@@ -1,52 +1,79 @@
-# Library Chatbot
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
+</p>
 
-Library Chatbot is a conversational AI developed to streamline and automate several aspects of library services, making them accessible 24/7 with an easy-to-use chat interface.
-### Features
+[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
+[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-- Study Room Reservation: Enables users to book study rooms directly via chat.
-- Building Hours Inquiry: Provides real-time information about the library's operating hours.
-- Room Availability Check: Allows users to check the availability of rooms at any given time.
-- EBSCO Library Search: Facilitates a rich search experience to help users find books, journals, articles, and more from the library's database.
-- Extensibility: More features can be added to the chatbot to cover an even broader range of services.
+  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+    <p align="center">
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
+<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
+<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
+<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
+<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
+<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
+  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
+    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
+  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
+</p>
+  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
+  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-### Getting Started
+## Description
 
-To get started with Library Chatbot, you'll first need to have Node.js and npm installed on your system.
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-Here's how to install Node.js and npm:
+## Installation
 
-- Download Node.js from the official website.
-- Install the package. npm is included with Node.js.
-
-Once Node.js and npm are installed, you can check their versions by running:
+```bash
+$ npm install
 ```
-    node -v
-    npm -v
+
+## Running the backend
+
+```bash
+# development
+$ npm run start
+
+# watch mode
+$ npm run start:dev
+
+# production mode
+$ npm run start:prod
 ```
 
-Afterwards, clone the Library Chatbot repository to your local machine.
-
-Now you're ready to install the project dependencies. Navigate to the project directory and run:
-
+## Running the frontend
+```bash
+# development
+$ npm run start
 ```
-    npm install
+
+## Test
+
+```bash
+# unit tests
+$ npm run test
+
+# e2e tests
+$ npm run test:e2e
+
+# test coverage
+$ npm run test:cov
 ```
-This will install all the required dependencies listed in the package.json file, including TypeScript, a strict syntactical superset of JavaScript that adds optional static typing.
-### Scripts
 
-Library Chatbot includes the following scripts:
+## Support
 
-- npm run build: Transpiles TypeScript files into JavaScript.
-- npm test: Runs test files (Note: replace with your test command when tests are implemented).
-- npm start: Starts the server using Nodemon for hot reloading.
-- npm run lint: Runs ESLint for code linting.
+Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-### Start the Server
+## Stay in touch
 
-To start the server, simply run:
+- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
+- Website - [https://nestjs.com](https://nestjs.com/)
+- Twitter - [@nestframework](https://twitter.com/nestframework)
 
-```
-    npm run server
-```
-#### Features
-[Google Docs](https://docs.google.com/document/d/17Af0IU_I-qEDjC10JIlbL2NL9pvP6YVyVbcXHDNmgFE/edit?usp=sharing)
+## License
+
+Nest is [MIT licensed](LICENSE).
