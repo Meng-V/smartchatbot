@@ -36,6 +36,10 @@ jobs:
           LIBAPPS_CLIENT_ID: ${{ secrets.LIBAPPS_CLIENT_ID }}
           LIBAPPS_CLIENT_SECRET: ${{ secrets.LIBAPPS_CLIENT_SECRET }}
           LIBAPPS_GRANT_TYPE: ${{ secrets.LIBAPPS_GRANT_TYPE }}
+          LIB_ANS_OAUTH_URL: ${{ secrets.LIB_ANS_OAUTH_URL }}
+          LIB_ANS_CLIENT_ID: ${{ secrets.LIB_ANS_CLIENT_ID }}
+          LIB_ANS_CLIENT_SECRET: ${{ secrets.LIB_ANS_CLIENT_SECRET }}
+          LIB_ANS_GRANT_TYPE: ${{ secrets.LIB_ANS_GRANT_TYPE }}
           LIBCAL_OAUTH_URL: ${{ secrets.LIBCAL_OAUTH_URL }}
           LIBCAL_CLIENT_ID: ${{ secrets.LIBCAL_CLIENT_ID }}
           LIBCAL_CLIENT_SECRET: ${{ secrets.LIBCAL_CLIENT_SECRET }}
