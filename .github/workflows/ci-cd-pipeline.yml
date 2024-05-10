@@ -4,7 +4,7 @@ on:
   # Trigger on pushes to the main and dev branch
   push:
     branches:
-      - main
+      - release/**
 
 jobs:
   build-and-push:
