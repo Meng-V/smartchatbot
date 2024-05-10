@@ -1,6 +1,6 @@
 FROM node:18.16-alpine
 WORKDIR /app
-RUN rm -rf node_modules/.vite/
+RUN rm -rf node_modules/
 RUN rm -rf dist/
 RUN npm cache clean --force
 COPY package*.json ./
