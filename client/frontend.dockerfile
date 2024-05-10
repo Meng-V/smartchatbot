@@ -16,5 +16,8 @@ RUN npm run build
 # Expose the port the app runs on
 EXPOSE 5173
 
-# Start the app
-CMD ["npm", "run", "serve"]
+# Install serve
+RUN npm install -g serve
+
+# Start the app using serve
+CMD ["serve", "-s", "dist", "-l", "5173"]
