@@ -1,7 +1,7 @@
 name: CI/CD Pipeline
 
 on:
-  # Trigger on pushes to the main and dev branch
+  # Trigger on release branch
   push:
     branches:
       - release/**
