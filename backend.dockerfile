@@ -1,38 +1,41 @@
-# Dockerfile
-FROM node:20-alpine
+# BUILD STAGE
+FROM node:20-alpine as builder
 ENV TZ="America/New_York"
 WORKDIR /app
-
-# Install bash
-RUN apk add --no-cache bash
-# Copy package.json and package-lock.json first
+# Install bash and curl, needed for the build
+RUN apk add --no-cache bash curl
+# Copy package.json and package-lock.json first to leverage Docker cache
 COPY package*.json ./
-
 # Install dependencies
-RUN npm install
+RUN npm install --omit=dev
 # Prisma
 RUN npm install -g prisma
-
 # Copy the rest of the files
 COPY . .
-
-RUN rm -rf node_modules
-
-# Add curl
-RUN apk add curl
+# Download wait-for script
 RUN curl -L https://raw.githubusercontent.com/eficode/wait-for/master/wait-for -o /app/wait-for
 RUN chmod +x /app/wait-for
-
 # Generate Prisma client
 RUN npx prisma generate
 RUN npm install @prisma/adapter-neon @neondatabase/serverless ws
 RUN npm install --save-dev @types/ws
-
-# Expose the port the app runs on
-EXPOSE 3000
-
 # Build the app
 RUN npm run build
 
+
+# PRODUCTION STAGE
+FROM node:20-alpine
+ENV TZ="America/New_York"
+WORKDIR /app
+# Install bash and curl for the runtime environment
+RUN apk add --no-cache bash curl
+# Copy necessary scripts and built files from the builder stage
+COPY --from=builder /app/wait-for /app/wait-for
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/prisma /app/prisma
+COPY --from=builder /app/dist /app/dist
+COPY --from=builder /app/package*.json /app/
+# Expose the port the app runs on
+EXPOSE 3000
 # Run the migrations and start the server
-CMD npx prisma migrate deploy && npm run start:prod
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
