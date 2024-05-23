@@ -37,5 +37,10 @@ COPY --from=builder /app/dist /app/dist
 COPY --from=builder /app/package*.json /app/
 # Expose the port the app runs on
 EXPOSE 3000
+# Copy the entry point script and set permissions
+COPY --from=builder /app/entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
+# Set the entry point script
+ENTRYPOINT ["entrypoint.sh"]
 # Run the migrations and start the server
 CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
