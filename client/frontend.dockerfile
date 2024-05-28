@@ -9,6 +9,13 @@ COPY package*.json ./
 RUN npm install --omit=dev
 RUN npm install react-markdown remark-gfm
 COPY . .
+# Declare env vars
+ARG VITE_BACKEND_URL
+ARG VITE_BACKEND_PORT
+ARG VITE_FRONTEND_PORT
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+ENV VITE_BACKEND_PORT=$VITE_BACKEND_PORT
+ENV VITE_FRONTEND_PORT=$VITE_FRONTEND_PORT
 # Build the app
 RUN npm run build
 # Copy the entry point script and ensure the script is executable
