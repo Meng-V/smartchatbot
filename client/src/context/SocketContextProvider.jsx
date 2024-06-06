@@ -17,6 +17,7 @@ const SocketContextProvider = ({ children }) => {
   const { messageContextValues } = useContext(MessageContext);
 
   useEffect(() => {
+    socket.current = io(url, { transports: ['websocket'], upgrade: false });
     if (!socket.current) {
       socket.current = io(url, { transports: ['websocket'], upgrade: false });
     } else {
@@ -72,6 +73,7 @@ const SocketContextProvider = ({ children }) => {
         socket.current.off('disconnect');
         socket.current.off('connect_error');
         socket.current.off('connect_timeout');
+        socket.current.disconnect();
       };
     }
   }, []);
