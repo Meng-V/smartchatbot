@@ -11,17 +11,9 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
     },
     server: {
-      origin: "http://localhost",
+      origin: JSON.stringify(env.VITE_BACKEND_URL),
       port: 5173,
       host: true,
-      proxy: {
-        '/socket.io/': {
-          target: 'http://localhost:3000',
-          ws: true,
-          changeOrigin: true,
-          secure: false,
-        },
-      },
     },
     define: {
       'process.env.SOME_KEY': JSON.stringify(env.SOME_KEY)
