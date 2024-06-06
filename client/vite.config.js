@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
     },
     server: {
-      origin: "http://ulblwebt04.lib.miamioh.edu",
+      origin: JSON.stringify(env.VITE_BACKEND_URL),
       port: 5173,
       host: true,
     },
