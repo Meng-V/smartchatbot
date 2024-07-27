@@ -48,10 +48,17 @@ const SocketContextProvider = ({ children }) => {
 
       socket.current.on('unexpected_error', (conversationHistory) => {
         //TODO: Find a way to send the whole conversation history to the real librarian for context
+        // Get llmChain.getConversationHistory() from chat gateway
+        // Now we got the whole conversation history, what else?
+        // In LibAnswers API, beside Name and Email, we can send the whole conversation history to the real librarian
+        // This can be done by using entrypoint=.... and this conversation
+        // could be sent via socket context
+
 
         messageContextValues.setIsTyping(false);
         const errorMessage =
-          'Some unexpected errors happened. Please click the button at the bottom to continue your conversation with the real librarian.';
+          `Some unexpected errors happened. Please click the button at the bottom to continue your conversation with the real librarian.\n
+          Here's the conversation history: ${conversationHistory}`;
         messageContextValues.addMessage(errorMessage, 'chatbot');
         setIsConnected(false);
       });
