@@ -79,11 +79,17 @@ const RealLibrarianWidget = () => {
         `${baseURL}?patron_name=${encodeURIComponent(name)}&patron_email=${encodeURIComponent(email)}&question=${socketContextValues.conversationHistory}`,
       );
     } else if (email !== '') {
-      setFormURL(`${baseURL}?patron_email=${encodeURIComponent(email)}&question=${socketContextValues.conversationHistory}`);
+      setFormURL(
+        `${baseURL}?patron_email=${encodeURIComponent(email)}&question=${socketContextValues.conversationHistory}`,
+      );
     } else if (name !== '') {
-      setFormURL(`${baseURL}?patron_name=${encodeURIComponent(name)}&question=${socketContextValues.conversationHistory}`);
+      setFormURL(
+        `${baseURL}?patron_name=${encodeURIComponent(name)}&question=${socketContextValues.conversationHistory}`,
+      );
     } else {
-      setFormURL(`${baseURL}?question=${socketContextValues.conversationHistory}`);
+      setFormURL(
+        `${baseURL}?question=${socketContextValues.conversationHistory}`,
+      );
     }
   }, [showForm]);
 

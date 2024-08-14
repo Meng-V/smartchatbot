@@ -14,7 +14,7 @@ const SocketContextProvider = ({ children }) => {
   const curSession = useRef(true);
   const [isConnected, setIsConnected] = useState(false);
   const [attemptedConnection, setAttemptedConnection] = useState(false);
-  const [conversationHistory, setConversationHistory] = useState("");
+  const [conversationHistory, setConversationHistory] = useState('');
   const { messageContextValues } = useContext(MessageContext);
 
   useEffect(() => {
@@ -49,8 +49,7 @@ const SocketContextProvider = ({ children }) => {
 
       socket.current.on('unexpected_error', (conversationHistory) => {
         messageContextValues.setIsTyping(false);
-        const errorMessage =
-          `Some unexpected errors happened. Please click the button at the bottom to continue your conversation with the real librarian.\n`;
+        const errorMessage = `Some unexpected errors happened. Please click the button at the bottom to continue your conversation with the real librarian.\n`;
         messageContextValues.addMessage(errorMessage, 'chatbot');
         setConversationHistory(conversationHistory);
         setIsConnected(false);
