@@ -35,4 +35,4 @@ EXPOSE 3000
 RUN npm run build
 
 # Run the migrations and start the server
-CMD npx prisma migrate dev --preview-feature && npm run start:prod
+CMD npx prisma migrate deploy && npm run start:prod
