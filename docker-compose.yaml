@@ -12,7 +12,6 @@ services:
     environment:
       - VITE_BACKEND_PORT=3000
       - PORT=5173
-      #- REACT_APP_BACKEND_URL=http://ulblwebt03.lib.miamioh.edu
       - VITE_BACKEND_URL=${URL}
     restart: unless-stopped
   backend:
@@ -23,7 +22,5 @@ services:
       - '${BACKEND_PORT}:${BACKEND_PORT}'
     env_file:
       - .env
-    # volumes:
-    # - ./:/app
     restart: unless-stopped
 

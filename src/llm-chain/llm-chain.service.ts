@@ -211,6 +211,16 @@ export class LlmChainService {
   }
 
   /**
+   * Get the whole conversation history
+   * @returns whole conversation in format: "Customer: ....\n AIAgent: ...."
+   */
+  public async getConversationHistory(): Promise<string> {
+    const conversationHistory =
+      await this.memoryService.getConversationAsString();
+    return conversationHistory;
+  }
+
+  /**
    * Get the list of LlmTool that the LlmChain used so far
    * @returns list of LlmTool name
    */
