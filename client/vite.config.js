@@ -6,12 +6,13 @@ import process from 'process';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
+    base: '/smartchatbot/',
     preview: {
       port: 5173,
       strictPort: true,
     },
     server: {
-      origin: JSON.stringify(env.VITE_BACKEND_URL_PROD),
+      origin: JSON.stringify(env.VITE_BACKEND_URL),
       port: 5173,
       host: true,
     },
