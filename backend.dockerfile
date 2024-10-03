@@ -9,7 +9,7 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install --omit=dev
 # Prisma
-RUN npm install -g prisma
+RUN npm ci -g prisma
 # Copy the rest of the files
 COPY . .
 # Download wait-for script
@@ -17,7 +17,7 @@ RUN curl -L https://raw.githubusercontent.com/eficode/wait-for/master/wait-for -
 RUN chmod +x /app/wait-for
 # Generate Prisma client
 RUN npx prisma generate
-RUN npm install @prisma/adapter-neon @neondatabase/serverless ws
+RUN npm ci @prisma/adapter-neon @neondatabase/serverless ws
 RUN npm install --save-dev @types/ws
 # Build the app
 RUN npm run build
