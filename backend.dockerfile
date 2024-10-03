@@ -9,7 +9,7 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install --omit=dev
 # Prisma
-RUN npm ci -g prisma
+RUN npm ci prisma
 # Copy the rest of the files
 COPY . .
 # Download wait-for script
