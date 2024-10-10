@@ -19,6 +19,7 @@ const SocketContextProvider = ({ children }) => {
   const { messageContextValues } = useContext(MessageContext);
 
   useEffect(() => {
+    console.log(url);
     socket.current = io(url, { transports: ['websocket'], upgrade: false });
     if (!socket.current) {
       socket.current = io(url, { transports: ['websocket'], upgrade: false });
