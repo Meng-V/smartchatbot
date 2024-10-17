@@ -76,15 +76,15 @@ const RealLibrarianWidget = () => {
     // Before that, encode the name variable so that it can be safely included in a URL
     if (email !== '' && name !== '') {
       setFormURL(
-        `${baseURL}?patron_name=${encodeURIComponent(name)}&patron_email=${encodeURIComponent(email)}&question=${socketContextValues.conversationHistory}`,
+        `${baseURL}?patron_name=${encodeURIComponent(name)}&patron_email=${encodeURIComponent(email)}&question=${encodeURIComponent(socketContextValues.conversationHistory)}`,
       );
     } else if (email !== '') {
       setFormURL(
-        `${baseURL}?patron_email=${encodeURIComponent(email)}&question=${socketContextValues.conversationHistory}`,
+        `${baseURL}?patron_email=${encodeURIComponent(email)}&question=${encodeURIComponent(socketContextValues.conversationHistory)}`,
       );
     } else if (name !== '') {
       setFormURL(
-        `${baseURL}?patron_name=${encodeURIComponent(name)}&question=${socketContextValues.conversationHistory}`,
+        `${baseURL}?patron_name=${encodeURIComponent(name)}&question=${encodeURIComponent(socketContextValues.conversationHistory)}`,
       );
     } else {
       setFormURL(
