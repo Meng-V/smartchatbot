@@ -1,10 +1,10 @@
 name: CI/CD Pipeline
 
 on:
-  # Trigger on pushes to the main and dev branch
+  # Trigger on release branch
   push:
     branches:
-      - main
+      - release/**
 
 jobs:
   build-and-push:
@@ -37,3 +37,7 @@ jobs:
         file: ./client/frontend.dockerfile
         push: true
         tags: tranhvloc/chatbot-app-frontend:latest
+        build-args: |
+          VITE_BACKEND_URL_PROD=${{ secrets.VITE_BACKEND_URL_PROD }}
+          VITE_BACKEND_PORT=${{ secrets.VITE_BACKEND_PORT }}
+          VITE_FRONTEND_PORT=${{ secrets.VITE_FRONTEND_PORT }}
