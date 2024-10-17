@@ -7,7 +7,7 @@ import { useMemo } from 'react';
 // const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL')}:${retrieveEnvironmentVariable(
 //   'VITE_BACKEND_PORT',
 // )}`;
-const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL')}/wss/`;
+const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL')}/socket.io/`;
 const SocketContext = createContext();
 
 const SocketContextProvider = ({ children }) => {
