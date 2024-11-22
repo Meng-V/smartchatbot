@@ -39,5 +39,6 @@ jobs:
         tags: tranhvloc/chatbot-app-frontend:latest
         build-args: |
           VITE_BACKEND_URL_PROD=${{ secrets.VITE_BACKEND_URL_PROD }}
+          VITE_BACKEND_URL=${{ secrets.VITE_BACKEND_URL }}
           VITE_BACKEND_PORT=${{ secrets.VITE_BACKEND_PORT }}
           VITE_FRONTEND_PORT=${{ secrets.VITE_FRONTEND_PORT }}
