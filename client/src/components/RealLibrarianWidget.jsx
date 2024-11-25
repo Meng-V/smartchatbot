@@ -109,6 +109,9 @@ const RealLibrarianWidget = () => {
       setFormURL(
         `${baseURL}?question=${socketContextValues.conversationHistory}`,
       );
+      setFormURL(
+        `${baseURL}?question=${socketContextValues.conversationHistory}`,
+      );
     }
   }, [showForm]);
 
