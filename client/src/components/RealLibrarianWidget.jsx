@@ -1,4 +1,13 @@
-import { Box, Button, FormControl, FormLabel, Input } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
+  InputGroup,
+  InputRightElement,
+  useClipboard,
+} from '@chakra-ui/react';
 import { useContext, useEffect, useState } from 'react';
 import { SocketContext } from '../context/SocketContextProvider';
 
@@ -9,6 +18,9 @@ const UserInfoForm = ({ onFormSubmit }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const { socketContextValues } = useContext(SocketContext);
+  const { hasCopied, onCopy } = useClipboard(
+    socketContextValues.conversationHistory,
+  );
 
   // Handle form submission
   const handleSubmit = (e) => {
@@ -36,10 +48,17 @@ const UserInfoForm = ({ onFormSubmit }) => {
       </FormControl>
       <FormControl mt={2}>
         <FormLabel>Chat History</FormLabel>
-        <Input
-          value={socketContextValues.conversationHistory}
-          isReadOnly={true}
-        />
+        <InputGroup>
+          <Input
+            value={socketContextValues.conversationHistory}
+            isReadOnly={true}
+          />
+          <InputRightElement width='4.5rem'>
+            <Button h='1.75rem' size='sm' onClick={onCopy}>
+              {hasCopied ? 'Copied' : 'Copy'}
+            </Button>
+          </InputRightElement>
+        </InputGroup>
       </FormControl>
       <Button type='submit' mt={2}>
         Submit
@@ -76,17 +95,20 @@ const RealLibrarianWidget = () => {
     // Before that, encode the name variable so that it can be safely included in a URL
     if (email !== '' && name !== '') {
       setFormURL(
-        `${baseURL}?patron_name=${encodeURIComponent(name)}&patron_email=${encodeURIComponent(email)}&question=${socketContextValues.conversationHistory}`,
+        `${baseURL}?patron_name=${encodeURIComponent(name)}&patron_email=${encodeURIComponent(email)}&question=${encodeURIComponent(socketContextValues.conversationHistory)}`,
       );
     } else if (email !== '') {
       setFormURL(
-        `${baseURL}?patron_email=${encodeURIComponent(email)}&question=${socketContextValues.conversationHistory}`,
+        `${baseURL}?patron_email=${encodeURIComponent(email)}&question=${encodeURIComponent(socketContextValues.conversationHistory)}`,
       );
     } else if (name !== '') {
       setFormURL(
-        `${baseURL}?patron_name=${encodeURIComponent(name)}&question=${socketContextValues.conversationHistory}`,
+        `${baseURL}?patron_name=${encodeURIComponent(name)}&question=${encodeURIComponent(socketContextValues.conversationHistory)}`,
       );
     } else {
+      setFormURL(
+        `${baseURL}?question=${socketContextValues.conversationHistory}`,
+      );
       setFormURL(
         `${baseURL}?question=${socketContextValues.conversationHistory}`,
       );
