@@ -37,7 +37,10 @@ type OfflineTicketSupportData = {
   ua: string; //Browser User Agent
 };
 
-@WebSocketGateway()
+@WebSocketGateway({
+  namespace: '/socket.io',
+  transports: ['websocket'],
+})
 export class ChatGateway implements OnGatewayDisconnect {
   private readonly logger = new Logger(ChatGateway.name);
 
