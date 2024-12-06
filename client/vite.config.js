@@ -7,6 +7,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     base: '/',
+    build: {
+      assetsDir: 'smartchatbot/assets',
+    },
     preview: {
       port: 5173,
       strictPort: true,
