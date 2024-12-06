@@ -4,9 +4,10 @@ import { retrieveEnvironmentVariable } from '../services/RetrieveEnvironmentVari
 import { MessageContext } from './MessageContextProvider';
 import { useMemo } from 'react';
 
-const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL')}:${retrieveEnvironmentVariable(
-  'VITE_BACKEND_PORT',
-)}`;
+// const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL')}:${retrieveEnvironmentVariable(
+//   'VITE_BACKEND_PORT',
+// )}`;
+const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL')}/socket.io`;
 const SocketContext = createContext();
 
 const SocketContextProvider = ({ children }) => {
@@ -14,9 +15,11 @@ const SocketContextProvider = ({ children }) => {
   const curSession = useRef(true);
   const [isConnected, setIsConnected] = useState(false);
   const [attemptedConnection, setAttemptedConnection] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState('');
   const { messageContextValues } = useContext(MessageContext);
 
   useEffect(() => {
+    socket.current = io(url, { transports: ['websocket'], upgrade: false });
     if (!socket.current) {
       socket.current = io(url, { transports: ['websocket'], upgrade: false });
     } else {
@@ -46,6 +49,22 @@ const SocketContextProvider = ({ children }) => {
         messageContextValues.addMessage(message, 'chatbot', messageId);
       });
 
+      socket.current.on('unexpected_error', (conversationHistory) => {
+        messageContextValues.setIsTyping(false);
+        const errorMessage = `Some unexpected errors happened. Please click the button at the bottom to continue your conversation with the real librarian.\n`;
+        messageContextValues.addMessage(errorMessage, 'chatbot');
+        setConversationHistory(conversationHistory);
+        setIsConnected(false);
+      });
+
+      socket.current.on('unexpected_error', (conversationHistory) => {
+        messageContextValues.setIsTyping(false);
+        const errorMessage = `Some unexpected errors happened. Please click the button at the bottom to continue your conversation with the real librarian.\n`;
+        messageContextValues.addMessage(errorMessage, 'chatbot');
+        setConversationHistory(conversationHistory);
+        setIsConnected(false);
+      });
+
       socket.current.on('disconnect', (reason) => {
         if (reason === 'io client disconnect') {
           messageContextValues.resetState();
@@ -72,6 +91,8 @@ const SocketContextProvider = ({ children }) => {
         socket.current.off('disconnect');
         socket.current.off('connect_error');
         socket.current.off('connect_timeout');
+        socket.current.disconnect();
+        socket.current.disconnect();
       };
     }
   }, []);
@@ -112,6 +133,8 @@ const SocketContextProvider = ({ children }) => {
       offlineTicketSubmit,
       sendMessageRating,
       sendUserFeedback,
+      conversationHistory,
+      setConversationHistory,
     }),
     [isConnected, attemptedConnection],
   );

@@ -1,5 +1,15 @@
-import { Box, Button, FormControl, FormLabel, Input } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
+import {
+  Box,
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
+  InputGroup,
+  InputRightElement,
+  useClipboard,
+} from '@chakra-ui/react';
+import { useContext, useEffect, useState } from 'react';
+import { SocketContext } from '../context/SocketContextProvider';
 
 /**
  * Functional component that renders a form to collect user info
@@ -7,6 +17,10 @@ import { useEffect, useState } from 'react';
 const UserInfoForm = ({ onFormSubmit }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const { socketContextValues } = useContext(SocketContext);
+  const { hasCopied, onCopy } = useClipboard(
+    socketContextValues.conversationHistory,
+  );
 
   // Handle form submission
   const handleSubmit = (e) => {
@@ -32,6 +46,20 @@ const UserInfoForm = ({ onFormSubmit }) => {
           onChange={(e) => setEmail(e.target.value)}
         />
       </FormControl>
+      <FormControl mt={2}>
+        <FormLabel>Chat History</FormLabel>
+        <InputGroup>
+          <Input
+            value={socketContextValues.conversationHistory}
+            isReadOnly={true}
+          />
+          <InputRightElement width='4.5rem'>
+            <Button h='1.75rem' size='sm' onClick={onCopy}>
+              {hasCopied ? 'Copied' : 'Copy'}
+            </Button>
+          </InputRightElement>
+        </InputGroup>
+      </FormControl>
       <Button type='submit' mt={2}>
         Submit
       </Button>
@@ -50,6 +78,8 @@ const RealLibrarianWidget = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [formURL, setFormURL] = useState('');
+  // Chat context values
+  const { socketContextValues } = useContext(SocketContext);
 
   // Handle form submission
   const handleFormSubmit = (name, email) => {
@@ -65,14 +95,23 @@ const RealLibrarianWidget = () => {
     // Before that, encode the name variable so that it can be safely included in a URL
     if (email !== '' && name !== '') {
       setFormURL(
-        `${baseURL}?patron_name=${encodeURIComponent(name)}&patron_email=${encodeURIComponent(email)}`,
+        `${baseURL}?patron_name=${encodeURIComponent(name)}&patron_email=${encodeURIComponent(email)}&question=${encodeURIComponent(socketContextValues.conversationHistory)}`,
       );
     } else if (email !== '') {
-      setFormURL(`${baseURL}?patron_email=${encodeURIComponent(email)}`);
+      setFormURL(
+        `${baseURL}?patron_email=${encodeURIComponent(email)}&question=${encodeURIComponent(socketContextValues.conversationHistory)}`,
+      );
     } else if (name !== '') {
-      setFormURL(`${baseURL}?patron_name=${encodeURIComponent(name)}`);
+      setFormURL(
+        `${baseURL}?patron_name=${encodeURIComponent(name)}&question=${encodeURIComponent(socketContextValues.conversationHistory)}`,
+      );
     } else {
-      setFormURL(baseURL);
+      setFormURL(
+        `${baseURL}?question=${socketContextValues.conversationHistory}`,
+      );
+      setFormURL(
+        `${baseURL}?question=${socketContextValues.conversationHistory}`,
+      );
     }
   }, [showForm]);
 

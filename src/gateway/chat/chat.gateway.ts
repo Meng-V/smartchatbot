@@ -13,6 +13,11 @@ import { DatabaseService } from '../../database/database.service';
 import { Role } from '../../llm-chain/memory/memory.interface';
 import { TokenUsage } from '../../shared/services/token-usage/token-usage.service';
 import { LlmModelType } from '../../llm-chain/llm/llm.module';
+import { HttpService } from '@nestjs/axios';
+import { RetrieveEnvironmentVariablesService } from '../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
+import { LibAnsAuthorizationService } from '../../library-api/libans-authorization/libans-authorization.service';
+import { Subscription } from 'rxjs';
+import { AxiosResponse } from 'axios';
 
 export type UserFeedback = {
   userRating: number;
@@ -24,17 +29,41 @@ type ConversationData = {
   userFeedback?: UserFeedback;
 };
 
-@WebSocketGateway()
+type OfflineTicketSupportData = {
+  question: string;
+  email: string;
+  name: string;
+  details: string;
+  ua: string; //Browser User Agent
+};
+
+@WebSocketGateway({
+  namespace: '/socket.io',
+  transports: ['websocket'],
+})
 export class ChatGateway implements OnGatewayDisconnect {
   private readonly logger = new Logger(ChatGateway.name);
+
+  // Access token
+  private libAnsAccessToken: string = '';
+  private libAnsTokenSubscription: Subscription;
 
   private clientIdToConversationDataMapping: Map<string, ConversationData> =
     new Map<string, ConversationData>();
 
   constructor(
+    private httpService: HttpService,
+    private libAnsAuthorizationService: LibAnsAuthorizationService,
+    private retrieveEnvironmentVariablesService: RetrieveEnvironmentVariablesService,
     private llmConnnectionGateway: LlmConnectionGateway,
     private databaseService: DatabaseService,
-  ) {}
+  ) {
+    this.libAnsTokenSubscription = this.libAnsAuthorizationService
+      .getAccessTokenObservable()
+      .subscribe((token: string) => {
+        this.libAnsAccessToken = token;
+      });
+  }
 
   @SubscribeMessage('message')
   async handleUserMessage(
@@ -60,16 +89,26 @@ export class ChatGateway implements OnGatewayDisconnect {
     const llmChain: LlmChainService =
       await this.llmConnnectionGateway.getLlmChainForCurrentSocket(client.id);
 
-    const modelResponse: string = await llmChain.getModelResponse(userMessage);
-    const [modelMessageId] = await this.databaseService.addMessageToDatabase(
-      Role.AIAgent,
-      modelResponse,
-      this.clientIdToConversationDataMapping.get(client.id)?.conversationId,
-    );
-    client.emit('message', {
-      messageId: modelMessageId,
-      message: modelResponse,
-    });
+    try {
+      const modelResponse: string =
+        await llmChain.getModelResponse(userMessage);
+      const [modelMessageId] = await this.databaseService.addMessageToDatabase(
+        Role.AIAgent,
+        modelResponse,
+        this.clientIdToConversationDataMapping.get(client.id)?.conversationId,
+      );
+      client.emit('message', {
+        messageId: modelMessageId,
+        message: modelResponse,
+      });
+    } catch (error: any) {
+      // If any errors arise, send the whole conversation string to the frontend
+      // to transfer the conversation to real librarian
+      const conversationHistory: string =
+        await llmChain.getConversationHistory();
+      client.emit('unexpected_error', conversationHistory);
+      client.disconnect();
+    }
   }
 
   @SubscribeMessage('messageRating')
@@ -104,6 +143,51 @@ export class ChatGateway implements OnGatewayDisconnect {
 
     conversationData.userFeedback = userFeedback;
     this.clientIdToConversationDataMapping.set(client.id, conversationData);
+  }
+
+  @SubscribeMessage('createTicket')
+  async handleCreateTicketForOfflineSupport(
+    @MessageBody() ticketData: OfflineTicketSupportData,
+  ) {
+    // Get the user's personal information
+    const { question, email, details, name, ua: userAgent } = ticketData;
+    const data = {
+      quid: this.retrieveEnvironmentVariablesService.retrieve<string>(
+        'QUEUE_ID',
+      ),
+      pquestion: question,
+      pdetails: details,
+      pname: name,
+      pemail: email,
+      ip: userAgent,
+      confirm_email: 'true',
+    };
+
+    const HTTP_UNAUTHORIZED = 403;
+    let response: AxiosResponse<any> | undefined;
+    while (response === undefined || response.status === HTTP_UNAUTHORIZED) {
+      try {
+        // Send the request to create the ticket
+        response = await this.httpService.axiosRef.post(
+          'https://libanswers.lib.miamioh.edu/api/1.1/ticket/create',
+          data,
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              Authorization: `Bearer ${this.libAnsAccessToken}`,
+            },
+          },
+        );
+      } catch (error: any) {
+        if (error.response.status === HTTP_UNAUTHORIZED) {
+          this.libAnsAuthorizationService.resetToken();
+          continue;
+        } else {
+          this.logger.error(error);
+          throw error;
+        }
+      }
+    }
   }
 
   async handleDisconnect(client: Socket): Promise<void> {
@@ -148,6 +232,9 @@ export class ChatGateway implements OnGatewayDisconnect {
       conversationData.conversationId,
       llmChain.getToolsUsed(),
     );
+
+    //Close the subscription to authorization service
+    this.libAnsTokenSubscription.unsubscribe();
 
     // Close the gateway
     this.llmConnnectionGateway.closeLlmChainForCurrentSocket(client.id);
