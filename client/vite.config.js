@@ -6,7 +6,7 @@ import process from 'process';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
-    base: '/smartchatbot/',
+    base: '/',
     preview: {
       port: 5173,
       strictPort: true,
@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => {
       host: true,
     },
     define: {
-      'process.env.SOME_KEY': JSON.stringify(env.SOME_KEY)
+      'process.env.SOME_KEY': JSON.stringify(env.SOME_KEY),
     },
     plugins: [react()],
-  }
-})
+  };
+});
