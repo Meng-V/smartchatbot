@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
     },
     server: {
-      origin: JSON.stringify(env.VITE_BACKEND_URL),
+      origin: JSON.stringify(env.VITE_BACKEND_URL_PROD),
       port: 5173,
       host: true,
     },

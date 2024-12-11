@@ -4,10 +4,7 @@ import { retrieveEnvironmentVariable } from '../services/RetrieveEnvironmentVari
 import { MessageContext } from './MessageContextProvider';
 import { useMemo } from 'react';
 
-// const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL')}:${retrieveEnvironmentVariable(
-//   'VITE_BACKEND_PORT',
-// )}`;
-const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL')}/socket.io`;
+const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL_PROD')}/socket.io`;
 const SocketContext = createContext();
 
 const SocketContextProvider = ({ children }) => {
