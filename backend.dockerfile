@@ -3,7 +3,7 @@ FROM node:20-alpine as builder
 ENV TZ="America/New_York"
 WORKDIR /app
 # Install bash and curl, needed for the build
-RUN apk add --no-cache bash curl
+RUN apk add --no-cache bash curl openssl
 # Copy package.json and package-lock.json first to leverage Docker cache
 COPY package*.json ./
 # Install dependencies
@@ -28,7 +28,7 @@ FROM node:20-alpine
 ENV TZ="America/New_York"
 WORKDIR /app
 # Install bash and curl for the runtime environment
-RUN apk add --no-cache bash curl
+RUN apk add --no-cache bash curl openssl
 # Copy necessary scripts and built files from the builder stage
 COPY --from=builder /app/wait-for /app/wait-for
 COPY --from=builder /app/node_modules /app/node_modules
