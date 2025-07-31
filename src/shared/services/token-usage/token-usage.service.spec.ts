@@ -30,7 +30,7 @@ describe('TokenUsageService', () => {
           finish_reason: 'stop',
         },
       ],
-      model: 'gpt-3.5-turbo',
+      model: 'o4-mini',
       usage: {
         total_tokens: 100,
         completion_tokens: 60,
@@ -41,7 +41,7 @@ describe('TokenUsageService', () => {
       created: 1,
     };
     const expectedTokenUsageResult: TokenUsage = {
-      'gpt-3.5-turbo': {
+      'o4-mini': {
         totalTokens: 100,
         completionTokens: 60,
         promptTokens: 40,
@@ -55,14 +55,14 @@ describe('TokenUsageService', () => {
 
   it('should combine TokenUsage objects correctly', () => {
     let mockTokenUsage1: TokenUsage = {
-      'gpt-3.5-turbo-0301': {
+      'o4-mini': {
         totalTokens: 100,
         promptTokens: 50,
         completionTokens: 50,
       },
     };
     let mockTokenUsage2: TokenUsage = {
-      'gpt-4-0314': {
+      'o4-mini': {
         totalTokens: 140,
         promptTokens: 110,
         completionTokens: 30,
@@ -70,15 +70,10 @@ describe('TokenUsageService', () => {
     };
 
     let expectedTokenUsageResult: TokenUsage = {
-      'gpt-4-0314': {
+      'o4-mini': {
         totalTokens: 140,
         promptTokens: 110,
         completionTokens: 30,
-      },
-      'gpt-3.5-turbo-0301': {
-        totalTokens: 100,
-        promptTokens: 50,
-        completionTokens: 50,
       },
     };
 
@@ -87,19 +82,14 @@ describe('TokenUsageService', () => {
     );
 
     mockTokenUsage1 = {
-      'gpt-3.5-turbo-0301': {
+      'o4-mini': {
         totalTokens: 100,
         promptTokens: 50,
         completionTokens: 50,
       },
-      'gpt-4-0314': {
-        totalTokens: 400,
-        promptTokens: 200,
-        completionTokens: 200,
-      },
     };
     mockTokenUsage2 = {
-      'gpt-4-0314': {
+      'o4-mini': {
         totalTokens: 140,
         promptTokens: 110,
         completionTokens: 30,
@@ -107,15 +97,10 @@ describe('TokenUsageService', () => {
     };
 
     expectedTokenUsageResult = {
-      'gpt-4-0314': {
+      'o4-mini': {
         totalTokens: 540,
         promptTokens: 310,
         completionTokens: 230,
-      },
-      'gpt-3.5-turbo-0301': {
-        totalTokens: 100,
-        promptTokens: 50,
-        completionTokens: 50,
       },
     };
     expect(service.combineTokenUsage(mockTokenUsage1, mockTokenUsage2)).toEqual(
@@ -125,7 +110,7 @@ describe('TokenUsageService', () => {
     //Should be able to deal with empty object
     mockTokenUsage1 = {};
     mockTokenUsage2 = {
-      'gpt-4-0314': {
+      'o4-mini': {
         totalTokens: 140,
         promptTokens: 110,
         completionTokens: 30,
@@ -133,7 +118,7 @@ describe('TokenUsageService', () => {
     };
 
     expectedTokenUsageResult = {
-      'gpt-4-0314': {
+      'o4-mini': {
         totalTokens: 140,
         promptTokens: 110,
         completionTokens: 30,

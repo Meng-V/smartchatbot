@@ -28,7 +28,7 @@ export class LlmChainService {
     'Please let me know if you need any help';
   private readonly LLM_CALL_LIMIT = 5;
   private readonly LLM_TYPE_TO_USE: LlmModelType =
-    OpenAiModelType.GPT_3_5_TURBO;
+    OpenAiModelType.GPT_o4_mini;
   private totalLlmTokenUsage: TokenUsage = {};
 
   private toolsMap: Map<string, LlmTool> = new Map<string, LlmTool>();
