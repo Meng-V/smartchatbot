@@ -45,7 +45,7 @@ export class LlmService {
   public async getModelResponse(
     prompt: Prompt,
     modelType: LlmModelType,
-    temperature: number = 0.0,
+    temperature: number = 1,
     responseFormat: 'text' | 'json_object' = 'text',
   ): Promise<{ response: string; tokenUsage: TokenUsage }> {
     //Get the appropriate model

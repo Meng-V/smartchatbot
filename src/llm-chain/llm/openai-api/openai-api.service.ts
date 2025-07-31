@@ -59,7 +59,7 @@ export class OpenaiApiService implements LlmInterface {
     userPrompt: string,
     systemPrompt?: string,
     modelName: OpenAiModelType = OpenAiModelType.GPT_o4_mini,
-    temperature: number = 0.0,
+    temperature: number = 1,
     responseFormat: 'text' | 'json_object' = 'text',
   ): Promise<{ response: string; tokenUsage: TokenUsage }> {
     let modelResponse;
