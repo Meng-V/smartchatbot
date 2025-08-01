@@ -37,7 +37,9 @@ const ErrorBoundaryComponent = ({ children, onLibrarianHelp }) => {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        throw new Error(
+          `Server returned ${response.status}: ${response.statusText}`,
+        );
       }
 
       const healthData = await response.json();
@@ -58,7 +60,7 @@ const ErrorBoundaryComponent = ({ children, onLibrarianHelp }) => {
       return healthData;
     } catch (error) {
       console.error('Health check failed:', error);
-      
+
       let errorType = 'network';
       let errorMessage = 'Unable to connect to the server';
 
@@ -68,7 +70,11 @@ const ErrorBoundaryComponent = ({ children, onLibrarianHelp }) => {
       } else if (error.message.includes('404')) {
         errorType = '404';
         errorMessage = 'Service endpoint not found';
-      } else if (error.message.includes('500') || error.message.includes('502') || error.message.includes('503')) {
+      } else if (
+        error.message.includes('500') ||
+        error.message.includes('502') ||
+        error.message.includes('503')
+      ) {
         errorType = 'server_error';
         errorMessage = 'Server is experiencing internal issues';
       }
@@ -80,7 +86,7 @@ const ErrorBoundaryComponent = ({ children, onLibrarianHelp }) => {
         fullError: error.message,
       });
       setLastHealthCheck(new Date());
-      setRetryCount(prev => prev + 1);
+      setRetryCount((prev) => prev + 1);
 
       return null;
     }
@@ -92,7 +98,7 @@ const ErrorBoundaryComponent = ({ children, onLibrarianHelp }) => {
     const initialTimeout = setTimeout(() => {
       checkServerHealth();
     }, 2000);
-    
+
     const interval = setInterval(() => {
       checkServerHealth();
     }, 60000); // Check every 60 seconds (less frequent to reduce load)
@@ -119,16 +125,21 @@ const ErrorBoundaryComponent = ({ children, onLibrarianHelp }) => {
 
   const getStatusColor = () => {
     switch (serverStatus) {
-      case 'healthy': return 'green';
-      case 'degraded': return 'yellow';
-      case 'unhealthy': return 'red';
-      case 'checking': return 'blue';
-      default: return 'gray';
+      case 'healthy':
+        return 'green';
+      case 'degraded':
+        return 'yellow';
+      case 'unhealthy':
+        return 'red';
+      case 'checking':
+        return 'blue';
+      default:
+        return 'gray';
     }
   };
 
   const getErrorIcon = () => {
-    if (errorDetails?.type === 'timeout') return <Spinner size="sm" />;
+    if (errorDetails?.type === 'timeout') return <Spinner size='sm' />;
     return <WarningIcon />;
   };
 
@@ -137,30 +148,31 @@ const ErrorBoundaryComponent = ({ children, onLibrarianHelp }) => {
     if (serverStatus === 'healthy' || serverStatus === 'checking') return null;
 
     return (
-      <Alert status="warning" mb={4} borderRadius="md" size="sm">
+      <Alert status='warning' mb={4} borderRadius='md' size='sm'>
         <AlertIcon as={WarningIcon} />
-        <Box flex="1">
-          <AlertTitle fontSize="sm">Service Notice</AlertTitle>
-          <AlertDescription fontSize="sm">
-            {errorDetails?.message || 'Health check failed - but you can still use the chatbot.'}
+        <Box flex='1'>
+          <AlertTitle fontSize='sm'>Service Notice</AlertTitle>
+          <AlertDescription fontSize='sm'>
+            {errorDetails?.message ||
+              'Health check failed - but you can still use the chatbot.'}
           </AlertDescription>
-          
+
           <HStack mt={2} spacing={2}>
             <Button
-              size="xs"
+              size='xs'
               leftIcon={<RepeatIcon />}
               onClick={handleRetryConnection}
-              colorScheme="blue"
-              variant="outline"
+              colorScheme='blue'
+              variant='outline'
             >
               {retryCount >= 2 ? 'Refresh Page' : 'Try Again'}
             </Button>
             <Button
-              size="xs"
+              size='xs'
               leftIcon={<ChatIcon />}
               onClick={onLibrarianHelp}
-              colorScheme="green"
-              variant="outline"
+              colorScheme='green'
+              variant='outline'
             >
               Talk to Librarian
             </Button>
@@ -172,18 +184,18 @@ const ErrorBoundaryComponent = ({ children, onLibrarianHelp }) => {
 
   const renderStatusBadge = () => {
     if (serverStatus === 'healthy') return null;
-    
+
     return (
-      <Box position="fixed" top={4} right={4} zIndex={1000}>
+      <Box position='fixed' top={4} right={4} zIndex={1000}>
         <Badge
           colorScheme={getStatusColor()}
-          variant="solid"
+          variant='solid'
           px={3}
           py={1}
-          borderRadius="full"
-          fontSize="xs"
+          borderRadius='full'
+          fontSize='xs'
         >
-          {serverStatus === 'checking' && <Spinner size="xs" mr={2} />}
+          {serverStatus === 'checking' && <Spinner size='xs' mr={2} />}
           {serverStatus.toUpperCase()}
         </Badge>
       </Box>
@@ -193,14 +205,12 @@ const ErrorBoundaryComponent = ({ children, onLibrarianHelp }) => {
   return (
     <>
       {renderStatusBadge()}
-      
+
       <Box>
         {renderErrorAlert()}
-        
+
         {/* Render children normally - never block UI */}
-        <Box>
-          {children}
-        </Box>
+        <Box>{children}</Box>
       </Box>
     </>
   );

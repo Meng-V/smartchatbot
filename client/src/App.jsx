@@ -71,7 +71,7 @@ const App = () => {
       onOpen(); // Open the modal if it's not already open
     }
     setStep('realLibrarian'); // Navigate to the librarian step
-    
+
     toast({
       title: 'Connecting to Librarian',
       description: 'Redirecting you to chat with a real librarian.',
@@ -90,37 +90,37 @@ const App = () => {
     <ErrorBoundaryComponent onLibrarianHelp={handleLibrarianHelp}>
       {/* Welcome background */}
       <Box
-        minH="100vh"
-        bg="gray.50"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
+        minH='100vh'
+        bg='gray.50'
+        display='flex'
+        alignItems='center'
+        justifyContent='center'
         p={4}
       >
         <Box
-          textAlign="center"
+          textAlign='center'
           mb={8}
           opacity={isOpen ? 0.3 : 1}
-          transition="opacity 0.3s ease"
-          cursor={!isOpen ? "pointer" : "default"}
+          transition='opacity 0.3s ease'
+          cursor={!isOpen ? 'pointer' : 'default'}
           onClick={!isOpen ? onOpen : undefined}
           _hover={!isOpen ? { opacity: 0.8 } : {}}
         >
           <img
-            src="https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png"
+            src='https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png'
             height={80}
             width={200}
-            alt="library logo"
+            alt='library logo'
             style={{ margin: '0 auto 20px' }}
           />
-          <Text fontSize="2xl" fontWeight="bold" color="gray.700" mb={2}>
+          <Text fontSize='2xl' fontWeight='bold' color='gray.700' mb={2}>
             Welcome to Smart Chatbot
           </Text>
-          <Text fontSize="md" color="gray.600">
+          <Text fontSize='md' color='gray.600'>
             Get help with research, ask questions, or talk to a librarian
           </Text>
           {!isOpen && (
-            <Text fontSize="sm" color="blue.500" mt={3} fontWeight="semibold">
+            <Text fontSize='sm' color='blue.500' mt={3} fontWeight='semibold'>
               Get Started
             </Text>
           )}
@@ -128,13 +128,8 @@ const App = () => {
       </Box>
 
       <Modal isOpen={isOpen} onClose={handleClose} isCentered>
-        <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-        <ModalContent
-          maxW='450px'
-          mx={4}
-          borderRadius='lg'
-          boxShadow='xl'
-        >
+        <ModalOverlay bg='blackAlpha.300' backdropFilter='blur(10px)' />
+        <ModalContent maxW='450px' mx={4} borderRadius='lg' boxShadow='xl'>
           <ModalHeader
             display='flex'
             alignItems='center'
@@ -169,7 +164,7 @@ const App = () => {
           <ModalBody py={5}>
             {step === 'initial' && (
               <VStack>
-                <Button 
+                <Button
                   onClick={() => setStep('services')}
                   isDisabled={serverStatus === 'unhealthy'}
                   opacity={serverStatus === 'unhealthy' ? 0.6 : 1}
