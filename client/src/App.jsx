@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import {
+  Box,
   Button,
   VStack,
   useDisclosure,
@@ -9,22 +10,25 @@ import {
   ModalHeader,
   ModalCloseButton,
   ModalBody,
-  IconButton,
   Flex,
+  Text,
 } from '@chakra-ui/react';
-import { ArrowBackIcon, ChatIcon } from '@chakra-ui/icons';
+import { ArrowBackIcon } from '@chakra-ui/icons';
 import RealLibrarianWidget from './components/RealLibrarianWidget';
 import OfflineTicketWidget from './components/OfflineTicketWidget';
 import ChatBotComponent from './components/ChatBotComponent';
+import ErrorBoundaryComponent from './components/ErrorBoundaryComponent';
 import { useToast } from '@chakra-ui/react';
 import { SocketContext } from './context/SocketContextProvider';
 import FeedbackFormComponent from './components/FeedbackFormComponent';
+import useServerHealth from './hooks/useServerHealth';
 
 const App = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onOpen, onClose } = useDisclosure({ defaultIsOpen: true }); // Open by default
   const [step, setStep] = useState('initial');
   const toast = useToast();
   const { socketContextValues } = useContext(SocketContext);
+  const { serverStatus, needsAttention, retryHealthCheck } = useServerHealth();
 
   useEffect(() => {
     if (
@@ -47,32 +51,89 @@ const App = () => {
     toast,
   ]);
 
+  // Auto-redirect to librarian if server is critically unhealthy
+  useEffect(() => {
+    if (serverStatus === 'unhealthy' && isOpen && step === 'services') {
+      toast({
+        title: 'Service Unavailable',
+        description: 'Redirecting you to a human librarian for assistance.',
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+      });
+      setStep('realLibrarian');
+    }
+  }, [serverStatus, isOpen, step, toast]);
+
+  // Handler for when user clicks "Talk to Librarian" from error boundary
+  const handleLibrarianHelp = () => {
+    if (!isOpen) {
+      onOpen(); // Open the modal if it's not already open
+    }
+    setStep('realLibrarian'); // Navigate to the librarian step
+    
+    toast({
+      title: 'Connecting to Librarian',
+      description: 'Redirecting you to chat with a real librarian.',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    });
+  };
+
   const handleClose = () => {
     setStep('initial');
     onClose();
   };
 
   return (
-    <>
-      <IconButton
-        boxSize={6}
-        onClick={onOpen}
-        icon={<ChatIcon />}
-        position='fixed'
-        bottom={10}
-        right={10}
-        width={30}
-        height={30}
-      />
+    <ErrorBoundaryComponent onLibrarianHelp={handleLibrarianHelp}>
+      {/* Welcome background */}
+      <Box
+        minH="100vh"
+        bg="gray.50"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        p={4}
+      >
+        <Box
+          textAlign="center"
+          mb={8}
+          opacity={isOpen ? 0.3 : 1}
+          transition="opacity 0.3s ease"
+          cursor={!isOpen ? "pointer" : "default"}
+          onClick={!isOpen ? onOpen : undefined}
+          _hover={!isOpen ? { opacity: 0.8 } : {}}
+        >
+          <img
+            src="https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png"
+            height={80}
+            width={200}
+            alt="library logo"
+            style={{ margin: '0 auto 20px' }}
+          />
+          <Text fontSize="2xl" fontWeight="bold" color="gray.700" mb={2}>
+            Welcome to Smart Chatbot
+          </Text>
+          <Text fontSize="md" color="gray.600">
+            Get help with research, ask questions, or talk to a librarian
+          </Text>
+          {!isOpen && (
+            <Text fontSize="sm" color="blue.500" mt={3} fontWeight="semibold">
+              Get Started
+            </Text>
+          )}
+        </Box>
+      </Box>
 
-      <Modal isOpen={isOpen} onClose={handleClose}>
-        <ModalOverlay />
+      <Modal isOpen={isOpen} onClose={handleClose} isCentered>
+        <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
         <ModalContent
-          maxW='400px'
-          position='fixed'
-          bottom='30px'
-          right='10'
-          borderRadius='md'
+          maxW='450px'
+          mx={4}
+          borderRadius='lg'
+          boxShadow='xl'
         >
           <ModalHeader
             display='flex'
@@ -108,8 +169,12 @@ const App = () => {
           <ModalBody py={5}>
             {step === 'initial' && (
               <VStack>
-                <Button onClick={() => setStep('services')}>
-                  Library Chatbot
+                <Button 
+                  onClick={() => setStep('services')}
+                  isDisabled={serverStatus === 'unhealthy'}
+                  opacity={serverStatus === 'unhealthy' ? 0.6 : 1}
+                >
+                  Library Chatbot {needsAttention && '(Unavailable)'}
                 </Button>
                 <Button onClick={() => setStep('realLibrarian')}>
                   Talk to a human librarian
@@ -138,7 +203,7 @@ const App = () => {
           )}
         </ModalContent>
       </Modal>
-    </>
+    </ErrorBoundaryComponent>
   );
 };
 
