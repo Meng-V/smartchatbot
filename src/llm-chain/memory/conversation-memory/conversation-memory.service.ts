@@ -136,7 +136,7 @@ export class ConversationMemoryService implements ConversationMemory {
       tokenUsage: tokenUsageFromSummarization,
     } = await this.llmService.getModelResponse(
       this.conversationSummarizationPromptService,
-      OpenAiModelType.GPT_3_5_TURBO,
+      OpenAiModelType.GPT_o4_mini,
     );
 
     //Update TokenUsage information

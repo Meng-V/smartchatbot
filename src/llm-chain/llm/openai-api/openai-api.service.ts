@@ -12,14 +12,15 @@ import { LlmInterface } from '../llm.interface';
 import { ChatCompletion } from 'openai/resources';
 
 export enum OpenAiModelType {
-  GPT_3_5_TURBO = 'gpt-3.5-turbo',
-  GPT_3_5_TURBO_1106 = 'gpt-3.5-turbo-1106',
-  GPT_3_5_TURBO_0613 = 'gpt-3.5-turbo-0613',
-  GPT_3_5_TURBO_0301 = 'gpt-3.5-turbo-0301',
-  GPT_4 = 'gpt-4',
-  GPT_4_0613 = 'gpt-4-0613',
-  GPT_4_0314 = 'gpt-4-0314',
-  GPT_4_TURBO = 'gpt-4-0125-preview',
+  // GPT_3_5_TURBO = 'gpt-3.5-turbo',
+  // GPT_3_5_TURBO_1106 = 'gpt-3.5-turbo-1106',
+  // GPT_3_5_TURBO_0613 = 'gpt-3.5-turbo-0613',
+  // GPT_3_5_TURBO_0301 = 'gpt-3.5-turbo-0301',
+  // GPT_4 = 'gpt-4',
+  // GPT_4_0613 = 'gpt-4-0613',
+  // GPT_4_0314 = 'gpt-4-0314',
+  // GPT_4_TURBO = 'gpt-4-0125-preview',
+  GPT_o4_mini = 'o4-mini',
 }
 
 /**
@@ -57,8 +58,8 @@ export class OpenaiApiService implements LlmInterface {
   async getModelResponse(
     userPrompt: string,
     systemPrompt?: string,
-    modelName: OpenAiModelType = OpenAiModelType.GPT_4,
-    temperature: number = 0.0,
+    modelName: OpenAiModelType = OpenAiModelType.GPT_o4_mini,
+    temperature: number = 1,
     responseFormat: 'text' | 'json_object' = 'text',
   ): Promise<{ response: string; tokenUsage: TokenUsage }> {
     let modelResponse;

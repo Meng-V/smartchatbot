@@ -123,6 +123,9 @@ const ChatBotComponent = () => {
           </Button>
         </HStack>
       </form>
+      <Text fontSize='xs' pt={2} color='gray.500'>
+        Chatbot can make mistakes, please contact librarians if needed.
+      </Text>
     </>
   );
 };

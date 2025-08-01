@@ -49,7 +49,7 @@ describe('LlmService', () => {
     const mockOpenaiResponse: { response: string; tokenUsage: TokenUsage } = {
       response: 'This is LLM response',
       tokenUsage: {
-        'gpt-4': {
+        'o4-mini': {
           totalTokens: 100,
           promptTokens: 70,
           completionTokens: 30,
@@ -59,7 +59,7 @@ describe('LlmService', () => {
     const expectedResponse: { response: string; tokenUsage: TokenUsage } = {
       response: 'This is LLM response',
       tokenUsage: {
-        'gpt-4': {
+        'o4-mini': {
           totalTokens: 100,
           promptTokens: 70,
           completionTokens: 30,
@@ -71,7 +71,7 @@ describe('LlmService', () => {
 
     const actualResponse = await service.getModelResponse(
       promptMock,
-      OpenAiModelType.GPT_4,
+      OpenAiModelType.GPT_o4_mini,
       0.3,
     );
 

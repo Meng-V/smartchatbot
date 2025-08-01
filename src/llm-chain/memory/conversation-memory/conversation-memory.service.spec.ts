@@ -91,7 +91,7 @@ describe('ConversationMemoryService', () => {
       .mockImplementation(async () => ({
         response: 'This is summary',
         tokenUsage: {
-          'gpt-4': {
+          'o4-mini': {
             totalTokens: 100,
             promptTokens: 70,
             completionTokens: 30,
@@ -144,7 +144,7 @@ describe('ConversationMemoryService', () => {
       .mockImplementation(async () => ({
         response: 'This is summary',
         tokenUsage: {
-          'gpt-4': {
+          'o4-mini': {
             totalTokens: 100,
             promptTokens: 70,
             completionTokens: 30,
@@ -155,7 +155,7 @@ describe('ConversationMemoryService', () => {
     //Token should be accumulate after each time call getConversationAsString
     await service.getConversationAsString();
     let expectedTokenUsage = {
-      'gpt-4': {
+      'o4-mini': {
         totalTokens: 100,
         promptTokens: 70,
         completionTokens: 30,
@@ -166,7 +166,7 @@ describe('ConversationMemoryService', () => {
     //Token should be accumulate after each time call getConversationAsString
     await service.getConversationAsString();
     expectedTokenUsage = {
-      'gpt-4': {
+      'o4-mini': {
         totalTokens: 200,
         promptTokens: 140,
         completionTokens: 60,
@@ -180,7 +180,7 @@ describe('ConversationMemoryService', () => {
       .mockImplementation(async () => ({
         response: 'This is summary',
         tokenUsage: {
-          'gpt-4': {
+          'o4-mini': {
             totalTokens: 50,
             promptTokens: 30,
             completionTokens: 20,
@@ -191,7 +191,7 @@ describe('ConversationMemoryService', () => {
     //Token should be accumulate after each time call getConversationAsString
     await service.getConversationAsString();
     expectedTokenUsage = {
-      'gpt-4': {
+      'o4-mini': {
         totalTokens: 250,
         promptTokens: 170,
         completionTokens: 80,

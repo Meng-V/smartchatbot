@@ -44,7 +44,7 @@ describe('LlmChainService', () => {
       .mockImplementation(async () => ({
         response: JSON.stringify(expectedLlmResponse),
         tokenUsage: {
-          'gpt-4': {
+          'o4-mini': {
             totalTokens: 100,
             promptTokens: 70,
             completionTokens: 30,
@@ -67,7 +67,7 @@ describe('LlmChainService', () => {
       .mockImplementation(async () => ({
         response: JSON.stringify(expectedLlmResponse),
         tokenUsage: {
-          'gpt-4': {
+          'o4-mini': {
             totalTokens: 100,
             promptTokens: 70,
             completionTokens: 30,
@@ -77,7 +77,7 @@ describe('LlmChainService', () => {
     jest
       .spyOn(llmChainService['memoryService'], 'getTokenUsage')
       .mockReturnValue({
-        'gpt-3.5-turbo': {
+        'o4-mini': {
           totalTokens: 90,
           promptTokens: 60,
           completionTokens: 30,
@@ -88,15 +88,10 @@ describe('LlmChainService', () => {
     await llmChainService.getModelResponse('_');
 
     expect(llmChainService.getTokenUsage()).toEqual({
-      'gpt-4': {
-        totalTokens: 100,
-        promptTokens: 70,
-        completionTokens: 30,
-      },
-      'gpt-3.5-turbo': {
-        totalTokens: 90,
-        promptTokens: 60,
-        completionTokens: 30,
+      'o4-mini': {
+        totalTokens: 190,
+        promptTokens: 130,
+        completionTokens: 60,
       },
     });
   });
