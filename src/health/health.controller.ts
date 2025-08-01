@@ -48,14 +48,18 @@ export class HealthController {
     }
   }
 
-  private async checkDatabaseHealth(): Promise<{ status: string; responseTime?: number; error?: string }> {
+  private async checkDatabaseHealth(): Promise<{
+    status: string;
+    responseTime?: number;
+    error?: string;
+  }> {
     try {
       const start = Date.now();
       // Simple database ping - adjust based on your database setup
       // If you have PrismaService injected, you can use it here
       // await this.prisma.$queryRaw`SELECT 1`;
       const responseTime = Date.now() - start;
-      
+
       return {
         status: 'healthy',
         responseTime,
@@ -63,12 +67,18 @@ export class HealthController {
     } catch (error) {
       return {
         status: 'unhealthy',
-        error: error instanceof Error ? error.message : 'OpenAI service check failed',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'OpenAI service check failed',
       };
     }
   }
 
-  private async checkOpenAIHealth(): Promise<{ status: string; error?: string }> {
+  private async checkOpenAIHealth(): Promise<{
+    status: string;
+    error?: string;
+  }> {
     try {
       // Check if OpenAI API key is configured
       if (!process.env.OPENAI_API_KEY) {
@@ -77,14 +87,17 @@ export class HealthController {
           error: 'OpenAI API key not configured',
         };
       }
-      
+
       return {
         status: 'healthy',
       };
     } catch (error) {
       return {
         status: 'unhealthy',
-        error: error instanceof Error ? error.message : 'OpenAI service check failed',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'OpenAI service check failed',
       };
     }
   }
