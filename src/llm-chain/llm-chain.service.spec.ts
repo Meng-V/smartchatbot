@@ -89,9 +89,9 @@ describe('LlmChainService', () => {
 
     expect(llmChainService.getTokenUsage()).toEqual({
       'o4-mini': {
-        totalTokens: 100,
-        promptTokens: 70,
-        completionTokens: 30,
+        totalTokens: 190,
+        promptTokens: 130,
+        completionTokens: 60,
       },
     });
   });

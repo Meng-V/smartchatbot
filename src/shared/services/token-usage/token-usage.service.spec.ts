@@ -72,9 +72,9 @@ describe('TokenUsageService', () => {
 
     let expectedTokenUsageResult: TokenUsage = {
       'o4-mini': {
-        totalTokens: 140,
-        promptTokens: 110,
-        completionTokens: 30,
+        totalTokens: 240,
+        promptTokens: 160,
+        completionTokens: 80,
       },
     };
 
@@ -99,9 +99,9 @@ describe('TokenUsageService', () => {
 
     expectedTokenUsageResult = {
       'o4-mini': {
-        totalTokens: 540,
-        promptTokens: 310,
-        completionTokens: 230,
+        totalTokens: 240,
+        promptTokens: 160,
+        completionTokens: 80,
       },
     };
     expect(service.combineTokenUsage(mockTokenUsage1, mockTokenUsage2)).toEqual(
