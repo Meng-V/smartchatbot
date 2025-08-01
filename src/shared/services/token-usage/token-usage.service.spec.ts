@@ -25,7 +25,7 @@ describe('TokenUsageService', () => {
           message: {
             role: 'assistant',
             content: 'Sample content',
-            refusal: null
+            refusal: null,
           },
           logprobs: null,
           finish_reason: 'stop',
