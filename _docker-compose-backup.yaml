@@ -1,0 +1,29 @@
+services:
+  frontend:
+    build:
+      context: ./client
+      dockerfile: frontend.dockerfile
+    ports:
+      - '${FRONTEND_PORT}:${FRONTEND_PORT}'
+    depends_on:
+      - backend
+    env_file:
+      - .env
+    environment:
+      - VITE_BACKEND_PORT=3000
+      - PORT=5173
+      #- REACT_APP_BACKEND_URL=http://ulblwebt03.lib.miamioh.edu
+      - VITE_BACKEND_URL=${URL}
+    restart: unless-stopped
+  backend:
+    build: 
+      context: ./
+      dockerfile: backend.dockerfile
+    ports:
+      - '${BACKEND_PORT}:${BACKEND_PORT}'
+    env_file:
+      - .env
+    # volumes:
+    # - ./:/app
+    restart: unless-stopped
+

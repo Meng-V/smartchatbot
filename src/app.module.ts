@@ -4,6 +4,7 @@ import { LibraryApiModule } from './library-api/library-api.module';
 import { SharedModule } from './shared/shared.module';
 import { GatewayModule } from './gateway/gateway.module';
 import { DatabaseModule } from './database/database.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
@@ -13,5 +14,6 @@ import { DatabaseModule } from './database/database.module';
     GatewayModule,
     DatabaseModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}

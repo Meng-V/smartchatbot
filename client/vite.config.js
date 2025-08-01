@@ -13,6 +13,22 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       host: true,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3000',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, ''),
+        },
+        '/health': {
+          target: 'http://localhost:3000',
+          changeOrigin: true,
+        },
+        '/socket.io': {
+          target: 'http://localhost:3000',
+          changeOrigin: true,
+          ws: true,
+        },
+      },
     },
     define: {
       'process.env.SOME_KEY': JSON.stringify(env.SOME_KEY)
