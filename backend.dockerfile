@@ -1,5 +1,5 @@
 # Dockerfile
-FROM node:20-alpine
+FROM node:22-alpine
 ENV TZ="America/New_York"
 WORKDIR /app
 
@@ -35,4 +35,4 @@ EXPOSE 3000
 RUN npm run build
 
 # Run the migrations and start the server
-CMD npx prisma migrate deploy && npm run start:prod
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
