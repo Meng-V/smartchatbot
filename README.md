@@ -1,4 +1,5 @@
-# 🤖 Smart Chatbot Application
+# 🤖 The Smart Chatbot Application at Miami University Libraries
+[https://new.lib.miamioh.edu/smartchatbot/] https://new.lib.miamioh.edu/smartchatbot/
 
 <p align="center">
   <img src="https://img.shields.io/badge/Node.js-22-green" alt="Node.js Version" />
