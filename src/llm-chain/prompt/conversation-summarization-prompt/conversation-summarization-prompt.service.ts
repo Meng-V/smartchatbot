@@ -7,7 +7,7 @@ export class ConversationSummarizationPromptService implements Prompt {
   private conversation: string = '';
   constructor() {
     this.modelDescription =
-      'You are trying to shorten the following conversation by summarizing it.Include any vital details like email,name,code,date,etc in the summary.\n';
+      'You are trying to shorten the following conversation by summarizing it. Include any vital details like email,name,code,date,etc in the summary.\n';
   }
 
   public setSystemDescription(systemDescription: string) {
