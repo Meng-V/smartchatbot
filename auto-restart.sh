@@ -33,8 +33,8 @@ check_server_health() {
     
     if [ "$response_code" = "200" ]; then
         return 0  # Healthy
-    elif [ "$response_code" = "400" ]; then
-        log "${RED}🚨 Server returned 400 status - unhealthy${NC}"
+    elif [ "$response_code" = "503" ] || [ "$response_code" = "500" ] || [ "$response_code" = "502" ] || [ "$response_code" = "504" ]; then
+        log "${RED}🚨 Server returned $response_code status - unhealthy/degraded${NC}"
         return 1  # Unhealthy
     elif [ -z "$response_code" ] || [ "$response_code" = "000" ]; then
         log "${YELLOW}⚠️  Server not responding${NC}"
@@ -133,6 +133,23 @@ while [ $restart_count -lt $MAX_GLOBAL_RESTARTS ]; do
     # Remove PID file
     rm -f "$PID_FILE"
     
+    # Detect manual or health-triggered restart regardless of exit code
+    if [ -f ".restart-flag" ]; then
+        log "${BLUE}🔄 Manual restart detected (exit code $EXIT_CODE)${NC}"
+        rm -f ".restart-flag"
+        # Don't increment restart count; immediately loop to restart
+        log "${YELLOW}🔁 Restarting backend...${NC}"
+        sleep $RESTART_DELAY
+        continue
+    elif [ -f ".health-restart-flag" ]; then
+        log "${RED}🚨 Health-triggered restart detected (exit code $EXIT_CODE)${NC}"
+        rm -f ".health-restart-flag"
+        # Don't increment restart count; immediately loop to restart
+        log "${YELLOW}🔁 Restarting backend...${NC}"
+        sleep $RESTART_DELAY
+        continue
+    fi
+
     if [ $EXIT_CODE -eq 0 ]; then
         log "${GREEN}✅ Backend exited normally${NC}"
         break

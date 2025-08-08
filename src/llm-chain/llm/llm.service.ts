@@ -8,6 +8,7 @@ import {
   OpenAiModelType,
 } from './openai-api/openai-api.service';
 import { LlmModelType } from './llm.module';
+import { ApiResilienceService } from '../../shared/services/api-resilience/api-resilience.service';
 
 /**
  * Service for getting response from different LLM model and number of token used
@@ -16,7 +17,10 @@ import { LlmModelType } from './llm.module';
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
 
-  constructor(private openaiApiService: OpenaiApiService) {}
+  constructor(
+    private openaiApiService: OpenaiApiService,
+    private apiResilienceService: ApiResilienceService,
+  ) {}
 
   /**
    * Get the LLM Model from input model name
@@ -56,17 +60,35 @@ export class LlmService {
       throw error;
     }
 
-    const { response, tokenUsage: responseTokenUsage } =
-      await model.getModelResponse(
-        await prompt.getPrompt(),
-        prompt.getSystemDescription(),
-        modelType,
-        temperature,
-        responseFormat,
-      );
-    return {
-      response: response,
-      tokenUsage: responseTokenUsage,
-    };
+    // Execute with API resilience (retry + circuit breaker + timeout)
+    return await this.apiResilienceService.executeWithResilience(
+      `llm-${modelType}`,
+      async () => {
+        const { response, tokenUsage: responseTokenUsage } =
+          await model.getModelResponse(
+            await prompt.getPrompt(),
+            prompt.getSystemDescription(),
+            modelType,
+            temperature,
+            responseFormat,
+          );
+        return {
+          response: response,
+          tokenUsage: responseTokenUsage,
+        };
+      },
+      {
+        maxAttempts: 3,
+        baseDelayMs: 2000,
+        maxDelayMs: 10000,
+        backoffMultiplier: 2,
+        timeoutMs: 45000 // 45 seconds for LLM calls
+      },
+      {
+        failureThreshold: 5,
+        recoveryTimeoutMs: 120000, // 2 minutes for LLM recovery
+        monitoringPeriodMs: 300000
+      }
+    );
   }
 }
