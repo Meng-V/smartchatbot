@@ -4,9 +4,6 @@ import { retrieveEnvironmentVariable } from '../services/RetrieveEnvironmentVari
 import { MessageContext } from './MessageContextProvider';
 import { useMemo } from 'react';
 
-const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL')}:${retrieveEnvironmentVariable(
-  'VITE_BACKEND_PORT',
-)}`;
 const SocketContext = createContext();
 
 const SocketContextProvider = ({ children }) => {
@@ -18,9 +15,15 @@ const SocketContextProvider = ({ children }) => {
 
   useEffect(() => {
     if (!socket.current) {
-      socket.current = io(url, { transports: ['websocket'], upgrade: false });
-    } else {
-      socket.current.on('connect', () => {
+      socket.current = io('', {
+	path: '/smartchatbot/socket.io',
+  	transports: ['websocket'],
+  	upgrade: false
+	});
+    }
+	
+    socket.current.on('connect', () => {
+     	console.log('Socket connected');
         if (curSession.current) {
           const welcomeMessage = {
             text: 'Hi this is the Library Smart Chatbot. How may I help you?',
@@ -40,13 +43,17 @@ const SocketContextProvider = ({ children }) => {
         setAttemptedConnection(true);
         messageContextValues.setIsTyping(false);
       });
+	  
+	  
 
       socket.current.on('message', ({ messageId, message }) => {
+	   console.log('Message received:', message);
         messageContextValues.setIsTyping(false);
         messageContextValues.addMessage(message, 'chatbot', messageId);
       });
 
       socket.current.on('disconnect', (reason) => {
+	   console.log('Socket disconnected:', reason);
         if (reason === 'io client disconnect') {
           messageContextValues.resetState();
           curSession.current = true;
@@ -58,11 +65,13 @@ const SocketContextProvider = ({ children }) => {
       });
 
       socket.current.on('connect_error', (error) => {
+        console.error('Connection error:', error);
         setIsConnected(false);
         setAttemptedConnection(true);
       });
 
       socket.current.on('connect_timeout', (timeout) => {
+        console.warn('Connection timeout');
         setIsConnected(false);
         setAttemptedConnection(true);
       });
@@ -73,8 +82,10 @@ const SocketContextProvider = ({ children }) => {
         socket.current.off('connect_error');
         socket.current.off('connect_timeout');
       };
-    }
+    
   }, []);
+
+
 
   const sendUserMessage = (message) => {
     if (socket.current) {
