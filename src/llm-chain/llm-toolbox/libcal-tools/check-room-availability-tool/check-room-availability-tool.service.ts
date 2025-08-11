@@ -95,9 +95,6 @@ export class CheckRoomAvailabilityToolService
     timeEnd: string,
     capacity: number | null,
   ): Promise<Room[]> {
-    const header = {
-      Authorization: `Bearer ${this.accessToken}`,
-    };
     const url = `${this.SEARCH_AVAILABLE_URL}/${this.DEFAULT_BUILDING_ID}`;
 
     //Try bigger room if no available rooms for the current capacity
@@ -109,8 +106,17 @@ export class CheckRoomAvailabilityToolService
     ) {
       const HTTP_UNAUTHORIZED = 403;
       let response: AxiosResponse<SearchAvailabilityApiResponse> | undefined;
-      while (response === undefined || response.status === HTTP_UNAUTHORIZED) {
+      let retryCount = 0;
+      const MAX_RETRIES = 2;
+      
+      while (response === undefined || (response.status === HTTP_UNAUTHORIZED && retryCount < MAX_RETRIES)) {
         try {
+          // Get fresh token (will refresh if needed)
+          const currentToken = await this.libcalAuthorizationService.getCurrentToken();
+          const header = {
+            Authorization: `Bearer ${currentToken}`,
+          };
+          
           response =
             await this.httpService.axiosRef.get<SearchAvailabilityApiResponse>(
               url,
@@ -126,13 +132,19 @@ export class CheckRoomAvailabilityToolService
               },
             );
         } catch (error: any) {
-          if (error.response.status === HTTP_UNAUTHORIZED) {
-            this.libcalAuthorizationService.resetToken();
+          if (error.response?.status === HTTP_UNAUTHORIZED && retryCount < MAX_RETRIES) {
+            retryCount++;
+            // Force token refresh and retry
+            await this.libcalAuthorizationService.refreshToken();
             continue;
           } else {
             throw error;
           }
         }
+      }
+      
+      if (!response) {
+        throw new Error('Failed to get response after maximum retries');
       }
 
       availableRooms = response.data.exact_matches;

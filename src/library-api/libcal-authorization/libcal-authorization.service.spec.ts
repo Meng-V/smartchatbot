@@ -26,56 +26,117 @@ describe('LibcalAuthorizationService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should reset token', (done) => {
+  it('should refresh token with expiration tracking', async () => {
     const token = 'newToken';
-    jest
-      .spyOn(httpService, 'post')
-      .mockImplementation(() =>
-        of({ data: { access_token: token } } as AxiosResponse),
-      );
+    const expiresIn = 3600; // 1 hour
+    const mockResponse = {
+      data: {
+        access_token: token,
+        token_type: 'Bearer',
+        expires_in: expiresIn,
+      },
+    } as AxiosResponse;
 
-    const tokenObservable = service.getAccessTokenObservable();
-    const tokenSubscription = tokenObservable.subscribe((newToken) => {
-      expect(newToken).toEqual(token);
-      tokenSubscription.unsubscribe();
-      done();
-    });
+    jest.spyOn(httpService.axiosRef, 'post').mockResolvedValue(mockResponse);
 
-    service.resetToken();
+    await service.refreshToken();
+
+    // Check that token is available immediately
+    const currentToken = await service.getCurrentToken();
+    expect(currentToken).toEqual(token);
+    
+    // Check that token is not expired
+    expect(service.isTokenExpired()).toBe(false);
   });
 
-  it('should update token when resetToken is called', (done) => {
+  it('should handle concurrent token refresh requests', async () => {
+    const token = 'concurrentToken';
+    const mockResponse = {
+      data: {
+        access_token: token,
+        token_type: 'Bearer',
+        expires_in: 3600,
+      },
+    } as AxiosResponse;
+
+    const postSpy = jest.spyOn(httpService.axiosRef, 'post').mockResolvedValue(mockResponse);
+
+    // Simulate multiple concurrent refresh requests
+    const refreshPromises = [
+      service.refreshToken(),
+      service.refreshToken(),
+      service.refreshToken(),
+    ];
+
+    await Promise.all(refreshPromises);
+
+    // Should only make one actual HTTP request due to isRefreshing flag
+    expect(postSpy).toHaveBeenCalledTimes(1);
+    
+    // All should get the same token
+    const currentToken = await service.getCurrentToken();
+    expect(currentToken).toEqual(token);
+  });
+
+  it('should proactively refresh token when expiring soon', async () => {
     const firstToken = 'firstToken';
     const secondToken = 'secondToken';
+    
+    // Mock first token response (expires in 1 second for testing)
+    const firstResponse = {
+      data: {
+        access_token: firstToken,
+        token_type: 'Bearer',
+        expires_in: 1, // 1 second
+      },
+    } as AxiosResponse;
+    
+    // Mock second token response
+    const secondResponse = {
+      data: {
+        access_token: secondToken,
+        token_type: 'Bearer',
+        expires_in: 3600,
+      },
+    } as AxiosResponse;
 
-    jest
-      .spyOn(httpService, 'post')
-      .mockImplementationOnce(() =>
-        of({ data: { access_token: firstToken } } as AxiosResponse),
-      );
+    const postSpy = jest.spyOn(httpService.axiosRef, 'post')
+      .mockResolvedValueOnce(firstResponse)
+      .mockResolvedValueOnce(secondResponse);
 
-    const tokenObservable = service.getAccessTokenObservable();
+    // Get first token
+    await service.refreshToken();
+    expect(await service.getCurrentToken()).toEqual(firstToken);
+    
+    // Wait for token to be considered expiring (1 second + buffer)
+    await new Promise(resolve => setTimeout(resolve, 1100));
+    
+    // getCurrentToken should automatically refresh
+    const currentToken = await service.getCurrentToken();
+    expect(currentToken).toEqual(secondToken);
+    expect(postSpy).toHaveBeenCalledTimes(2);
+  });
 
-    let counter = 1;
-    const tokenSubscription = tokenObservable.subscribe((newToken) => {
-      if (counter === 1) {
-        counter++;
-        expect(newToken).toEqual(firstToken);
+  it('should use BehaviorSubject to provide immediate token access', (done) => {
+    const token = 'immediateToken';
+    const mockResponse = {
+      data: {
+        access_token: token,
+        token_type: 'Bearer',
+        expires_in: 3600,
+      },
+    } as AxiosResponse;
 
-        //New token
-        jest
-          .spyOn(httpService, 'post')
-          .mockImplementationOnce(() =>
-            of({ data: { access_token: secondToken } } as AxiosResponse),
-          );
-        service.resetToken(); // Calling resetToken again to trigger second token
-      } else if (counter === 2) {
-        expect(newToken).toEqual(secondToken);
+    jest.spyOn(httpService.axiosRef, 'post').mockResolvedValue(mockResponse);
+
+    service.refreshToken().then(() => {
+      // BehaviorSubject should immediately emit the current value to new subscribers
+      const tokenObservable = service.getAccessTokenObservable();
+      const tokenSubscription = tokenObservable.subscribe((currentToken) => {
+        expect(currentToken).toEqual(token);
         tokenSubscription.unsubscribe();
         done();
-      }
+      });
     });
-
-    service.resetToken();
   });
 });
