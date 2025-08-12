@@ -4,9 +4,6 @@ import { retrieveEnvironmentVariable } from '../services/RetrieveEnvironmentVari
 import { MessageContext } from './MessageContextProvider';
 import { useMemo } from 'react';
 
-const url = `${retrieveEnvironmentVariable('VITE_BACKEND_URL')}:${retrieveEnvironmentVariable(
-  'VITE_BACKEND_PORT',
-)}`;
 const SocketContext = createContext();
 
 const SocketContextProvider = ({ children }) => {
@@ -18,62 +15,77 @@ const SocketContextProvider = ({ children }) => {
 
   useEffect(() => {
     if (!socket.current) {
-      socket.current = io(url, { transports: ['websocket'], upgrade: false });
-    } else {
-      socket.current.on('connect', () => {
-        if (curSession.current) {
-          const welcomeMessage = {
-            text: 'Hi this is the Library Smart Chatbot. How may I help you?',
-            sender: 'chatbot',
-          };
-          messageContextValues.setMessage((prevMessages) => {
-            const updatedMessages = [...prevMessages, welcomeMessage];
-            sessionStorage.setItem(
-              'chat_messages',
-              JSON.stringify(updatedMessages),
-            );
-            return updatedMessages;
-          });
-          curSession.current = false;
-        }
-        setIsConnected(true);
-        setAttemptedConnection(true);
-        messageContextValues.setIsTyping(false);
-      });
+      // Use environment variables for production-ready configuration
+      // const backendUrl = retrieveEnvironmentVariable('VITE_BACKEND_URL');
+      // const backendPort = retrieveEnvironmentVariable('VITE_BACKEND_PORT');
+      // const socketUrl = `${backendUrl}:${backendPort}`;
 
-      socket.current.on('message', ({ messageId, message }) => {
-        messageContextValues.setIsTyping(false);
-        messageContextValues.addMessage(message, 'chatbot', messageId);
+      // socket.current = io(socketUrl, {
+      socket.current = io('', {
+        path: '/smartchatbot/socket.io',
+        transports: ['websocket'],
+        upgrade: false,
       });
-
-      socket.current.on('disconnect', (reason) => {
-        if (reason === 'io client disconnect') {
-          messageContextValues.resetState();
-          curSession.current = true;
-          socket.current.connect();
-        } else {
-          setIsConnected(false);
-          setAttemptedConnection(true);
-        }
-      });
-
-      socket.current.on('connect_error', (error) => {
-        setIsConnected(false);
-        setAttemptedConnection(true);
-      });
-
-      socket.current.on('connect_timeout', (timeout) => {
-        setIsConnected(false);
-        setAttemptedConnection(true);
-      });
-
-      return () => {
-        socket.current.off('message');
-        socket.current.off('disconnect');
-        socket.current.off('connect_error');
-        socket.current.off('connect_timeout');
-      };
     }
+
+    socket.current.on('connect', () => {
+      console.log('Socket connected');
+      if (curSession.current) {
+        const welcomeMessage = {
+          text: 'Hi this is the Library Smart Chatbot. How may I help you?',
+          sender: 'chatbot',
+        };
+        messageContextValues.setMessage((prevMessages) => {
+          const updatedMessages = [...prevMessages, welcomeMessage];
+          sessionStorage.setItem(
+            'chat_messages',
+            JSON.stringify(updatedMessages),
+          );
+          return updatedMessages;
+        });
+        curSession.current = false;
+      }
+      setIsConnected(true);
+      setAttemptedConnection(true);
+      messageContextValues.setIsTyping(false);
+    });
+
+    socket.current.on('message', ({ messageId, message }) => {
+      console.log('Message received:', message);
+      messageContextValues.setIsTyping(false);
+      messageContextValues.addMessage(message, 'chatbot', messageId);
+    });
+
+    socket.current.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+      if (reason === 'io client disconnect') {
+        messageContextValues.resetState();
+        curSession.current = true;
+        socket.current.connect();
+      } else {
+        setIsConnected(false);
+        setAttemptedConnection(true);
+      }
+    });
+
+    socket.current.on('connect_error', (error) => {
+      console.error('Connection error:', error);
+      setIsConnected(false);
+      setAttemptedConnection(true);
+    });
+
+    socket.current.on('connect_timeout', (timeout) => {
+      console.warn('Connection timeout');
+      setIsConnected(false);
+      setAttemptedConnection(true);
+    });
+
+    return () => {
+      socket.current.off('message');
+      socket.current.off('disconnect');
+      socket.current.off('connect_error');
+      socket.current.off('connect_timeout');
+    };
   }, []);
 
   const sendUserMessage = (message) => {

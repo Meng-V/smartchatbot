@@ -15,6 +15,12 @@ async function bootstrap() {
       logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     });
 
+    // Enable CORS for frontend origin (adjust as needed)
+    app.enableCors({
+      origin: ['https://new.lib.miamioh.edu'], // your frontend URL
+      credentials: true,
+    });
+
     // Global error handling
     process.on('uncaughtException', (error) => {
       console.error('❌ Uncaught Exception:', error);

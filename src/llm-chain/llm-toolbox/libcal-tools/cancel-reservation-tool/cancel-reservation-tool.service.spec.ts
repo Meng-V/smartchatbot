@@ -13,6 +13,8 @@ describe('CancelReservationService', () => {
   };
   const mockLibcalApiAuthorizationService = {
     getAccessTokenObservable: jest.fn().mockReturnValue(of('mockToken')),
+    getCurrentToken: jest.fn().mockResolvedValue('mockToken'),
+    refreshToken: jest.fn().mockResolvedValue(undefined),
   };
   const mockRetrieveEnvironmentVariablesService = { retrieve: jest.fn() };
 
