@@ -154,9 +154,14 @@ export class CheckOpenHourToolService implements LlmTool, OnModuleDestroy {
         'sunday',
       ];
 
-      const HTTP_UNAUTHORIZED = 403;
+      const HTTP_UNAUTHORIZED = 401;
+      const HTTP_FORBIDDEN = 403;
       let response: AxiosResponse<OpenHourApiResponse> | undefined;
-      while (response === undefined || response.status === HTTP_UNAUTHORIZED) {
+      while (
+        response === undefined ||
+        response.status === HTTP_UNAUTHORIZED ||
+        response.status === HTTP_FORBIDDEN
+      ) {
         try {
           response = await this.httpService.axiosRef.get<OpenHourApiResponse>(
             `${this.OPEN_HOUR_URL}/8113`,
@@ -169,8 +174,13 @@ export class CheckOpenHourToolService implements LlmTool, OnModuleDestroy {
             },
           );
         } catch (error: any) {
-          if (error.response.status === HTTP_UNAUTHORIZED) {
-            this.libcalAuthorizationService.resetToken();
+          if (
+            error.response.status === HTTP_UNAUTHORIZED ||
+            error.response.status === HTTP_FORBIDDEN
+          ) {
+            await this.libcalAuthorizationService.resetToken();
+            // Update the header with the new token
+            header.Authorization = `Bearer ${this.accessToken}`;
             continue;
           } else {
             throw error;
