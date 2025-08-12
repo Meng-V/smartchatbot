@@ -10,8 +10,10 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       strictPort: true,
     },
+    base: '/smartchatbot/',
     server: {
       port: 5173,
+      allowedHosts: ['new.lib.miamioh.edu'],
       host: true,
       proxy: {
         '/api': {
