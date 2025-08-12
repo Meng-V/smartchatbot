@@ -95,7 +95,7 @@ export class LibcalAuthorizationService implements OnModuleInit, OnModuleDestroy
     if (this.isRefreshing) {
       // Wait for the current refresh to complete
       while (this.isRefreshing) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
       return;
     }

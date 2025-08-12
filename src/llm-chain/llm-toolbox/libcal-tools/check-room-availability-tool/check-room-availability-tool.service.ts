@@ -142,8 +142,10 @@ export class CheckRoomAvailabilityToolService
             );
         } catch (error: any) {
           if (
+            error.response &&
             (error.response.status === HTTP_UNAUTHORIZED ||
-            error.response.status === HTTP_FORBIDDEN) && retryCount < MAX_RETRIES) {
+            error.response.status === HTTP_FORBIDDEN) && retryCount < MAX_RETRIES
+          ) {
             retryCount++;
             // Force token refresh and retry
             await this.libcalAuthorizationService.refreshToken();

@@ -182,6 +182,7 @@ export class CheckOpenHourToolService implements LlmTool, OnModuleDestroy {
           );
         } catch (error: any) {
           if (
+            error.response &&
             (error.response.status === HTTP_UNAUTHORIZED ||
             error.response.status === HTTP_FORBIDDEN) && retryCount < MAX_RETRIES
           ) {
@@ -203,9 +204,13 @@ export class CheckOpenHourToolService implements LlmTool, OnModuleDestroy {
       // for the days of the week (Monday to Sunday)
       const filteredData = weekdays.reduce(
         (prevObj, currentDay, currentIndex) => {
+          // Add safety checks for response data structure
+          const dayData = response?.data?.[0]?.dates?.[currentDay];
+          const hours = dayData?.hours || [];
+          
           return {
             ...prevObj,
-            [dayNames[currentIndex]]: response!.data[0].dates[currentDay].hours,
+            [dayNames[currentIndex]]: hours,
           };
         },
         {},
