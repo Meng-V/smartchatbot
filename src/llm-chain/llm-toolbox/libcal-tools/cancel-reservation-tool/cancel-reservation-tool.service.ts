@@ -90,18 +90,26 @@ export class CancelReservationToolService implements LlmTool, OnModuleDestroy {
   async run(
     bookingID: string,
   ): Promise<{ success: boolean; error: string | null | undefined }> {
-    const header = {
-      Authorization: `Bearer ${this.accessToken}`,
-    };
     const HTTP_UNAUTHORIZED = 401;
     const HTTP_FORBIDDEN = 403;
     let response: AxiosResponse<LibcalAPICancelReservationResponse> | undefined;
+
+    let retryCount = 0;
+    const MAX_RETRIES = 2;
+
     while (
       response === undefined ||
       response.status === HTTP_UNAUTHORIZED ||
       response.status === HTTP_FORBIDDEN
     ) {
       try {
+        // Get fresh token (will refresh if needed)
+        const currentToken =
+          await this.libcalAuthorizationService.getCurrentToken();
+        const header = {
+          Authorization: `Bearer ${currentToken}`,
+        };
+
         response =
           await this.httpService.axiosRef.post<LibcalAPICancelReservationResponse>(
             `${this.CANCEL_URL}/${bookingID}`,
@@ -110,18 +118,24 @@ export class CancelReservationToolService implements LlmTool, OnModuleDestroy {
           );
       } catch (error: any) {
         if (
-          error.response.status === HTTP_UNAUTHORIZED ||
-          error.response.status === HTTP_FORBIDDEN
+          error.response &&
+          (error.response.status === HTTP_UNAUTHORIZED ||
+            error.response.status === HTTP_FORBIDDEN) &&
+          retryCount < MAX_RETRIES
         ) {
-          await this.libcalAuthorizationService.resetToken();
-          // Update the header with the new token
-          header.Authorization = `Bearer ${this.accessToken}`;
+          retryCount++;
+          // Force token refresh and retry
+          await this.libcalAuthorizationService.refreshToken();
           continue;
         } else {
           this.logger.error(error);
           throw error;
         }
       }
+    }
+
+    if (!response) {
+      throw new Error('Failed to get response after maximum retries');
     }
     if (response.data[0].cancelled) {
       return { success: true, error: null };
