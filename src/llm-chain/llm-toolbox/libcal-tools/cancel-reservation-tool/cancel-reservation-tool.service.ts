@@ -93,10 +93,10 @@ export class CancelReservationToolService implements LlmTool, OnModuleDestroy {
     const HTTP_UNAUTHORIZED = 401;
     const HTTP_FORBIDDEN = 403;
     let response: AxiosResponse<LibcalAPICancelReservationResponse> | undefined;
-    
+
     let retryCount = 0;
     const MAX_RETRIES = 2;
-    
+
     while (
       response === undefined ||
       response.status === HTTP_UNAUTHORIZED ||
@@ -104,11 +104,12 @@ export class CancelReservationToolService implements LlmTool, OnModuleDestroy {
     ) {
       try {
         // Get fresh token (will refresh if needed)
-        const currentToken = await this.libcalAuthorizationService.getCurrentToken();
+        const currentToken =
+          await this.libcalAuthorizationService.getCurrentToken();
         const header = {
           Authorization: `Bearer ${currentToken}`,
         };
-        
+
         response =
           await this.httpService.axiosRef.post<LibcalAPICancelReservationResponse>(
             `${this.CANCEL_URL}/${bookingID}`,
@@ -119,7 +120,8 @@ export class CancelReservationToolService implements LlmTool, OnModuleDestroy {
         if (
           error.response &&
           (error.response.status === HTTP_UNAUTHORIZED ||
-          error.response.status === HTTP_FORBIDDEN) && retryCount < MAX_RETRIES
+            error.response.status === HTTP_FORBIDDEN) &&
+          retryCount < MAX_RETRIES
         ) {
           retryCount++;
           // Force token refresh and retry
@@ -131,7 +133,7 @@ export class CancelReservationToolService implements LlmTool, OnModuleDestroy {
         }
       }
     }
-    
+
     if (!response) {
       throw new Error('Failed to get response after maximum retries');
     }

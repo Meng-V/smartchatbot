@@ -256,11 +256,15 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
     // Convert HH-MM format to HH:MM format for proper parsing
     const startTimeFormatted = llmToolInput.startTime!.replace('-', ':');
     const endTimeFormatted = llmToolInput.endTime!.replace('-', ':');
-    
+
     // Create proper Date objects with timezone handling
-    const startTimestamp = new Date(`${llmToolInput.date}T${startTimeFormatted}:00-05:00`); // EST is UTC-5
-    const endTimestamp = new Date(`${llmToolInput.date}T${endTimeFormatted}:00-05:00`); // EST is UTC-5
-    
+    const startTimestamp = new Date(
+      `${llmToolInput.date}T${startTimeFormatted}:00-05:00`,
+    ); // EST is UTC-5
+    const endTimestamp = new Date(
+      `${llmToolInput.date}T${endTimeFormatted}:00-05:00`,
+    ); // EST is UTC-5
+
     // Validate that dates are valid
     if (isNaN(startTimestamp.getTime()) || isNaN(endTimestamp.getTime())) {
       return `Invalid date or time format. Please use YYYY-MM-DD for date and HH-MM for time.`;

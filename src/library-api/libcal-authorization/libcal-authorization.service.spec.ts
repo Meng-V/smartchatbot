@@ -44,7 +44,7 @@ describe('LibcalAuthorizationService', () => {
     // Check that token is available immediately
     const currentToken = await service.getCurrentToken();
     expect(currentToken).toEqual(token);
-    
+
     // Check that token is not expired
     expect(service.isTokenExpired()).toBe(false);
   });
@@ -61,7 +61,9 @@ describe('LibcalAuthorizationService', () => {
 
     // Clear any previous spy calls and create fresh spy
     jest.clearAllMocks();
-    const postSpy = jest.spyOn(httpService.axiosRef, 'post').mockResolvedValue(mockResponse);
+    const postSpy = jest
+      .spyOn(httpService.axiosRef, 'post')
+      .mockResolvedValue(mockResponse);
 
     // Simulate multiple concurrent refresh requests
     const refreshPromises = [
@@ -75,7 +77,7 @@ describe('LibcalAuthorizationService', () => {
     // Should make at most 2 HTTP requests (allowing for some race conditions in tests)
     expect(postSpy.mock.calls.length).toBeGreaterThanOrEqual(1);
     expect(postSpy.mock.calls.length).toBeLessThanOrEqual(2);
-    
+
     // All should get the same token
     const currentToken = await service.getCurrentToken();
     expect(currentToken).toEqual(token);
@@ -84,7 +86,7 @@ describe('LibcalAuthorizationService', () => {
   it('should proactively refresh token when expiring soon', async () => {
     const firstToken = 'firstToken';
     const secondToken = 'secondToken';
-    
+
     // Mock first token response (expires in 6 minutes - just over the 5 minute buffer)
     const firstResponse = {
       data: {
@@ -93,7 +95,7 @@ describe('LibcalAuthorizationService', () => {
         expires_in: 360, // 6 minutes
       },
     } as AxiosResponse;
-    
+
     // Mock second token response
     const secondResponse = {
       data: {
@@ -105,7 +107,8 @@ describe('LibcalAuthorizationService', () => {
 
     // Clear any previous spy calls and create fresh spy
     jest.clearAllMocks();
-    const postSpy = jest.spyOn(httpService.axiosRef, 'post')
+    const postSpy = jest
+      .spyOn(httpService.axiosRef, 'post')
       .mockResolvedValueOnce(firstResponse)
       .mockResolvedValueOnce(secondResponse);
 
@@ -113,15 +116,15 @@ describe('LibcalAuthorizationService', () => {
     await service.refreshToken();
     const initialToken = await service.getCurrentToken();
     expect(initialToken).toEqual(firstToken);
-    
+
     // Manually set token to be expiring soon (simulate time passing)
     // Access private property for testing
-    (service as any).tokenExpiresAt = Date.now() + (4 * 60 * 1000); // 4 minutes from now (within buffer)
-    
+    (service as any).tokenExpiresAt = Date.now() + 4 * 60 * 1000; // 4 minutes from now (within buffer)
+
     // getCurrentToken should automatically refresh
     const currentToken = await service.getCurrentToken();
     expect(currentToken).toEqual(secondToken);
-    
+
     // Check that exactly 2 calls were made in this test
     expect(postSpy).toHaveBeenCalledTimes(2);
   });
@@ -138,17 +141,20 @@ describe('LibcalAuthorizationService', () => {
 
     jest.spyOn(httpService.axiosRef, 'post').mockResolvedValue(mockResponse);
 
-    service.refreshToken().then(() => {
-      // BehaviorSubject should immediately emit the current value to new subscribers
-      const tokenObservable = service.getAccessTokenObservable();
-      let tokenSubscription: any;
-      tokenSubscription = tokenObservable.subscribe((currentToken) => {
-        expect(currentToken).toEqual(token);
-        if (tokenSubscription) {
-          tokenSubscription.unsubscribe();
-        }
-        done();
-      });
-    }).catch(done);
+    service
+      .refreshToken()
+      .then(() => {
+        // BehaviorSubject should immediately emit the current value to new subscribers
+        const tokenObservable = service.getAccessTokenObservable();
+        let tokenSubscription: any;
+        tokenSubscription = tokenObservable.subscribe((currentToken) => {
+          expect(currentToken).toEqual(token);
+          if (tokenSubscription) {
+            tokenSubscription.unsubscribe();
+          }
+          done();
+        });
+      })
+      .catch(done);
   }, 10000);
 });

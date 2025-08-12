@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 
@@ -13,7 +18,9 @@ interface LibCalTokenResponse {
 }
 
 @Injectable()
-export class LibcalAuthorizationService implements OnModuleInit, OnModuleDestroy {
+export class LibcalAuthorizationService
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly OAUTH_URL: string =
     this.retrieveEnvironmentVariablesService.retrieve('LIBCAL_OAUTH_URL');
   private readonly CLIENT_ID: string =
@@ -68,7 +75,7 @@ export class LibcalAuthorizationService implements OnModuleInit, OnModuleDestroy
    */
   private isTokenExpiredOrExpiringSoon(): boolean {
     const now = Date.now();
-    return now >= (this.tokenExpiresAt - this.TOKEN_REFRESH_BUFFER_MS);
+    return now >= this.tokenExpiresAt - this.TOKEN_REFRESH_BUFFER_MS;
   }
 
   /**
@@ -95,7 +102,7 @@ export class LibcalAuthorizationService implements OnModuleInit, OnModuleDestroy
     if (this.isRefreshing) {
       // Wait for the current refresh to complete
       while (this.isRefreshing) {
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
       return;
     }
@@ -104,32 +111,32 @@ export class LibcalAuthorizationService implements OnModuleInit, OnModuleDestroy
 
     try {
       this.logger.log('Refreshing LibCal access token...');
-      
-      const response = await this.httpService.axiosRef.post<LibCalTokenResponse>(
-        this.OAUTH_URL,
-        {
-          client_id: this.CLIENT_ID,
-          client_secret: this.CLIENT_SECRET,
-          grant_type: this.GRANT_TYPE,
-        }
-      );
+
+      const response =
+        await this.httpService.axiosRef.post<LibCalTokenResponse>(
+          this.OAUTH_URL,
+          {
+            client_id: this.CLIENT_ID,
+            client_secret: this.CLIENT_SECRET,
+            grant_type: this.GRANT_TYPE,
+          },
+        );
 
       const tokenData = response.data;
       const now = Date.now();
-      
+
       // Calculate expiration time (expires_in is in seconds)
-      this.tokenExpiresAt = now + (tokenData.expires_in * 1000);
-      
+      this.tokenExpiresAt = now + tokenData.expires_in * 1000;
+
       // Update the token
       this.token$.next(tokenData.access_token);
-      
+
       this.logger.log(
-        `LibCal token refreshed successfully. Expires at: ${new Date(this.tokenExpiresAt).toISOString()}`
+        `LibCal token refreshed successfully. Expires at: ${new Date(this.tokenExpiresAt).toISOString()}`,
       );
-      
+
       // Schedule the next proactive refresh
       this.scheduleTokenRefresh();
-      
     } catch (error: any) {
       this.logger.error('Failed to refresh LibCal token:', error.message);
       throw error;
@@ -152,7 +159,7 @@ export class LibcalAuthorizationService implements OnModuleInit, OnModuleDestroy
     const delay = Math.max(0, refreshAt - Date.now());
 
     this.logger.log(
-      `Scheduling next LibCal token refresh in ${Math.floor(delay / (60 * 1000))} minutes`
+      `Scheduling next LibCal token refresh in ${Math.floor(delay / (60 * 1000))} minutes`,
     );
 
     this.refreshTimer = setTimeout(async () => {

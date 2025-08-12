@@ -19,7 +19,7 @@ const SocketContextProvider = ({ children }) => {
       // const backendUrl = retrieveEnvironmentVariable('VITE_BACKEND_URL');
       // const backendPort = retrieveEnvironmentVariable('VITE_BACKEND_PORT');
       // const socketUrl = `${backendUrl}:${backendPort}`;
-      
+
       // socket.current = io(socketUrl, {
       socket.current = io('', {
         path: '/smartchatbot/socket.io',

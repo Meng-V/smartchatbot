@@ -121,11 +121,12 @@ export class CheckRoomAvailabilityToolService
       ) {
         try {
           // Get fresh token (will refresh if needed)
-          const currentToken = await this.libcalAuthorizationService.getCurrentToken();
+          const currentToken =
+            await this.libcalAuthorizationService.getCurrentToken();
           const header = {
             Authorization: `Bearer ${currentToken}`,
           };
-          
+
           response =
             await this.httpService.axiosRef.get<SearchAvailabilityApiResponse>(
               url,
@@ -144,7 +145,8 @@ export class CheckRoomAvailabilityToolService
           if (
             error.response &&
             (error.response.status === HTTP_UNAUTHORIZED ||
-            error.response.status === HTTP_FORBIDDEN) && retryCount < MAX_RETRIES
+              error.response.status === HTTP_FORBIDDEN) &&
+            retryCount < MAX_RETRIES
           ) {
             retryCount++;
             // Force token refresh and retry
@@ -155,7 +157,7 @@ export class CheckRoomAvailabilityToolService
           }
         }
       }
-      
+
       if (!response) {
         throw new Error('Failed to get response after maximum retries');
       }
