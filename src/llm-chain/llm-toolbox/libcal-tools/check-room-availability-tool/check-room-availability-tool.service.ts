@@ -97,6 +97,10 @@ export class CheckRoomAvailabilityToolService
   ): Promise<Room[]> {
     const url = `${this.SEARCH_AVAILABLE_URL}/${this.DEFAULT_BUILDING_ID}`;
 
+    // Convert HH-MM format to HH:MM format for LibCal API compatibility
+    const timeStartFormatted = timeStart.replace('-', ':');
+    const timeEndFormatted = timeEnd.replace('-', ':');
+
     //Try bigger room if no available rooms for the current capacity
     let availableRooms: RoomAvailability[] = [];
     for (
@@ -129,8 +133,8 @@ export class CheckRoomAvailabilityToolService
                 headers: header,
                 params: {
                   date: date,
-                  time_start: timeStart,
-                  time_end: timeEnd,
+                  time_start: timeStartFormatted,
+                  time_end: timeEndFormatted,
                   type: 'space',
                   capacity: capacityRange,
                 },

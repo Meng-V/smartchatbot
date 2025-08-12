@@ -138,9 +138,6 @@ export class CheckOpenHourToolService implements LlmTool, OnModuleDestroy {
    * @returns
    */
   async runHttpService(date: string): Promise<WeekAvailability> {
-    const header = {
-      Authorization: `Bearer ${this.accessToken}`,
-    };
     const weekdays = this.getMondayAndSundayOfWeek(date);
 
     try {
@@ -157,12 +154,22 @@ export class CheckOpenHourToolService implements LlmTool, OnModuleDestroy {
       const HTTP_UNAUTHORIZED = 401;
       const HTTP_FORBIDDEN = 403;
       let response: AxiosResponse<OpenHourApiResponse> | undefined;
+      
+      let retryCount = 0;
+      const MAX_RETRIES = 2;
+      
       while (
         response === undefined ||
         response.status === HTTP_UNAUTHORIZED ||
         response.status === HTTP_FORBIDDEN
       ) {
         try {
+          // Get fresh token (will refresh if needed)
+          const currentToken = await this.libcalAuthorizationService.getCurrentToken();
+          const header = {
+            Authorization: `Bearer ${currentToken}`,
+          };
+          
           response = await this.httpService.axiosRef.get<OpenHourApiResponse>(
             `${this.OPEN_HOUR_URL}/8113`,
             {
@@ -175,17 +182,21 @@ export class CheckOpenHourToolService implements LlmTool, OnModuleDestroy {
           );
         } catch (error: any) {
           if (
-            error.response.status === HTTP_UNAUTHORIZED ||
-            error.response.status === HTTP_FORBIDDEN
+            (error.response.status === HTTP_UNAUTHORIZED ||
+            error.response.status === HTTP_FORBIDDEN) && retryCount < MAX_RETRIES
           ) {
-            await this.libcalAuthorizationService.resetToken();
-            // Update the header with the new token
-            header.Authorization = `Bearer ${this.accessToken}`;
+            retryCount++;
+            // Force token refresh and retry
+            await this.libcalAuthorizationService.refreshToken();
             continue;
           } else {
             throw error;
           }
         }
+      }
+      
+      if (!response) {
+        throw new Error('Failed to get response after maximum retries');
       }
 
       // Filter the data to only include the hours

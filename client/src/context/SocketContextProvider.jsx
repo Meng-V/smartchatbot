@@ -15,6 +15,12 @@ const SocketContextProvider = ({ children }) => {
 
   useEffect(() => {
     if (!socket.current) {
+      // Use environment variables for production-ready configuration
+      // const backendUrl = retrieveEnvironmentVariable('VITE_BACKEND_URL');
+      // const backendPort = retrieveEnvironmentVariable('VITE_BACKEND_PORT');
+      // const socketUrl = `${backendUrl}:${backendPort}`;
+      
+      // socket.current = io(socketUrl, {
       socket.current = io('', {
         path: '/smartchatbot/socket.io',
         transports: ['websocket'],

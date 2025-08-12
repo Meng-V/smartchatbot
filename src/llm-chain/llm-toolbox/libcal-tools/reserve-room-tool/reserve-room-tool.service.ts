@@ -46,7 +46,7 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
 
   private accessToken: string = '';
   private tokenSubscription: Subscription;
-  private readonly TIMEZONE = 'EST';
+  private readonly TIMEZONE = 'America/New_York'; // Proper timezone identifier for EST/EDT
 
   constructor(
     private httpService: HttpService,
@@ -253,12 +253,18 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
       }, availableRooms[0]);
     }
 
-    const startTimestamp: Date = Date.parse(
-      `${llmToolInput.date} ${llmToolInput.startTime} ${this.TIMEZONE}`,
-    );
-    const endTimestamp: Date = Date.parse(
-      `${llmToolInput.date} ${llmToolInput.endTime} ${this.TIMEZONE}`,
-    );
+    // Convert HH-MM format to HH:MM format for proper parsing
+    const startTimeFormatted = llmToolInput.startTime!.replace('-', ':');
+    const endTimeFormatted = llmToolInput.endTime!.replace('-', ':');
+    
+    // Create proper Date objects with timezone handling
+    const startTimestamp = new Date(`${llmToolInput.date}T${startTimeFormatted}:00-05:00`); // EST is UTC-5
+    const endTimestamp = new Date(`${llmToolInput.date}T${endTimeFormatted}:00-05:00`); // EST is UTC-5
+    
+    // Validate that dates are valid
+    if (isNaN(startTimestamp.getTime()) || isNaN(endTimestamp.getTime())) {
+      return `Invalid date or time format. Please use YYYY-MM-DD for date and HH-MM for time.`;
+    }
 
     const { succeed, bookingId, message } = await this.reserveRoomWithApi(
       startTimestamp,
