@@ -15,8 +15,6 @@ import { TokenUsage } from '../../shared/services/token-usage/token-usage.servic
 import { LlmModelType } from '../../llm-chain/llm/llm.module';
 import { RetrieveEnvironmentVariablesService } from '../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
 
-
-
 export type UserFeedback = {
   userRating: number;
   userComment?: string;
@@ -27,12 +25,13 @@ type ConversationData = {
   userFeedback?: UserFeedback;
 };
 
-@WebSocketGateway(
-{  path: '/smartchatbot/socket.io',  cors: {
-    origin: ['https://new.lib.miamioh.edu'], 
+@WebSocketGateway({
+  path: '/smartchatbot/socket.io',
+  cors: {
+    origin: ['https://new.lib.miamioh.edu'],
     credentials: true,
-  },}
-)
+  },
+})
 export class ChatGateway implements OnGatewayDisconnect {
   private readonly logger = new Logger(ChatGateway.name);
 
