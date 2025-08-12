@@ -104,12 +104,17 @@ export class CheckRoomAvailabilityToolService
       capacityRange <= 3;
       capacityRange++
     ) {
-      const HTTP_UNAUTHORIZED = 403;
+      const HTTP_UNAUTHORIZED = 401;
+      const HTTP_FORBIDDEN = 403;
       let response: AxiosResponse<SearchAvailabilityApiResponse> | undefined;
+
       let retryCount = 0;
       const MAX_RETRIES = 2;
-      
-      while (response === undefined || (response.status === HTTP_UNAUTHORIZED && retryCount < MAX_RETRIES)) {
+      while (
+        response === undefined ||
+        response.status === HTTP_UNAUTHORIZED ||
+        response.status === HTTP_FORBIDDEN
+      ) {
         try {
           // Get fresh token (will refresh if needed)
           const currentToken = await this.libcalAuthorizationService.getCurrentToken();
@@ -132,7 +137,9 @@ export class CheckRoomAvailabilityToolService
               },
             );
         } catch (error: any) {
-          if (error.response?.status === HTTP_UNAUTHORIZED && retryCount < MAX_RETRIES) {
+          if (
+            (error.response.status === HTTP_UNAUTHORIZED ||
+            error.response.status === HTTP_FORBIDDEN) && retryCount < MAX_RETRIES) {
             retryCount++;
             // Force token refresh and retry
             await this.libcalAuthorizationService.refreshToken();
