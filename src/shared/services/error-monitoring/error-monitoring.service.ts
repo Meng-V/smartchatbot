@@ -37,14 +37,18 @@ export class ErrorMonitoringService {
   private readonly logger = new Logger(ErrorMonitoringService.name);
   private errors: ErrorEvent[] = [];
   private readonly maxStoredErrors = 1000;
-  private readonly errorLogPath = path.join(process.cwd(), 'logs', 'error-monitoring.json');
+  private readonly errorLogPath = path.join(
+    process.cwd(),
+    'logs',
+    'error-monitoring.json',
+  );
   private lastAlertTime = 0;
 
   private readonly defaultAlertConfig: AlertConfig = {
     errorRateThreshold: 10, // 10 errors per minute
     criticalErrorThreshold: 5, // 5 critical errors in 5 minutes
     timeWindowMs: 300000, // 5 minutes
-    alertCooldownMs: 600000 // 10 minutes between alerts
+    alertCooldownMs: 600000, // 10 minutes between alerts
   };
 
   constructor() {
@@ -65,7 +69,7 @@ export class ErrorMonitoringService {
     userId?: string,
     sessionId?: string,
     userAgent?: string,
-    ip?: string
+    ip?: string,
   ): string {
     const errorEvent: ErrorEvent = {
       id: this.generateErrorId(),
@@ -78,11 +82,11 @@ export class ErrorMonitoringService {
       userId,
       sessionId,
       userAgent,
-      ip
+      ip,
     };
 
     this.errors.push(errorEvent);
-    
+
     // Maintain max stored errors
     if (this.errors.length > this.maxStoredErrors) {
       this.errors = this.errors.slice(-this.maxStoredErrors);
@@ -116,25 +120,27 @@ export class ErrorMonitoringService {
   /**
    * Get error statistics
    */
-  getErrorStats(timeWindowMs: number = 3600000): ErrorStats { // Default 1 hour
+  getErrorStats(timeWindowMs: number = 3600000): ErrorStats {
+    // Default 1 hour
     const now = Date.now();
     const cutoffTime = now - timeWindowMs;
-    
+
     const recentErrors = this.errors.filter(
-      error => new Date(error.timestamp).getTime() > cutoffTime
+      (error) => new Date(error.timestamp).getTime() > cutoffTime,
     );
 
     const errorsByCategory: Record<string, number> = {};
     const errorsByLevel: Record<string, number> = {};
     const errorCounts: Record<string, number> = {};
 
-    recentErrors.forEach(error => {
+    recentErrors.forEach((error) => {
       // Count by category
-      errorsByCategory[error.category] = (errorsByCategory[error.category] || 0) + 1;
-      
+      errorsByCategory[error.category] =
+        (errorsByCategory[error.category] || 0) + 1;
+
       // Count by level
       errorsByLevel[error.level] = (errorsByLevel[error.level] || 0) + 1;
-      
+
       // Count by message for top errors
       errorCounts[error.message] = (errorCounts[error.message] || 0) + 1;
     });
@@ -144,7 +150,7 @@ export class ErrorMonitoringService {
       .slice(0, 10)
       .map(([message, count]) => ({ message, count }));
 
-    const errorRate = (recentErrors.length / (timeWindowMs / 60000)); // errors per minute
+    const errorRate = recentErrors.length / (timeWindowMs / 60000); // errors per minute
 
     return {
       totalErrors: recentErrors.length,
@@ -152,7 +158,7 @@ export class ErrorMonitoringService {
       errorsByLevel,
       recentErrors: recentErrors.slice(-50), // Last 50 errors
       errorRate,
-      topErrors
+      topErrors,
     };
   }
 
@@ -161,7 +167,7 @@ export class ErrorMonitoringService {
    */
   getErrorsByCategory(category: string, limit: number = 100): ErrorEvent[] {
     return this.errors
-      .filter(error => error.category === category)
+      .filter((error) => error.category === category)
       .slice(-limit);
   }
 
@@ -169,9 +175,7 @@ export class ErrorMonitoringService {
    * Get errors by user
    */
   getErrorsByUser(userId: string, limit: number = 100): ErrorEvent[] {
-    return this.errors
-      .filter(error => error.userId === userId)
-      .slice(-limit);
+    return this.errors.filter((error) => error.userId === userId).slice(-limit);
   }
 
   /**
@@ -180,10 +184,11 @@ export class ErrorMonitoringService {
   searchErrors(query: string, limit: number = 100): ErrorEvent[] {
     const lowerQuery = query.toLowerCase();
     return this.errors
-      .filter(error => 
-        error.message.toLowerCase().includes(lowerQuery) ||
-        error.category.toLowerCase().includes(lowerQuery) ||
-        (error.stack && error.stack.toLowerCase().includes(lowerQuery))
+      .filter(
+        (error) =>
+          error.message.toLowerCase().includes(lowerQuery) ||
+          error.category.toLowerCase().includes(lowerQuery) ||
+          (error.stack && error.stack.toLowerCase().includes(lowerQuery)),
       )
       .slice(-limit);
   }
@@ -191,20 +196,21 @@ export class ErrorMonitoringService {
   /**
    * Clear old errors
    */
-  clearOldErrors(olderThanMs: number = 2592000000): number { // Default 30 days
+  clearOldErrors(olderThanMs: number = 2592000000): number {
+    // Default 30 days
     const cutoffTime = Date.now() - olderThanMs;
     const initialCount = this.errors.length;
-    
+
     this.errors = this.errors.filter(
-      error => new Date(error.timestamp).getTime() > cutoffTime
+      (error) => new Date(error.timestamp).getTime() > cutoffTime,
     );
-    
+
     const removedCount = initialCount - this.errors.length;
-    
+
     if (removedCount > 0) {
       this.logger.log(`Cleared ${removedCount} old error records`);
     }
-    
+
     return removedCount;
   }
 
@@ -213,19 +219,19 @@ export class ErrorMonitoringService {
    */
   exportErrors(startDate?: Date, endDate?: Date): ErrorEvent[] {
     let filteredErrors = this.errors;
-    
+
     if (startDate) {
       filteredErrors = filteredErrors.filter(
-        error => new Date(error.timestamp) >= startDate
+        (error) => new Date(error.timestamp) >= startDate,
       );
     }
-    
+
     if (endDate) {
       filteredErrors = filteredErrors.filter(
-        error => new Date(error.timestamp) <= endDate
+        (error) => new Date(error.timestamp) <= endDate,
       );
     }
-    
+
     return filteredErrors;
   }
 
@@ -234,7 +240,7 @@ export class ErrorMonitoringService {
    */
   private checkAlerts(config: AlertConfig = this.defaultAlertConfig): void {
     const now = Date.now();
-    
+
     // Check cooldown
     if (now - this.lastAlertTime < config.alertCooldownMs) {
       return;
@@ -242,11 +248,13 @@ export class ErrorMonitoringService {
 
     const cutoffTime = now - config.timeWindowMs;
     const recentErrors = this.errors.filter(
-      error => new Date(error.timestamp).getTime() > cutoffTime
+      (error) => new Date(error.timestamp).getTime() > cutoffTime,
     );
 
-    const errorRate = (recentErrors.length / (config.timeWindowMs / 60000));
-    const criticalErrors = recentErrors.filter(error => error.level === 'error').length;
+    const errorRate = recentErrors.length / (config.timeWindowMs / 60000);
+    const criticalErrors = recentErrors.filter(
+      (error) => error.level === 'error',
+    ).length;
 
     let shouldAlert = false;
     let alertMessage = '';
@@ -272,14 +280,14 @@ export class ErrorMonitoringService {
    */
   private triggerAlert(message: string, recentErrors: ErrorEvent[]): void {
     this.logger.error(`🚨 ALERT: ${message}`);
-    
+
     // Log alert details
     const alertDetails = {
       timestamp: new Date().toISOString(),
       message,
       errorCount: recentErrors.length,
       topCategories: this.getTopCategories(recentErrors, 5),
-      recentErrorSample: recentErrors.slice(-5)
+      recentErrorSample: recentErrors.slice(-5),
     };
 
     // Write alert to separate file
@@ -294,11 +302,15 @@ export class ErrorMonitoringService {
   /**
    * Get top error categories
    */
-  private getTopCategories(errors: ErrorEvent[], limit: number): Array<{ category: string; count: number }> {
+  private getTopCategories(
+    errors: ErrorEvent[],
+    limit: number,
+  ): Array<{ category: string; count: number }> {
     const categoryCounts: Record<string, number> = {};
-    
-    errors.forEach(error => {
-      categoryCounts[error.category] = (categoryCounts[error.category] || 0) + 1;
+
+    errors.forEach((error) => {
+      categoryCounts[error.category] =
+        (categoryCounts[error.category] || 0) + 1;
     });
 
     return Object.entries(categoryCounts)
@@ -350,12 +362,15 @@ export class ErrorMonitoringService {
     try {
       if (fs.existsSync(this.errorLogPath)) {
         const content = fs.readFileSync(this.errorLogPath, 'utf8');
-        const lines = content.trim().split('\n').filter(line => line.trim());
-        
+        const lines = content
+          .trim()
+          .split('\n')
+          .filter((line) => line.trim());
+
         // Load last 500 errors from file
         const recentLines = lines.slice(-500);
-        
-        recentLines.forEach(line => {
+
+        recentLines.forEach((line) => {
           try {
             const error = JSON.parse(line);
             this.errors.push(error);
@@ -363,7 +378,7 @@ export class ErrorMonitoringService {
             this.logger.warn('Failed to parse persisted error:', parseError);
           }
         });
-        
+
         this.logger.log(`Loaded ${this.errors.length} persisted errors`);
       }
     } catch (error) {
@@ -386,7 +401,9 @@ export class ErrorMonitoringService {
    */
   private getRecentErrors(timeWindowMs: number): ErrorEvent[] {
     const cutoffTime = new Date(Date.now() - timeWindowMs);
-    return this.errors.filter(error => new Date(error.timestamp) >= cutoffTime);
+    return this.errors.filter(
+      (error) => new Date(error.timestamp) >= cutoffTime,
+    );
   }
 
   /**
@@ -394,25 +411,23 @@ export class ErrorMonitoringService {
    */
   private checkAutoRestart(errorEvent: ErrorEvent): void {
     // Define conditions that should trigger automatic restart
-    const shouldRestart = 
+    const shouldRestart =
       // Critical errors in chat gateway or core services
-      (errorEvent.level === 'error' && 
-       (errorEvent.category.includes('chat-gateway') || 
-        errorEvent.category.includes('database') ||
-        errorEvent.category.includes('llm-service'))) ||
-      
+      (errorEvent.level === 'error' &&
+        (errorEvent.category.includes('chat-gateway') ||
+          errorEvent.category.includes('database') ||
+          errorEvent.category.includes('llm-service'))) ||
       // Multiple API failures in short time
       this.hasMultipleApiFailures() ||
-      
       // High error rate threshold exceeded
       this.isErrorRateExceeded();
 
     if (shouldRestart) {
       this.logger.error('🔄 Auto-restart triggered due to critical errors', {
         triggerError: errorEvent,
-        errorRate: this.getErrorStats(300000).errorRate
+        errorRate: this.getErrorStats(300000).errorRate,
       });
-      
+
       // Trigger restart with delay to allow current operations to complete
       setTimeout(() => {
         this.triggerServerRestart('Critical error conditions detected');
@@ -425,13 +440,14 @@ export class ErrorMonitoringService {
    */
   private hasMultipleApiFailures(): boolean {
     const recentErrors = this.getRecentErrors(300000); // Last 5 minutes
-    const apiErrors = recentErrors.filter((error: ErrorEvent) => 
-      error.category.includes('api') || 
-      error.category.includes('third-party') ||
-      error.message.toLowerCase().includes('timeout') ||
-      error.message.toLowerCase().includes('connection')
+    const apiErrors = recentErrors.filter(
+      (error: ErrorEvent) =>
+        error.category.includes('api') ||
+        error.category.includes('third-party') ||
+        error.message.toLowerCase().includes('timeout') ||
+        error.message.toLowerCase().includes('connection'),
     );
-    
+
     return apiErrors.length >= 5; // 5 API failures in 5 minutes
   }
 
@@ -448,19 +464,22 @@ export class ErrorMonitoringService {
    */
   private triggerServerRestart(reason: string): void {
     this.logger.error(`🚨 TRIGGERING SERVER RESTART: ${reason}`);
-    
+
     // Write restart flag for monitoring
     const fs = require('fs');
     const path = require('path');
     const restartFlagPath = path.join(process.cwd(), '.restart-flag');
-    
+
     try {
-      fs.writeFileSync(restartFlagPath, JSON.stringify({
-        timestamp: new Date().toISOString(),
-        reason,
-        triggeredBy: 'ErrorMonitoringService'
-      }));
-      
+      fs.writeFileSync(
+        restartFlagPath,
+        JSON.stringify({
+          timestamp: new Date().toISOString(),
+          reason,
+          triggeredBy: 'ErrorMonitoringService',
+        }),
+      );
+
       // Exit with code 1 to trigger restart
       process.exit(1);
     } catch (error) {
@@ -472,7 +491,11 @@ export class ErrorMonitoringService {
   /**
    * Get health status
    */
-  getHealthStatus(): { status: string; errorRate: number; recentErrors: number } {
+  getHealthStatus(): {
+    status: string;
+    errorRate: number;
+    recentErrors: number;
+  } {
     const recentErrors = this.getRecentErrors(300000); // Last 5 minutes
     const errorRate = (recentErrors.length / 5) * 60; // Errors per minute
 
@@ -486,7 +509,7 @@ export class ErrorMonitoringService {
     return {
       status,
       errorRate,
-      recentErrors: recentErrors.length
+      recentErrors: recentErrors.length,
     };
   }
 }

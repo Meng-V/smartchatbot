@@ -53,10 +53,13 @@ export class ChatGateway implements OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
     // Start performance monitoring
-    const endTimer = this.performanceMonitoringService.startTimer('chat-message-handling', {
-      clientId: client.id,
-      messageLength: userMessage?.length || 0
-    });
+    const endTimer = this.performanceMonitoringService.startTimer(
+      'chat-message-handling',
+      {
+        clientId: client.id,
+        messageLength: userMessage?.length || 0,
+      },
+    );
 
     let conversationId: string | undefined;
     let messageId: string | undefined;
@@ -64,12 +67,16 @@ export class ChatGateway implements OnGatewayDisconnect {
 
     try {
       // Input validation
-      if (!userMessage || typeof userMessage !== 'string' || userMessage.trim().length === 0) {
+      if (
+        !userMessage ||
+        typeof userMessage !== 'string' ||
+        userMessage.trim().length === 0
+      ) {
         this.errorMonitoringService.logError(
           'chat-validation',
           'Invalid message received',
           'warn',
-          { clientId: client.id, messageType: typeof userMessage }
+          { clientId: client.id, messageType: typeof userMessage },
         );
         this.sendErrorResponse(client, 'Please provide a valid message.');
         success = false;
@@ -78,16 +85,19 @@ export class ChatGateway implements OnGatewayDisconnect {
 
       // Sanitize and limit message length
       const sanitizedMessage = userMessage.trim().substring(0, 2000);
-      
-      const conversationData = this.clientIdToConversationDataMapping.get(client.id);
+
+      const conversationData = this.clientIdToConversationDataMapping.get(
+        client.id,
+      );
 
       // Database operations with error handling
       try {
-        const [, newConversationId] = await this.databaseService.addMessageToDatabase(
-          Role.Customer,
-          sanitizedMessage,
-          conversationData?.conversationId,
-        );
+        const [, newConversationId] =
+          await this.databaseService.addMessageToDatabase(
+            Role.Customer,
+            sanitizedMessage,
+            conversationData?.conversationId,
+          );
         conversationId = newConversationId;
 
         if (!this.clientIdToConversationDataMapping.has(client.id)) {
@@ -102,9 +112,12 @@ export class ChatGateway implements OnGatewayDisconnect {
           'Failed to save user message to database',
           'error',
           { clientId: client.id, messageLength: sanitizedMessage.length },
-          dbError instanceof Error ? dbError.stack : undefined
+          dbError instanceof Error ? dbError.stack : undefined,
         );
-        this.sendErrorResponse(client, 'I\'m having trouble saving your message. Please try again, or contact a librarian for immediate assistance.');
+        this.sendErrorResponse(
+          client,
+          "I'm having trouble saving your message. Please try again, or contact a librarian for immediate assistance.",
+        );
         success = false;
         return;
       }
@@ -112,8 +125,11 @@ export class ChatGateway implements OnGatewayDisconnect {
       // LLM Chain operations with comprehensive error handling
       let modelResponse: string;
       try {
-        const llmChain: LlmChainService = await this.llmConnnectionGateway.getLlmChainForCurrentSocket(client.id);
-        
+        const llmChain: LlmChainService =
+          await this.llmConnnectionGateway.getLlmChainForCurrentSocket(
+            client.id,
+          );
+
         // Set timeout for LLM response
         const responsePromise = llmChain.getModelResponse(sanitizedMessage);
         const timeoutPromise = new Promise<never>((_, reject) => {
@@ -127,31 +143,39 @@ export class ChatGateway implements OnGatewayDisconnect {
           'llm-error',
           'LLM Chain failed to generate response',
           'error',
-          { 
-            clientId: client.id, 
+          {
+            clientId: client.id,
             messageLength: sanitizedMessage.length,
-            errorType: llmError instanceof Error ? llmError.constructor.name : 'unknown'
+            errorType:
+              llmError instanceof Error ? llmError.constructor.name : 'unknown',
           },
-          llmError instanceof Error ? llmError.stack : undefined
+          llmError instanceof Error ? llmError.stack : undefined,
         );
-        
+
         // Provide helpful fallback response with librarian guidance
-        modelResponse = this.generateFallbackResponse(sanitizedMessage, llmError);
+        modelResponse = this.generateFallbackResponse(
+          sanitizedMessage,
+          llmError,
+        );
         success = false; // Mark as partial failure but still provide response
       }
 
       // Save AI response to database
       try {
-        const [modelMessageId] = await this.databaseService.addMessageToDatabase(
-          Role.AIAgent,
-          modelResponse,
-          this.clientIdToConversationDataMapping.get(client.id)?.conversationId,
-        );
+        const [modelMessageId] =
+          await this.databaseService.addMessageToDatabase(
+            Role.AIAgent,
+            modelResponse,
+            this.clientIdToConversationDataMapping.get(client.id)
+              ?.conversationId,
+          );
         messageId = modelMessageId;
       } catch (dbError) {
         this.logger.error('Database error while saving AI response:', dbError);
         // Still send the response to user even if we can't save it
-        this.logger.warn('Sending response without saving to database due to error');
+        this.logger.warn(
+          'Sending response without saving to database due to error',
+        );
       }
 
       // Send response to client
@@ -159,21 +183,29 @@ export class ChatGateway implements OnGatewayDisconnect {
         messageId: messageId || 'temp-' + Date.now(),
         message: modelResponse,
       });
-
     } catch (unexpectedError) {
-      this.logger.error('Unexpected error in handleUserMessage:', unexpectedError);
+      this.logger.error(
+        'Unexpected error in handleUserMessage:',
+        unexpectedError,
+      );
       this.errorMonitoringService.logError(
         'chat-gateway',
         'Unexpected error in chat message handling',
         'error',
-        { 
+        {
           clientId: client.id,
-          errorType: unexpectedError instanceof Error ? unexpectedError.constructor.name : 'unknown',
-          triggerAutoRestart: true
+          errorType:
+            unexpectedError instanceof Error
+              ? unexpectedError.constructor.name
+              : 'unknown',
+          triggerAutoRestart: true,
         },
-        unexpectedError instanceof Error ? unexpectedError.stack : undefined
+        unexpectedError instanceof Error ? unexpectedError.stack : undefined,
       );
-      this.sendErrorResponse(client, 'I encountered an unexpected issue. Let me connect you with a real librarian who can help you right away.');
+      this.sendErrorResponse(
+        client,
+        'I encountered an unexpected issue. Let me connect you with a real librarian who can help you right away.',
+      );
       success = false;
     } finally {
       // Complete performance monitoring
@@ -186,33 +218,51 @@ export class ChatGateway implements OnGatewayDisconnect {
       messageId: 'error-' + Date.now(),
       message: userMessage,
       isError: true,
-      showLibrarianOption: true
+      showLibrarianOption: true,
     };
     client.emit('message', errorResponse);
   }
 
   private generateFallbackResponse(userMessage: string, error: any): string {
-    this.logger.warn(`Generating fallback response for message: "${userMessage.substring(0, 50)}..." due to error: ${error.message}`);
-    
+    this.logger.warn(
+      `Generating fallback response for message: "${userMessage.substring(0, 50)}..." due to error: ${error.message}`,
+    );
+
     // Analyze user message to provide contextual fallback
     const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('hour') || lowerMessage.includes('open') || lowerMessage.includes('close')) {
+
+    if (
+      lowerMessage.includes('hour') ||
+      lowerMessage.includes('open') ||
+      lowerMessage.includes('close')
+    ) {
       return `I'm having trouble accessing current library hours right now. For the most up-to-date hours and information, please contact King Library directly at (513) 529-4141 or visit our website. You can also speak with a librarian using the "Talk to a Real Librarian" option below.`;
     }
-    
-    if (lowerMessage.includes('room') || lowerMessage.includes('reserve') || lowerMessage.includes('book')) {
+
+    if (
+      lowerMessage.includes('room') ||
+      lowerMessage.includes('reserve') ||
+      lowerMessage.includes('book')
+    ) {
       return `I'm currently unable to process room reservations due to a system issue. You can make reservations directly at www.lib.miamioh.edu or contact the library at (513) 529-4141. For immediate assistance, please use the "Talk to a Real Librarian" option.`;
     }
-    
-    if (lowerMessage.includes('librarian') || lowerMessage.includes('help') || lowerMessage.includes('research')) {
+
+    if (
+      lowerMessage.includes('librarian') ||
+      lowerMessage.includes('help') ||
+      lowerMessage.includes('research')
+    ) {
       return `I'm experiencing some technical difficulties right now, but I can still help you connect with the right person! Please use the "Talk to a Real Librarian" option below, or you can contact King Library directly at (513) 529-4141 for immediate research assistance.`;
     }
-    
-    if (lowerMessage.includes('search') || lowerMessage.includes('find') || lowerMessage.includes('database')) {
+
+    if (
+      lowerMessage.includes('search') ||
+      lowerMessage.includes('find') ||
+      lowerMessage.includes('database')
+    ) {
       return `I'm having trouble accessing search functions at the moment. You can search the library catalog directly at www.lib.miamioh.edu or contact a librarian for research assistance. Please use the "Talk to a Real Librarian" option for immediate help.`;
     }
-    
+
     // Generic fallback response
     return `I'm experiencing some technical difficulties and can't fully process your request right now. However, I don't want to leave you without help! Please use the "Talk to a Real Librarian" option below, or contact King Library directly at (513) 529-4141. Our librarians are available to assist you with research, reservations, and any other questions you may have.`;
   }

@@ -40,7 +40,9 @@ export class KingLibrarySiteSearchService {
         index: idx,
         link: item.link || null,
         content: item.pagemap
-          ? item.pagemap.metatags?.[0]?.['og:description'] || item.snippet || null
+          ? item.pagemap.metatags?.[0]?.['og:description'] ||
+            item.snippet ||
+            null
           : item.snippet || null,
       });
     });

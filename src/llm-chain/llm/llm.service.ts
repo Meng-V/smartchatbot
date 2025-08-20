@@ -82,13 +82,13 @@ export class LlmService {
         baseDelayMs: 2000,
         maxDelayMs: 10000,
         backoffMultiplier: 2,
-        timeoutMs: 45000 // 45 seconds for LLM calls
+        timeoutMs: 45000, // 45 seconds for LLM calls
       },
       {
         failureThreshold: 5,
         recoveryTimeoutMs: 120000, // 2 minutes for LLM recovery
-        monitoringPeriodMs: 300000
-      }
+        monitoringPeriodMs: 300000,
+      },
     );
   }
 }

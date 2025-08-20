@@ -13,8 +13,8 @@ describe('ChatGateway', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [DatabaseModule],
       providers: [
-        ChatGateway, 
-        LlmConnectionGateway, 
+        ChatGateway,
+        LlmConnectionGateway,
         DatabaseService,
         ErrorMonitoringService,
         PerformanceMonitoringService,

@@ -12,7 +12,10 @@ export class HealthController {
     try {
       const healthData = {
         status: 'healthy',
-        timestamp: new Date().toLocaleString('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' }),
+        timestamp: new Date().toLocaleString('en-US', {
+          timeZone: 'America/New_York',
+          timeZoneName: 'short',
+        }),
         uptime: process.uptime(),
         memory: {
           used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
@@ -47,7 +50,10 @@ export class HealthController {
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'unhealthy',
-        timestamp: new Date().toLocaleString('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' }),
+        timestamp: new Date().toLocaleString('en-US', {
+          timeZone: 'America/New_York',
+          timeZoneName: 'short',
+        }),
         error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
@@ -119,20 +125,20 @@ export class HealthController {
         key: process.env.GOOGLE_API_KEY,
         cx: process.env.GOOGLE_LIBRARY_SEARCH_CSE_ID,
         q: 'library',
-        num: 1
+        num: 1,
       };
-      
+
       const response = await axios.get(testUrl, {
         params: testParams,
         timeout: 5000, // 5 second timeout
       });
-      
+
       return {
         status: 'healthy',
         details: {
           responseStatus: response.status,
-          testUrl: testUrl
-        }
+          testUrl: testUrl,
+        },
       };
     } catch (error: any) {
       // If external API returns 400, 403, 500, or 503, mark as unhealthy to trigger restart
@@ -142,37 +148,46 @@ export class HealthController {
       if (problematicStatuses.includes(error.response?.status)) {
         const statusMessages: { [key: number]: string } = {
           400: 'Bad Request',
-          403: 'Forbidden', 
+          403: 'Forbidden',
           500: 'Internal Server Error',
-          503: 'Service Unavailable'
+          503: 'Service Unavailable',
         };
-        
+
         return {
           status: 'unhealthy',
           error: `External API returned ${error.response?.status}: ${error.response?.data || statusMessages[error.response?.status]}`,
           details: {
             responseStatus: error.response?.status,
-            responseData: error.response?.data
-          }
+            responseData: error.response?.data,
+          },
         };
       }
-      
+
       // For other errors (network, timeout, rate limiting, etc.), don't trigger restart
       if (error.response?.status === 429) {
         // Rate limiting is expected - only log occasionally to avoid spam
-        if (!this.lastRateLimitLog || Date.now() - this.lastRateLimitLog > 300000) { // Log once every 5 minutes
-          console.log('External API rate limited (429) - this is expected behavior (suppressing further logs for 5 minutes)');
+        if (
+          !this.lastRateLimitLog ||
+          Date.now() - this.lastRateLimitLog > 300000
+        ) {
+          // Log once every 5 minutes
+          console.log(
+            'External API rate limited (429) - this is expected behavior (suppressing further logs for 5 minutes)',
+          );
           this.lastRateLimitLog = Date.now();
         }
       } else {
-        console.warn('External API health check failed (non-critical):', error.message);
+        console.warn(
+          'External API health check failed (non-critical):',
+          error.message,
+        );
       }
       return {
         status: 'healthy', // Don't restart for network issues
         error: `External API warning: ${error.message}`,
         details: {
-          errorType: 'network_or_timeout'
-        }
+          errorType: 'network_or_timeout',
+        },
       };
     }
   }
@@ -181,31 +196,40 @@ export class HealthController {
   async triggerRestart(@Res() res: Response) {
     try {
       console.log('🔄 Manual restart triggered via health endpoint');
-      
+
       // Log the restart request
       const restartLog = {
-        timestamp: new Date().toLocaleString('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' }),
+        timestamp: new Date().toLocaleString('en-US', {
+          timeZone: 'America/New_York',
+          timeZoneName: 'short',
+        }),
         trigger: 'manual_health_endpoint',
         reason: 'Manual restart requested',
       };
-      
+
       fs.writeFileSync(
         path.join(process.cwd(), 'restart-log.json'),
-        JSON.stringify(restartLog, null, 2)
+        JSON.stringify(restartLog, null, 2),
       );
-      
+
       // Create restart flag
       fs.writeFileSync(
         path.join(process.cwd(), '.restart-flag'),
-        new Date().toLocaleString('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' })
+        new Date().toLocaleString('en-US', {
+          timeZone: 'America/New_York',
+          timeZoneName: 'short',
+        }),
       );
-      
+
       res.status(HttpStatus.OK).json({
         status: 'restart_initiated',
         message: 'Server restart has been triggered',
-        timestamp: new Date().toLocaleString('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' }),
+        timestamp: new Date().toLocaleString('en-US', {
+          timeZone: 'America/New_York',
+          timeZoneName: 'short',
+        }),
       });
-      
+
       // Trigger restart after sending response
       setTimeout(() => {
         console.log('🔄 Initiating restart...');
@@ -221,15 +245,17 @@ export class HealthController {
           process.exit(1);
         }, 2000);
       }, 1000);
-      
+
       return; // Explicit return to satisfy TypeScript
-      
     } catch (error) {
       console.error('❌ Failed to trigger restart:', error);
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'restart_failed',
         error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toLocaleString('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' }),
+        timestamp: new Date().toLocaleString('en-US', {
+          timeZone: 'America/New_York',
+          timeZoneName: 'short',
+        }),
       });
     }
   }
@@ -241,7 +267,10 @@ export class HealthController {
         server: {
           status: 'running',
           uptime: process.uptime(),
-          timestamp: new Date().toLocaleString('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' }),
+          timestamp: new Date().toLocaleString('en-US', {
+            timeZone: 'America/New_York',
+            timeZoneName: 'short',
+          }),
           pid: process.pid,
           nodeVersion: process.version,
           platform: process.platform,
@@ -259,26 +288,30 @@ export class HealthController {
         lastRestart: this.getLastRestartInfo(),
         lastError: this.getLastErrorInfo(),
       };
-      
+
       // Determine overall health
       const criticalServicesDown = Object.values(status.services).some(
         (service: any) => service.status !== 'healthy',
       );
-      
-      const httpStatus = criticalServicesDown ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK;
+
+      const httpStatus = criticalServicesDown
+        ? HttpStatus.SERVICE_UNAVAILABLE
+        : HttpStatus.OK;
       const overallStatus = criticalServicesDown ? 'degraded' : 'healthy';
-      
+
       return res.status(httpStatus).json({
         ...status,
         status: overallStatus,
       });
-      
     } catch (error) {
       console.error('❌ Status check failed:', error);
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'unhealthy',
         error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toLocaleString('en-US', { timeZone: 'America/New_York', timeZoneName: 'short' }),
+        timestamp: new Date().toLocaleString('en-US', {
+          timeZone: 'America/New_York',
+          timeZoneName: 'short',
+        }),
       });
     }
   }
