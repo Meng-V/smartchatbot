@@ -10,6 +10,7 @@ import {
   TokenUsage,
   TokenUsageService,
 } from '../../shared/services/token-usage/token-usage.service';
+import { ApiResilienceService } from '../../shared/services/api-resilience/api-resilience.service';
 
 describe('LlmService', () => {
   let service: LlmService;
@@ -27,6 +28,7 @@ describe('LlmService', () => {
           }),
         },
         TokenUsageService,
+        ApiResilienceService,
       ],
     }).compile();
 
