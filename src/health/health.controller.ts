@@ -6,6 +6,7 @@ import axios from 'axios';
 
 @Controller('health')
 export class HealthController {
+  private lastRateLimitLog: number | undefined;
   @Get()
   async checkHealth(@Res() res: Response) {
     try {
@@ -136,6 +137,7 @@ export class HealthController {
     } catch (error: any) {
       // If external API returns 400, 403, 500, or 503, mark as unhealthy to trigger restart
       // These errors indicate issues the server can't handle gracefully
+      // 429 (Rate Limiting) should not trigger restart - it's expected behavior
       const problematicStatuses = [400, 403, 500, 503];
       if (problematicStatuses.includes(error.response?.status)) {
         const statusMessages: { [key: number]: string } = {
@@ -155,8 +157,16 @@ export class HealthController {
         };
       }
       
-      // For other errors (network, timeout, etc.), don't trigger restart
-      console.warn('External API health check failed (non-400/403):', error.message);
+      // For other errors (network, timeout, rate limiting, etc.), don't trigger restart
+      if (error.response?.status === 429) {
+        // Rate limiting is expected - only log occasionally to avoid spam
+        if (!this.lastRateLimitLog || Date.now() - this.lastRateLimitLog > 300000) { // Log once every 5 minutes
+          console.log('External API rate limited (429) - this is expected behavior (suppressing further logs for 5 minutes)');
+          this.lastRateLimitLog = Date.now();
+        }
+      } else {
+        console.warn('External API health check failed (non-critical):', error.message);
+      }
       return {
         status: 'healthy', // Don't restart for network issues
         error: `External API warning: ${error.message}`,
