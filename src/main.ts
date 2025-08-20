@@ -9,8 +9,10 @@ let restartAttempts = 0;
 
 async function bootstrap() {
   try {
-    console.log(`🚀 Starting application (attempt ${restartAttempts + 1}/${MAX_RESTART_ATTEMPTS})...`);
-    
+    console.log(
+      `🚀 Starting application (attempt ${restartAttempts + 1}/${MAX_RESTART_ATTEMPTS})...`,
+    );
+
     const app = await NestFactory.create(AppModule, {
       logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     });
@@ -51,10 +53,9 @@ async function bootstrap() {
 
     await app.listen(3000);
     console.log('✅ Application is running on http://localhost:3000');
-    
+
     // Reset restart attempts on successful start
     restartAttempts = 0;
-    
   } catch (error) {
     console.error('❌ Failed to start application:', error);
     handleCriticalError('bootstrap', error);
@@ -63,7 +64,7 @@ async function bootstrap() {
 
 function handleCriticalError(source: string, error: any) {
   console.error(`💥 Critical error from ${source}:`, error);
-  
+
   // Write error details to file for debugging
   const errorLog = {
     timestamp: new Date().toISOString(),
@@ -72,25 +73,29 @@ function handleCriticalError(source: string, error: any) {
     stack: error.stack,
     restartAttempt: restartAttempts + 1,
   };
-  
+
   fs.writeFileSync(
     path.join(process.cwd(), 'last-error.json'),
-    JSON.stringify(errorLog, null, 2)
+    JSON.stringify(errorLog, null, 2),
   );
 
   if (restartAttempts < MAX_RESTART_ATTEMPTS) {
-    console.log(`🔄 Attempting restart (${restartAttempts + 1}/${MAX_RESTART_ATTEMPTS})...`);
+    console.log(
+      `🔄 Attempting restart (${restartAttempts + 1}/${MAX_RESTART_ATTEMPTS})...`,
+    );
     restartAttempts++;
-    
+
     // Create restart flag
     fs.writeFileSync(RESTART_FLAG_FILE, new Date().toISOString());
-    
+
     // Restart after a short delay
     setTimeout(() => {
       process.exit(1);
     }, 2000);
   } else {
-    console.error('💀 Maximum restart attempts reached. Manual intervention required.');
+    console.error(
+      '💀 Maximum restart attempts reached. Manual intervention required.',
+    );
     process.exit(1);
   }
 }

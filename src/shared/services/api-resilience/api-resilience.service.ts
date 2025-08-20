@@ -17,7 +17,7 @@ export interface CircuitBreakerConfig {
 export enum CircuitBreakerState {
   CLOSED = 'CLOSED',
   OPEN = 'OPEN',
-  HALF_OPEN = 'HALF_OPEN'
+  HALF_OPEN = 'HALF_OPEN',
 }
 
 export interface CircuitBreakerStats {
@@ -38,13 +38,13 @@ export class ApiResilienceService {
     baseDelayMs: 1000,
     maxDelayMs: 10000,
     backoffMultiplier: 2,
-    timeoutMs: 30000
+    timeoutMs: 30000,
   };
 
   private readonly defaultCircuitBreakerConfig: CircuitBreakerConfig = {
     failureThreshold: 5,
     recoveryTimeoutMs: 60000, // 1 minute
-    monitoringPeriodMs: 300000 // 5 minutes
+    monitoringPeriodMs: 300000, // 5 minutes
   };
 
   /**
@@ -54,10 +54,13 @@ export class ApiResilienceService {
     operationName: string,
     operation: () => Promise<T>,
     retryConfig: Partial<RetryConfig> = {},
-    circuitBreakerConfig: Partial<CircuitBreakerConfig> = {}
+    circuitBreakerConfig: Partial<CircuitBreakerConfig> = {},
   ): Promise<T> {
     const config = { ...this.defaultRetryConfig, ...retryConfig };
-    const cbConfig = { ...this.defaultCircuitBreakerConfig, ...circuitBreakerConfig };
+    const cbConfig = {
+      ...this.defaultCircuitBreakerConfig,
+      ...circuitBreakerConfig,
+    };
 
     // Check circuit breaker
     if (this.isCircuitOpen(operationName, cbConfig)) {
@@ -67,34 +70,43 @@ export class ApiResilienceService {
     }
 
     let lastError: Error | undefined;
-    
+
     for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
       try {
-        this.logger.debug(`Executing ${operationName} - attempt ${attempt}/${config.maxAttempts}`);
-        
+        this.logger.debug(
+          `Executing ${operationName} - attempt ${attempt}/${config.maxAttempts}`,
+        );
+
         // Execute with timeout
-        const result = await this.executeWithTimeout(operation, config.timeoutMs);
-        
+        const result = await this.executeWithTimeout(
+          operation,
+          config.timeoutMs,
+        );
+
         // Record success
         this.recordSuccess(operationName);
-        
+
         if (attempt > 1) {
           this.logger.log(`${operationName} succeeded on attempt ${attempt}`);
         }
-        
+
         return result;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         this.recordFailure(operationName, cbConfig);
-        
-        this.logger.warn(`${operationName} failed on attempt ${attempt}: ${lastError.message}`);
-        
+
+        this.logger.warn(
+          `${operationName} failed on attempt ${attempt}: ${lastError.message}`,
+        );
+
         // Don't retry if circuit breaker is now open
         if (this.isCircuitOpen(operationName, cbConfig)) {
-          this.logger.warn(`Circuit breaker opened for ${operationName} after failure`);
+          this.logger.warn(
+            `Circuit breaker opened for ${operationName} after failure`,
+          );
           break;
         }
-        
+
         // Don't delay after the last attempt
         if (attempt < config.maxAttempts) {
           const delay = this.calculateDelay(attempt, config);
@@ -104,8 +116,12 @@ export class ApiResilienceService {
       }
     }
 
-    const finalError = lastError || new Error(`${operationName} failed after ${config.maxAttempts} attempts`);
-    this.logger.error(`${operationName} failed after ${config.maxAttempts} attempts: ${finalError.message}`);
+    const finalError =
+      lastError ||
+      new Error(`${operationName} failed after ${config.maxAttempts} attempts`);
+    this.logger.error(
+      `${operationName} failed after ${config.maxAttempts} attempts: ${finalError.message}`,
+    );
     throw finalError;
   }
 
@@ -114,7 +130,7 @@ export class ApiResilienceService {
    */
   private async executeWithTimeout<T>(
     operation: () => Promise<T>,
-    timeoutMs: number
+    timeoutMs: number,
   ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
@@ -122,11 +138,11 @@ export class ApiResilienceService {
       }, timeoutMs);
 
       operation()
-        .then(result => {
+        .then((result) => {
           clearTimeout(timeoutId);
           resolve(result);
         })
-        .catch(error => {
+        .catch((error) => {
           clearTimeout(timeoutId);
           reject(error);
         });
@@ -136,25 +152,30 @@ export class ApiResilienceService {
   /**
    * Check if circuit breaker is open
    */
-  private isCircuitOpen(operationName: string, config: CircuitBreakerConfig): boolean {
+  private isCircuitOpen(
+    operationName: string,
+    config: CircuitBreakerConfig,
+  ): boolean {
     const stats = this.getCircuitBreakerStats(operationName);
-    
+
     switch (stats.state) {
       case CircuitBreakerState.CLOSED:
         return false;
-      
+
       case CircuitBreakerState.OPEN:
         // Check if recovery timeout has passed
         if (Date.now() - stats.lastFailureTime > config.recoveryTimeoutMs) {
           stats.state = CircuitBreakerState.HALF_OPEN;
-          this.logger.log(`Circuit breaker for ${operationName} moved to HALF_OPEN`);
+          this.logger.log(
+            `Circuit breaker for ${operationName} moved to HALF_OPEN`,
+          );
           return false;
         }
         return true;
-      
+
       case CircuitBreakerState.HALF_OPEN:
         return false;
-      
+
       default:
         return false;
     }
@@ -167,7 +188,7 @@ export class ApiResilienceService {
     const stats = this.getCircuitBreakerStats(operationName);
     stats.successCount++;
     stats.totalRequests++;
-    
+
     if (stats.state === CircuitBreakerState.HALF_OPEN) {
       // Reset circuit breaker on success in half-open state
       stats.state = CircuitBreakerState.CLOSED;
@@ -179,15 +200,20 @@ export class ApiResilienceService {
   /**
    * Record failed operation
    */
-  private recordFailure(operationName: string, config: CircuitBreakerConfig): void {
+  private recordFailure(
+    operationName: string,
+    config: CircuitBreakerConfig,
+  ): void {
     const stats = this.getCircuitBreakerStats(operationName);
     stats.failureCount++;
     stats.totalRequests++;
     stats.lastFailureTime = Date.now();
-    
+
     if (stats.failureCount >= config.failureThreshold) {
       stats.state = CircuitBreakerState.OPEN;
-      this.logger.warn(`Circuit breaker for ${operationName} opened after ${stats.failureCount} failures`);
+      this.logger.warn(
+        `Circuit breaker for ${operationName} opened after ${stats.failureCount} failures`,
+      );
     }
   }
 
@@ -201,7 +227,7 @@ export class ApiResilienceService {
         failureCount: 0,
         lastFailureTime: 0,
         successCount: 0,
-        totalRequests: 0
+        totalRequests: 0,
       });
     }
     return this.circuitBreakers.get(operationName)!;
@@ -211,7 +237,8 @@ export class ApiResilienceService {
    * Calculate exponential backoff delay
    */
   private calculateDelay(attempt: number, config: RetryConfig): number {
-    const delay = config.baseDelayMs * Math.pow(config.backoffMultiplier, attempt - 1);
+    const delay =
+      config.baseDelayMs * Math.pow(config.backoffMultiplier, attempt - 1);
     return Math.min(delay, config.maxDelayMs);
   }
 
@@ -219,7 +246,7 @@ export class ApiResilienceService {
    * Sleep utility
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**

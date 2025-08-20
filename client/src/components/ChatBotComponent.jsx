@@ -11,7 +11,6 @@ const ChatBotComponent = () => {
   const { messageContextValues } = useContext(MessageContext);
   const chatRef = useRef();
 
-
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (messageContextValues.inputMessage && socketContextValues.socket) {
@@ -30,8 +29,6 @@ const ChatBotComponent = () => {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [messageContextValues.message]);
-
-
 
   return (
     <>
@@ -107,8 +104,6 @@ const ChatBotComponent = () => {
           )}
         </VStack>
       </Box>
-      
-
 
       <form onSubmit={handleFormSubmit}>
         <HStack spacing={3}>
