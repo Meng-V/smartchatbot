@@ -51,19 +51,19 @@ const App = () => {
     toast,
   ]);
 
-  // Auto-redirect to librarian if server is critically unhealthy
+  // Auto-redirect to librarian if server is critically unhealthy or connection issues
   useEffect(() => {
-    if (serverStatus === 'unhealthy' && isOpen && step === 'services') {
+    if ((serverStatus === 'unhealthy' || (!socketContextValues.isConnected && socketContextValues.attemptedConnection)) && isOpen && step === 'services') {
       toast({
         title: 'Service Unavailable',
-        description: 'Redirecting you to a human librarian for assistance.',
+        description: 'The Smart Chatbot is currently unavailable. Redirecting you to a human librarian for assistance.',
         status: 'warning',
         duration: 5000,
         isClosable: true,
       });
       setStep('realLibrarian');
     }
-  }, [serverStatus, isOpen, step, toast]);
+  }, [serverStatus, socketContextValues.isConnected, socketContextValues.attemptedConnection, isOpen, step, toast]);
 
   // Handler for when user clicks "Talk to Librarian" from error boundary
   const handleLibrarianHelp = () => {
@@ -165,11 +165,25 @@ const App = () => {
             {step === 'initial' && (
               <VStack>
                 <Button
-                  onClick={() => setStep('services')}
-                  isDisabled={serverStatus === 'unhealthy'}
-                  opacity={serverStatus === 'unhealthy' ? 0.6 : 1}
+                  onClick={() => {
+                    // Check if server is healthy and connected before allowing access to chatbot
+                    if (serverStatus === 'unhealthy' || (!socketContextValues.isConnected && socketContextValues.attemptedConnection)) {
+                      toast({
+                        title: 'Chatbot Unavailable',
+                        description: 'The Smart Chatbot is currently unavailable. Please talk to a human librarian instead.',
+                        status: 'error',
+                        duration: 5000,
+                        isClosable: true,
+                      });
+                      setStep('realLibrarian');
+                    } else {
+                      setStep('services');
+                    }
+                  }}
+                  isDisabled={serverStatus === 'unhealthy' || (!socketContextValues.isConnected && socketContextValues.attemptedConnection)}
+                  opacity={(serverStatus === 'unhealthy' || (!socketContextValues.isConnected && socketContextValues.attemptedConnection)) ? 0.6 : 1}
                 >
-                  Library Chatbot {needsAttention && '(Unavailable)'}
+                  Library Chatbot {(needsAttention || (!socketContextValues.isConnected && socketContextValues.attemptedConnection)) && '(Unavailable)'}
                 </Button>
                 <Button onClick={() => setStep('realLibrarian')}>
                   Talk to a human librarian
@@ -179,7 +193,29 @@ const App = () => {
                 </Button>
               </VStack>
             )}
-            {step === 'services' && <ChatBotComponent />}
+            {step === 'services' && (
+              // Only render ChatBotComponent if server is healthy and connected
+              (serverStatus === 'healthy' && socketContextValues.isConnected) ? (
+                <ChatBotComponent />
+              ) : (
+                // If server becomes unhealthy while in services step, show message and redirect
+                <VStack spacing={4} textAlign="center" py={6}>
+                  <Text color="red.500" fontWeight="bold">
+                    Smart Chatbot is currently unavailable
+                  </Text>
+                  <Text color="gray.600" fontSize="sm">
+                    We're experiencing technical difficulties. Let us connect you with a human librarian instead.
+                  </Text>
+                  <Button 
+                    colorScheme="blue" 
+                    onClick={() => setStep('realLibrarian')}
+                    size="md"
+                  >
+                    Talk to a Human Librarian
+                  </Button>
+                </VStack>
+              )
+            )}
             {step === 'realLibrarian' && <RealLibrarianWidget />}
             {step === 'ticket' && <OfflineTicketWidget />}
           </ModalBody>

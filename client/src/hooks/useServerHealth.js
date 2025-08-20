@@ -62,6 +62,9 @@ const useServerHealth = (checkInterval = 30000) => {
       if (error.name === 'AbortError') {
         errorType = 'timeout';
         errorMessage = 'Server is taking too long to respond';
+      } else if (error.message.includes('400')) {
+        errorType = '400';
+        errorMessage = 'Bad request - invalid health check parameters';
       } else if (error.message.includes('404')) {
         errorType = '404';
         errorMessage = 'Health check endpoint not found';
@@ -91,6 +94,71 @@ const useServerHealth = (checkInterval = 30000) => {
   const retryHealthCheck = useCallback(() => {
     setServerStatus('checking');
     checkServerHealth();
+  }, [checkServerHealth]);
+
+  // Trigger backend restart function
+  const triggerBackendRestart = useCallback(async () => {
+    try {
+      console.log('🔄 Triggering backend restart...');
+      setServerStatus('restarting');
+      setErrorDetails({
+        type: 'restarting',
+        message: 'Attempting to restart the backend server...',
+        timestamp: new Date(),
+      });
+
+      const response = await fetch('/health/restart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Backend restart initiated:', result);
+        
+        // Wait a moment for the server to restart, then check health
+        setTimeout(() => {
+          setServerStatus('checking');
+          setErrorDetails({
+            type: 'restart_checking',
+            message: 'Server restart initiated, checking status...',
+            timestamp: new Date(),
+          });
+          
+          // Start checking health more frequently after restart
+          const checkInterval = setInterval(() => {
+            checkServerHealth().then((healthData) => {
+              if (healthData && healthData.status === 'healthy') {
+                clearInterval(checkInterval);
+                console.log('✅ Backend successfully restarted and healthy');
+              }
+            });
+          }, 2000); // Check every 2 seconds
+          
+          // Stop checking after 30 seconds
+          setTimeout(() => {
+            clearInterval(checkInterval);
+          }, 30000);
+        }, 3000);
+        
+        return { success: true, message: result.message };
+      } else {
+        throw new Error(`Restart request failed: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('❌ Failed to trigger backend restart:', error);
+      setServerStatus('unhealthy');
+      setErrorDetails({
+        type: 'restart_failed',
+        message: 'Failed to trigger backend restart',
+        fullError: error.message,
+        timestamp: new Date(),
+      });
+      return { success: false, error: error.message };
+    }
   }, [checkServerHealth]);
 
   // Monitor online/offline status
@@ -148,6 +216,15 @@ const useServerHealth = (checkInterval = 30000) => {
     return status === 'unhealthy' || status === 'degraded' || status === 'offline';
   };
 
+  const canRestart = () => {
+    const status = getHealthStatus();
+    return status === 'unhealthy' || status === 'degraded';
+  };
+
+  const isRestarting = () => {
+    return serverStatus === 'restarting';
+  };
+
   return {
     serverStatus: getHealthStatus(),
     lastHealthCheck,
@@ -156,8 +233,11 @@ const useServerHealth = (checkInterval = 30000) => {
     isOnline,
     checkServerHealth,
     retryHealthCheck,
+    triggerBackendRestart,
     isHealthy: isHealthy(),
     needsAttention: needsAttention(),
+    canRestart: canRestart(),
+    isRestarting: isRestarting(),
   };
 };
 

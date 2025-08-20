@@ -5,6 +5,7 @@ import {
   OpenAiModelType,
 } from './openai-api/openai-api.service';
 import { SharedModule } from '../../shared/shared.module';
+import { ApiResilienceService } from '../../shared/services/api-resilience/api-resilience.service';
 
 export type LlmModelType = OpenAiModelType | CohereModelType;
 
@@ -22,7 +23,7 @@ export type LlmModelSetting = {
 
 @Module({
   imports: [SharedModule],
-  providers: [LlmService, OpenaiApiService],
-  exports: [LlmService, OpenaiApiService],
+  providers: [LlmService, OpenaiApiService, ApiResilienceService],
+  exports: [LlmService, OpenaiApiService, ApiResilienceService],
 })
 export class LlmModule {}
