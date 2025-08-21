@@ -21,15 +21,14 @@ const SocketContextProvider = ({ children }) => {
       // const socketUrl = `${backendUrl}:${backendPort}`;
 
       // socket.current = io(socketUrl, {
-      socket.current = io('', {
-        path: '/smartchatbot/socket.io',
+      socket.current = io(retrieveEnvironmentVariable('VITE_SOCKET_DOMAIN'), {
+        path: retrieveEnvironmentVariable('VITE_BASE_PATH') + '/socket.io',
         transports: ['websocket'],
         upgrade: false,
       });
     }
 
     socket.current.on('connect', () => {
-      console.log('Socket connected');
       if (curSession.current) {
         const welcomeMessage = {
           text: 'Hi this is the Library Smart Chatbot. How may I help you?',

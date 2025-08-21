@@ -28,9 +28,9 @@ type ConversationData = {
 };
 
 @WebSocketGateway({
-  path: '/smartchatbot/socket.io',
+  path: process.env.SOCKET_PATH + '/socket.io',
   cors: {
-    origin: ['https://new.lib.miamioh.edu'],
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   },
 })

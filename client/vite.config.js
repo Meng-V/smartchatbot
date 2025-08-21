@@ -10,10 +10,10 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       strictPort: true,
     },
-    base: '/smartchatbot/',
+    base: env.VITE_BASE_PATH + '/',
     server: {
       port: 5173,
-      allowedHosts: ['new.lib.miamioh.edu'],
+      allowedHosts: env.VITE_FRONTEND_DOMAIN,
       host: true,
       proxy: {
         '/api': {

@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as fs from 'fs';
 import * as path from 'path';
+import 'dotenv/config'; 
 
 const RESTART_FLAG_FILE = path.join(process.cwd(), '.restart-flag');
 const MAX_RESTART_ATTEMPTS = 5;
@@ -16,10 +17,9 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
       logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     });
-
     // Enable CORS for frontend origin (adjust as needed)
     app.enableCors({
-      origin: ['https://new.lib.miamioh.edu'], // your frontend URL
+      origin: process.env.FRONTEND_URL, // your frontend URL
       credentials: true,
     });
 
