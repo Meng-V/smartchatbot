@@ -1,0 +1,37 @@
+# Systemd service file for SmartChatbot with auto-restart.sh
+# Save this as /etc/systemd/system/smartchatbot.service
+
+[Unit]
+Description=SmartChatbot Auto-Restart Manager
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=your-username  # Replace with your actual username
+Group=your-group    # Replace with your actual group
+WorkingDirectory=/path/to/smartchatbot  # Replace with your actual path
+ExecStart=/bin/bash /path/to/smartchatbot/auto-restart.sh
+Restart=always
+RestartSec=10
+
+# Environment variables
+Environment=NODE_ENV=production
+# Add other environment variables as needed
+# Environment=OPENAI_API_KEY=your-key
+# Environment=GOOGLE_API_KEY=your-key
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=smartchatbot
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/path/to/smartchatbot
+
+[Install]
+WantedBy=multi-user.target

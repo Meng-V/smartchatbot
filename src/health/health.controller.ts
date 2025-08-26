@@ -7,6 +7,10 @@ import axios from 'axios';
 @Controller('health')
 export class HealthController {
   private lastRateLimitLog: number | undefined;
+  private restartAttempts: number = 0;
+  private readonly maxRestartAttempts: number = 3;
+  private lastRestartTime: number = 0;
+  private readonly restartCooldown: number = 60000; // 1 minute cooldown between restarts
   @Get()
   async checkHealth(@Res() res: Response) {
     try {
@@ -40,9 +44,38 @@ export class HealthController {
       );
 
       if (criticalServicesDown) {
+        // Log the critical service failure
+        console.error(
+          '🚨 Critical services are down:',
+          Object.entries(healthData.services)
+            .filter(
+              ([_, service]: [string, any]) => service.status !== 'healthy',
+            )
+            .map(
+              ([name, service]: [string, any]) =>
+                `${name}: ${service.error || 'unhealthy'}`,
+            ),
+        );
+
+        // Trigger auto-restart if within limits and cooldown period
+        await this.attemptAutoRestart(
+          'critical_service_failure',
+          `Services down: ${Object.entries(healthData.services)
+            .filter(
+              ([_, service]: [string, any]) => service.status !== 'healthy',
+            )
+            .map(([name]) => name)
+            .join(', ')}`,
+        );
+
         return res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
           ...healthData,
           status: 'degraded',
+          autoRestart: {
+            attempts: this.restartAttempts,
+            maxAttempts: this.maxRestartAttempts,
+            canRestart: this.canAttemptRestart(),
+          },
         });
       }
 
@@ -99,6 +132,39 @@ export class HealthController {
         };
       }
 
+      // Test actual OpenAI API connection with a minimal request
+      try {
+        const response = await axios.get('https://api.openai.com/v1/models', {
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          timeout: 5000,
+        });
+
+        if (response.status === 200) {
+          return { status: 'healthy' };
+        }
+      } catch (apiError: any) {
+        // API key invalid, expired, or other critical issues
+        if (apiError.response?.status === 401) {
+          return {
+            status: 'unhealthy',
+            error: 'OpenAI API key is invalid or expired',
+          };
+        }
+        if (apiError.response?.status === 403) {
+          return {
+            status: 'unhealthy',
+            error: 'OpenAI API access forbidden',
+          };
+        }
+        // For other errors, still mark as unhealthy but with different message
+        return {
+          status: 'unhealthy',
+          error: `OpenAI API connection failed: ${apiError.message}`,
+        };
+      }
+
       return {
         status: 'healthy',
       };
@@ -119,6 +185,22 @@ export class HealthController {
     details?: any;
   }> {
     try {
+      // Check if required environment variables are present
+      if (
+        !process.env.GOOGLE_API_KEY ||
+        !process.env.GOOGLE_LIBRARY_SEARCH_CSE_ID
+      ) {
+        return {
+          status: 'unhealthy',
+          error:
+            'Google API credentials not configured (missing GOOGLE_API_KEY or GOOGLE_LIBRARY_SEARCH_CSE_ID)',
+          details: {
+            missingApiKey: !process.env.GOOGLE_API_KEY,
+            missingCseId: !process.env.GOOGLE_LIBRARY_SEARCH_CSE_ID,
+          },
+        };
+      }
+
       // Test Google Custom Search API since that's the main external API we use
       const testUrl = 'https://www.googleapis.com/customsearch/v1';
       const testParams = {
@@ -141,52 +223,77 @@ export class HealthController {
         },
       };
     } catch (error: any) {
-      // If external API returns 400, 403, 500, or 503, mark as unhealthy to trigger restart
-      // These errors indicate issues the server can't handle gracefully
-      // 429 (Rate Limiting) should not trigger restart - it's expected behavior
-      const problematicStatuses = [400, 403, 500, 503];
-      if (problematicStatuses.includes(error.response?.status)) {
+      // Mark as unhealthy for any API errors that indicate configuration issues
+      // This includes missing/invalid API keys, forbidden access, server errors
+      const criticalStatuses = [400, 401, 403, 500, 503];
+
+      if (
+        error.response?.status &&
+        criticalStatuses.includes(error.response.status)
+      ) {
         const statusMessages: { [key: number]: string } = {
-          400: 'Bad Request',
-          403: 'Forbidden',
+          400: 'Bad Request - Invalid API parameters',
+          401: 'Unauthorized - Invalid API key',
+          403: 'Forbidden - API access denied',
           500: 'Internal Server Error',
           503: 'Service Unavailable',
         };
 
         return {
           status: 'unhealthy',
-          error: `External API returned ${error.response?.status}: ${error.response?.data || statusMessages[error.response?.status]}`,
+          error: `External API returned ${error.response.status}: ${statusMessages[error.response.status] || error.response.data}`,
           details: {
-            responseStatus: error.response?.status,
-            responseData: error.response?.data,
+            responseStatus: error.response.status,
+            responseData: error.response.data,
           },
         };
       }
 
-      // For other errors (network, timeout, rate limiting, etc.), don't trigger restart
+      // Handle network errors, timeouts, and connection failures as unhealthy
+      if (
+        error.code === 'ENOTFOUND' ||
+        error.code === 'ECONNREFUSED' ||
+        error.code === 'ETIMEDOUT'
+      ) {
+        return {
+          status: 'unhealthy',
+          error: `External API connection failed: ${error.message}`,
+          details: {
+            errorCode: error.code,
+            errorType: 'connection_failure',
+          },
+        };
+      }
+
+      // For rate limiting (429), don't trigger restart - it's expected behavior
       if (error.response?.status === 429) {
-        // Rate limiting is expected - only log occasionally to avoid spam
         if (
           !this.lastRateLimitLog ||
           Date.now() - this.lastRateLimitLog > 300000
         ) {
-          // Log once every 5 minutes
           console.log(
             'External API rate limited (429) - this is expected behavior (suppressing further logs for 5 minutes)',
           );
           this.lastRateLimitLog = Date.now();
         }
-      } else {
-        console.warn(
-          'External API health check failed (non-critical):',
-          error.message,
-        );
+        return {
+          status: 'healthy', // Don't restart for rate limiting
+          error: `External API rate limited: ${error.message}`,
+          details: {
+            errorType: 'rate_limited',
+          },
+        };
+      }
+
+      // For any other errors, only log if it's actually an error (not rate limiting)
+      if (error.response?.status !== 429) {
+        console.warn('External API health check failed:', error.message);
       }
       return {
-        status: 'healthy', // Don't restart for network issues
-        error: `External API warning: ${error.message}`,
+        status: 'unhealthy',
+        error: `External API error: ${error.message}`,
         details: {
-          errorType: 'network_or_timeout',
+          errorType: 'unknown_error',
         },
       };
     }
@@ -197,6 +304,10 @@ export class HealthController {
     try {
       console.log('🔄 Manual restart triggered via health endpoint');
 
+      // Reset auto-restart counter for manual restarts
+      this.restartAttempts = 0;
+      this.lastRestartTime = 0;
+
       // Log the restart request
       const restartLog = {
         timestamp: new Date().toLocaleString('en-US', {
@@ -205,6 +316,7 @@ export class HealthController {
         }),
         trigger: 'manual_health_endpoint',
         reason: 'Manual restart requested',
+        attempt: 'manual',
       };
 
       fs.writeFileSync(
@@ -215,35 +327,26 @@ export class HealthController {
       // Create restart flag
       fs.writeFileSync(
         path.join(process.cwd(), '.restart-flag'),
-        new Date().toLocaleString('en-US', {
-          timeZone: 'America/New_York',
-          timeZoneName: 'short',
-        }),
+        `Manual restart at ${restartLog.timestamp}`,
       );
 
       res.status(HttpStatus.OK).json({
         status: 'restart_initiated',
         message: 'Server restart has been triggered',
-        timestamp: new Date().toLocaleString('en-US', {
-          timeZone: 'America/New_York',
-          timeZoneName: 'short',
-        }),
+        timestamp: restartLog.timestamp,
+        type: 'manual',
       });
 
       // Trigger restart after sending response
       setTimeout(() => {
-        console.log('🔄 Initiating restart...');
-        // Force close all connections and exit
-        if (process.platform === 'win32') {
-          process.kill(process.pid, 'SIGTERM');
-        } else {
-          process.kill(process.pid, 'SIGTERM');
-        }
+        console.log('🔄 Initiating manual restart...');
+        process.kill(process.pid, 'SIGTERM');
+
         // Fallback to force exit if SIGTERM doesn't work
         setTimeout(() => {
           console.log('🔄 Force exiting...');
           process.exit(1);
-        }, 2000);
+        }, 3000);
       }, 1000);
 
       return; // Explicit return to satisfy TypeScript
@@ -284,6 +387,12 @@ export class HealthController {
         services: {
           database: await this.checkDatabaseHealth(),
           openai: await this.checkOpenAIHealth(),
+          externalApis: await this.checkExternalApisHealth(),
+        },
+        autoRestart: {
+          attempts: this.restartAttempts,
+          maxAttempts: this.maxRestartAttempts,
+          canRestart: this.canAttemptRestart(),
         },
         lastRestart: this.getLastRestartInfo(),
         lastError: this.getLastErrorInfo(),
@@ -340,5 +449,121 @@ export class HealthController {
       console.warn('Could not read error log:', error);
     }
     return null;
+  }
+
+  private canAttemptRestart(): boolean {
+    const now = Date.now();
+    const timeSinceLastRestart = now - this.lastRestartTime;
+
+    return (
+      this.restartAttempts < this.maxRestartAttempts &&
+      timeSinceLastRestart > this.restartCooldown
+    );
+  }
+
+  private async attemptAutoRestart(
+    trigger: string,
+    reason: string,
+  ): Promise<void> {
+    if (!this.canAttemptRestart()) {
+      if (this.restartAttempts >= this.maxRestartAttempts) {
+        console.error(
+          `🚫 Auto-restart disabled: Maximum attempts (${this.maxRestartAttempts}) reached`,
+        );
+      } else {
+        const remainingCooldown =
+          this.restartCooldown - (Date.now() - this.lastRestartTime);
+        console.warn(
+          `⏳ Auto-restart on cooldown: ${Math.ceil(remainingCooldown / 1000)}s remaining`,
+        );
+      }
+      return;
+    }
+
+    this.restartAttempts++;
+    this.lastRestartTime = Date.now();
+
+    console.log(
+      `🔄 Auto-restart attempt ${this.restartAttempts}/${this.maxRestartAttempts} triggered by: ${trigger}`,
+    );
+
+    // Log the restart attempt
+    const restartLog = {
+      timestamp: new Date().toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        timeZoneName: 'short',
+      }),
+      trigger: `auto_restart_${trigger}`,
+      reason: reason,
+      attempt: this.restartAttempts,
+      maxAttempts: this.maxRestartAttempts,
+    };
+
+    try {
+      fs.writeFileSync(
+        path.join(process.cwd(), 'restart-log.json'),
+        JSON.stringify(restartLog, null, 2),
+      );
+
+      // Create restart flag for auto-restart.sh script
+      fs.writeFileSync(
+        path.join(process.cwd(), '.restart-flag'),
+        `Auto-restart attempt ${this.restartAttempts}/${this.maxRestartAttempts} at ${restartLog.timestamp}`,
+      );
+
+      // Log error details for debugging
+      const errorLog = {
+        timestamp: restartLog.timestamp,
+        trigger: trigger,
+        reason: reason,
+        attempt: this.restartAttempts,
+        services: 'See health check for details',
+      };
+
+      fs.writeFileSync(
+        path.join(process.cwd(), 'last-error.json'),
+        JSON.stringify(errorLog, null, 2),
+      );
+
+      // Delay restart to allow current requests to complete
+      setTimeout(() => {
+        console.log(
+          `🔄 Executing auto-restart (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`,
+        );
+        process.kill(process.pid, 'SIGTERM');
+
+        // Fallback force exit
+        setTimeout(() => {
+          console.log('🔄 Force exiting...');
+          process.exit(1);
+        }, 3000);
+      }, 2000);
+    } catch (error) {
+      console.error('❌ Failed to execute auto-restart:', error);
+    }
+  }
+
+  @Get('restart-status')
+  async getRestartStatus(@Res() res: Response) {
+    try {
+      const status = {
+        restartAttempts: this.restartAttempts,
+        maxRestartAttempts: this.maxRestartAttempts,
+        canRestart: this.canAttemptRestart(),
+        lastRestartTime: this.lastRestartTime,
+        cooldownRemaining: Math.max(
+          0,
+          this.restartCooldown - (Date.now() - this.lastRestartTime),
+        ),
+        lastRestart: this.getLastRestartInfo(),
+        lastError: this.getLastErrorInfo(),
+      };
+
+      return res.status(HttpStatus.OK).json(status);
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   }
 }

@@ -1,15 +1,30 @@
-import { Box, VStack, HStack, Input, Button, Text } from '@chakra-ui/react';
+import {
+  Box,
+  VStack,
+  HStack,
+  Input,
+  Button,
+  Text,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  Flex,
+  Spacer,
+} from '@chakra-ui/react';
 import MessageComponents from './ParseLinks';
-import { useContext, useRef, useEffect } from 'react';
+import { useContext, useRef, useEffect, useState } from 'react';
 import { SocketContext } from '../context/SocketContextProvider';
 import { MessageContext } from '../context/MessageContextProvider';
 import MessageRatingComponent from './MessageRatingComponent';
+import HumanLibrarianWidget from './HumanLibrarianWidget';
 import './ChatBotComponent.css';
 
 const ChatBotComponent = () => {
   const { socketContextValues } = useContext(SocketContext);
   const { messageContextValues } = useContext(MessageContext);
   const chatRef = useRef();
+  const [widgetVisible, setWidgetVisible] = useState(false);
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
@@ -30,8 +45,68 @@ const ChatBotComponent = () => {
     }
   }, [messageContextValues.message]);
 
+  // Determine if we should show service issues alert
+  const shouldShowServiceAlert =
+    !socketContextValues.serviceHealthy ||
+    socketContextValues.connectionErrors >= 3 ||
+    (!socketContextValues.isConnected &&
+      socketContextValues.attemptedConnection);
+
+  // Auto-show librarian widget based on service status
+  useEffect(() => {
+    if (socketContextValues.showLibrarianWidget && !widgetVisible) {
+      setWidgetVisible(true);
+    }
+  }, [socketContextValues.showLibrarianWidget, widgetVisible]);
+
   return (
     <>
+      {/* Service Status Alert */}
+      {shouldShowServiceAlert && (
+        <Alert status='warning' mb={4}>
+          <AlertIcon />
+          <Box>
+            <AlertTitle>Service Issue Detected!</AlertTitle>
+            <AlertDescription>
+              {!socketContextValues.serviceHealthy
+                ? 'The chatbot service is experiencing technical difficulties. '
+                : 'Unable to connect to the chatbot service. '}
+              Please contect to a human librarian for immediate assistance.
+            </AlertDescription>
+          </Box>
+          <Spacer />
+          <Button
+            size='sm'
+            colorScheme='blue'
+            onClick={() => setWidgetVisible(!widgetVisible)}
+          >
+            {widgetVisible ? 'Hide' : 'Chat with Human Librarian'}
+          </Button>
+        </Alert>
+      )}
+
+      {/* Human Librarian Widget */}
+      {widgetVisible && (
+        <Box
+          mb={4}
+          p={4}
+          border='1px'
+          borderColor='blue.200'
+          borderRadius='md'
+          bg='blue.50'
+        >
+          <Flex justify='space-between' align='center' mb={2}>
+            <Text fontWeight='bold' color='blue.700'>
+              Chat with a Human Librarian
+            </Text>
+            <Button size='xs' onClick={() => setWidgetVisible(false)}>
+              ✕
+            </Button>
+          </Flex>
+          <HumanLibrarianWidget />
+        </Box>
+      )}
+
       <Box ref={chatRef} className='chat'>
         <VStack align='start' spacing={4}>
           {messageContextValues.message.map((message, index) => {

@@ -200,7 +200,7 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
 
     return {
       succeed: true,
-      bookingId: isProductionMode ? response!.data.booking_id : 'testBookingId',
+      bookingId: response!.data.booking_id,
     };
   }
 

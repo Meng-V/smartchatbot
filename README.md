@@ -1,5 +1,4 @@
-# 🤖 The Smart Chatbot Application at Miami University Libraries
-https://new.lib.miamioh.edu/smartchatbot/
+# 🤖 SmartChatbot - Enterprise AI Library Assistant
 
 <p align="center">
   <img src="https://img.shields.io/badge/Node.js-22-green" alt="Node.js Version" />
@@ -7,20 +6,50 @@ https://new.lib.miamioh.edu/smartchatbot/
   <img src="https://img.shields.io/badge/React-19-blue" alt="React Version" />
   <img src="https://img.shields.io/badge/TypeScript-5-blue" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Docker-Ready-blue" alt="Docker" />
+  <img src="https://img.shields.io/badge/LibCal-Integration-orange" alt="LibCal" />
+  <img src="https://img.shields.io/badge/Enterprise-Ready-purple" alt="Enterprise" />
 </p>
 
-A modern, full-stack AI-powered chatbot application built with cutting-edge technologies. Experience real-time conversations with AI, enhanced by Google Custom Search integration for up-to-date information retrieval.
+**SmartChatbot** is a production-ready, enterprise-grade AI library assistant that seamlessly integrates with library systems. Built for Miami University Libraries, it provides intelligent chat assistance with room reservations, library hours, research help, and automatic fallback to human librarians when needed.
 
-## ✨ Features
+## 🎯 **What Makes This Special**
 
-🚀 **Real-time Chat**: WebSocket-powered instant messaging  
-🧠 **AI-Powered**: OpenAI GPT integration for intelligent responses  
-🔍 **Smart Search**: Google Custom Search API for current information  
-💾 **Persistent Storage**: Neon serverless database with Prisma ORM  
-🎨 **Modern UI**: Beautiful React interface with Chakra UI  
-🐳 **Docker Ready**: Full containerization with Docker Compose  
-⚡ **High Performance**: Node.js 22 with latest optimizations  
-🔄 **Scalable**: Load balancer with multiple backend replicas  
+- **🏢 Enterprise-Grade**: Production-ready with auto-restart, error monitoring, and comprehensive logging
+- **📚 Library-Focused**: Deep integration with LibCal API for room reservations and library services  
+- **🤖 Intelligent Fallback**: Automatically connects users to human librarians when AI can't help
+- **⚡ High Performance**: Optimized chat handling with parallel processing and background operations
+- **🔄 Self-Healing**: Auto-restart system with graceful error recovery
+- **🎨 Modern UX**: Beautiful, accessible interface with real-time chat capabilities
+
+## ✨ Core Features
+
+### 🤖 **AI-Powered Library Assistant**
+- **Smart Conversations**: OpenAI GPT-4 integration with library-specific knowledge
+- **Room Reservations**: Direct LibCal API integration for booking study rooms
+- **Library Hours**: Real-time library hours and service information
+- **Research Help**: Intelligent assistance with academic research queries
+- **Contextual Responses**: Maintains conversation context for natural interactions
+
+### 🔄 **Enterprise Reliability**
+- **Auto-Restart System**: Graceful server restart on critical errors
+- **Error Monitoring**: Comprehensive error tracking and alerting
+- **Performance Monitoring**: Real-time performance metrics and optimization
+- **Health Checks**: Automated system health monitoring
+- **Fallback Mechanisms**: Seamless handoff to human librarians when needed
+
+### ⚡ **High-Performance Architecture**
+- **Parallel Processing**: Optimized database operations and LLM calls
+- **WebSocket Real-time**: Instant messaging with sub-second response times
+- **Background Operations**: Non-blocking database saves for better UX
+- **Connection Pooling**: Efficient database connection management
+- **Caching Layer**: Smart caching for frequently accessed data
+
+### 🎨 **Modern User Experience**
+- **Responsive Design**: Works perfectly on desktop, tablet, and mobile
+- **Accessibility**: WCAG compliant with screen reader support
+- **Real-time Indicators**: Live typing indicators and connection status
+- **Error Recovery**: Graceful error handling with user-friendly messages
+- **Human Handoff**: One-click connection to human librarians  
 
 ## 🏗️ Architecture
 

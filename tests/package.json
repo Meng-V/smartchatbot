@@ -1,0 +1,19 @@
+{
+  "name": "smartchatbot-enterprise-tests",
+  "version": "1.0.0",
+  "description": "Enterprise-level testing suite for SmartChatbot",
+  "main": "enterprise-test-suite.js",
+  "scripts": {
+    "test": "node enterprise-test-suite.js",
+    "test:performance": "node enterprise-test-suite.js --performance",
+    "test:load": "node enterprise-test-suite.js --load",
+    "test:security": "node enterprise-test-suite.js --security",
+    "test:integration": "node enterprise-test-suite.js --integration"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.2"
+  },
+  "keywords": ["testing", "enterprise", "chatbot", "performance", "load-testing"],
+  "author": "SmartChatbot Team",
+  "license": "MIT"
+}

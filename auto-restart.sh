@@ -37,10 +37,13 @@ check_server_health() {
         log "${RED}🚨 Server returned $response_code status - unhealthy/degraded${NC}"
         return 1  # Unhealthy
     elif [ -z "$response_code" ] || [ "$response_code" = "000" ]; then
-        log "${YELLOW}⚠️  Server not responding${NC}"
+        # Only log if this is a persistent issue (don't spam logs during startup)
         return 2  # Not responding
     else
-        log "${YELLOW}⚠️  Server returned unexpected status: $response_code${NC}"
+        # Only log unexpected status codes that aren't temporary
+        if [ "$response_code" != "503" ]; then
+            log "${YELLOW}⚠️  Server returned unexpected status: $response_code${NC}"
+        fi
         return 1  # Unhealthy
     fi
 }
@@ -102,16 +105,20 @@ while [ $restart_count -lt $MAX_GLOBAL_RESTARTS ]; do
     
     while kill -0 $BACKEND_PID 2>/dev/null; do
         # Check server health
-        if check_server_health; then
+        health_result=$(check_server_health)
+        health_status=$?
+        
+        if [ $health_status -eq 0 ]; then
             health_failure_count=0  # Reset failure count on success
-        else
+        elif [ $health_status -eq 1 ]; then
+            # Only count actual unhealthy responses (not "not responding" during startup)
             health_failure_count=$((health_failure_count + 1))
             log "${YELLOW}📊 Health check failure $health_failure_count/$HEALTH_CHECK_FAILURES_THRESHOLD${NC}"
             
             if [ $health_failure_count -ge $HEALTH_CHECK_FAILURES_THRESHOLD ]; then
                 log "${RED}🚨 Health check threshold reached - triggering restart${NC}"
                 # Create health restart flag
-                echo "$(date '+%Y-%m-%d %H:%M:%S') - Health check failure (400 status)" > ".health-restart-flag"
+                echo "$(date '+%Y-%m-%d %H:%M:%S') - Health check failure" > ".health-restart-flag"
                 # Kill the backend process
                 kill -TERM $BACKEND_PID 2>/dev/null
                 sleep 2
@@ -119,6 +126,12 @@ while [ $restart_count -lt $MAX_GLOBAL_RESTARTS ]; do
                     kill -KILL $BACKEND_PID 2>/dev/null
                 fi
                 break
+            fi
+        else
+            # Status 2 = not responding (likely during startup) - don't increment counter immediately
+            # Only log if this persists
+            if [ $health_failure_count -gt 0 ]; then
+                log "${YELLOW}⚠️  Server not responding (startup or temporary issue)${NC}"
             fi
         fi
         

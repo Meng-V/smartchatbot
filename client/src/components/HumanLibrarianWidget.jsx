@@ -43,7 +43,7 @@ const UserInfoForm = ({ onFormSubmit }) => {
  * Functional component that renders the LibAnswers chat widget
  * @returns
  */
-const RealLibrarianWidget = () => {
+const HumanLibrarianWidget = () => {
   // State to determine whether to show the form or the widget
   const [showForm, setShowForm] = useState(true);
   // User info
@@ -94,4 +94,4 @@ const RealLibrarianWidget = () => {
   );
 };
 
-export default RealLibrarianWidget;
+export default HumanLibrarianWidget;
