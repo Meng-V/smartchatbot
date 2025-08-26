@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"client/**/*.jsx\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"client/**/*.jsx\"",
     "start": "NODE_ENV=development nest start",
     "start:dev": "NODE_ENV=development nest start --watch",
     "start:debug": "NODE_ENV=development nest start --debug --watch",

@@ -45,17 +45,27 @@ export class HealthController {
 
       if (criticalServicesDown) {
         // Log the critical service failure
-        console.error('🚨 Critical services are down:', 
+        console.error(
+          '🚨 Critical services are down:',
           Object.entries(healthData.services)
-            .filter(([_, service]: [string, any]) => service.status !== 'healthy')
-            .map(([name, service]: [string, any]) => `${name}: ${service.error || 'unhealthy'}`)
+            .filter(
+              ([_, service]: [string, any]) => service.status !== 'healthy',
+            )
+            .map(
+              ([name, service]: [string, any]) =>
+                `${name}: ${service.error || 'unhealthy'}`,
+            ),
         );
 
         // Trigger auto-restart if within limits and cooldown period
-        await this.attemptAutoRestart('critical_service_failure', 
+        await this.attemptAutoRestart(
+          'critical_service_failure',
           `Services down: ${Object.entries(healthData.services)
-            .filter(([_, service]: [string, any]) => service.status !== 'healthy')
-            .map(([name]) => name).join(', ')}`
+            .filter(
+              ([_, service]: [string, any]) => service.status !== 'healthy',
+            )
+            .map(([name]) => name)
+            .join(', ')}`,
         );
 
         return res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
@@ -126,11 +136,11 @@ export class HealthController {
       try {
         const response = await axios.get('https://api.openai.com/v1/models', {
           headers: {
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
           },
           timeout: 5000,
         });
-        
+
         if (response.status === 200) {
           return { status: 'healthy' };
         }
@@ -176,10 +186,14 @@ export class HealthController {
   }> {
     try {
       // Check if required environment variables are present
-      if (!process.env.GOOGLE_API_KEY || !process.env.GOOGLE_LIBRARY_SEARCH_CSE_ID) {
+      if (
+        !process.env.GOOGLE_API_KEY ||
+        !process.env.GOOGLE_LIBRARY_SEARCH_CSE_ID
+      ) {
         return {
           status: 'unhealthy',
-          error: 'Google API credentials not configured (missing GOOGLE_API_KEY or GOOGLE_LIBRARY_SEARCH_CSE_ID)',
+          error:
+            'Google API credentials not configured (missing GOOGLE_API_KEY or GOOGLE_LIBRARY_SEARCH_CSE_ID)',
           details: {
             missingApiKey: !process.env.GOOGLE_API_KEY,
             missingCseId: !process.env.GOOGLE_LIBRARY_SEARCH_CSE_ID,
@@ -212,8 +226,11 @@ export class HealthController {
       // Mark as unhealthy for any API errors that indicate configuration issues
       // This includes missing/invalid API keys, forbidden access, server errors
       const criticalStatuses = [400, 401, 403, 500, 503];
-      
-      if (error.response?.status && criticalStatuses.includes(error.response.status)) {
+
+      if (
+        error.response?.status &&
+        criticalStatuses.includes(error.response.status)
+      ) {
         const statusMessages: { [key: number]: string } = {
           400: 'Bad Request - Invalid API parameters',
           401: 'Unauthorized - Invalid API key',
@@ -233,7 +250,11 @@ export class HealthController {
       }
 
       // Handle network errors, timeouts, and connection failures as unhealthy
-      if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+      if (
+        error.code === 'ENOTFOUND' ||
+        error.code === 'ECONNREFUSED' ||
+        error.code === 'ETIMEDOUT'
+      ) {
         return {
           status: 'unhealthy',
           error: `External API connection failed: ${error.message}`,
@@ -320,7 +341,7 @@ export class HealthController {
       setTimeout(() => {
         console.log('🔄 Initiating manual restart...');
         process.kill(process.pid, 'SIGTERM');
-        
+
         // Fallback to force exit if SIGTERM doesn't work
         setTimeout(() => {
           console.log('🔄 Force exiting...');
@@ -433,18 +454,28 @@ export class HealthController {
   private canAttemptRestart(): boolean {
     const now = Date.now();
     const timeSinceLastRestart = now - this.lastRestartTime;
-    
-    return this.restartAttempts < this.maxRestartAttempts && 
-           timeSinceLastRestart > this.restartCooldown;
+
+    return (
+      this.restartAttempts < this.maxRestartAttempts &&
+      timeSinceLastRestart > this.restartCooldown
+    );
   }
 
-  private async attemptAutoRestart(trigger: string, reason: string): Promise<void> {
+  private async attemptAutoRestart(
+    trigger: string,
+    reason: string,
+  ): Promise<void> {
     if (!this.canAttemptRestart()) {
       if (this.restartAttempts >= this.maxRestartAttempts) {
-        console.error(`🚫 Auto-restart disabled: Maximum attempts (${this.maxRestartAttempts}) reached`);
+        console.error(
+          `🚫 Auto-restart disabled: Maximum attempts (${this.maxRestartAttempts}) reached`,
+        );
       } else {
-        const remainingCooldown = this.restartCooldown - (Date.now() - this.lastRestartTime);
-        console.warn(`⏳ Auto-restart on cooldown: ${Math.ceil(remainingCooldown / 1000)}s remaining`);
+        const remainingCooldown =
+          this.restartCooldown - (Date.now() - this.lastRestartTime);
+        console.warn(
+          `⏳ Auto-restart on cooldown: ${Math.ceil(remainingCooldown / 1000)}s remaining`,
+        );
       }
       return;
     }
@@ -452,7 +483,9 @@ export class HealthController {
     this.restartAttempts++;
     this.lastRestartTime = Date.now();
 
-    console.log(`🔄 Auto-restart attempt ${this.restartAttempts}/${this.maxRestartAttempts} triggered by: ${trigger}`);
+    console.log(
+      `🔄 Auto-restart attempt ${this.restartAttempts}/${this.maxRestartAttempts} triggered by: ${trigger}`,
+    );
 
     // Log the restart attempt
     const restartLog = {
@@ -494,16 +527,17 @@ export class HealthController {
 
       // Delay restart to allow current requests to complete
       setTimeout(() => {
-        console.log(`🔄 Executing auto-restart (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`);
+        console.log(
+          `🔄 Executing auto-restart (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`,
+        );
         process.kill(process.pid, 'SIGTERM');
-        
+
         // Fallback force exit
         setTimeout(() => {
           console.log('🔄 Force exiting...');
           process.exit(1);
         }, 3000);
       }, 2000);
-
     } catch (error) {
       console.error('❌ Failed to execute auto-restart:', error);
     }
@@ -517,7 +551,10 @@ export class HealthController {
         maxRestartAttempts: this.maxRestartAttempts,
         canRestart: this.canAttemptRestart(),
         lastRestartTime: this.lastRestartTime,
-        cooldownRemaining: Math.max(0, this.restartCooldown - (Date.now() - this.lastRestartTime)),
+        cooldownRemaining: Math.max(
+          0,
+          this.restartCooldown - (Date.now() - this.lastRestartTime),
+        ),
         lastRestart: this.getLastRestartInfo(),
         lastError: this.getLastErrorInfo(),
       };

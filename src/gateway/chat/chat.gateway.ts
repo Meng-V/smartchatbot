@@ -108,7 +108,10 @@ export class ChatGateway implements OnGatewayDisconnect {
           }
           return newConversationId;
         } catch (dbError) {
-          this.logger.error('Database error while saving user message:', dbError);
+          this.logger.error(
+            'Database error while saving user message:',
+            dbError,
+          );
           this.errorMonitoringService.logError(
             'database-error',
             'Failed to save user message to database',
@@ -120,9 +123,8 @@ export class ChatGateway implements OnGatewayDisconnect {
         }
       })();
 
-      const llmChainPromise = this.llmConnnectionGateway.getLlmChainForCurrentSocket(
-        client.id,
-      );
+      const llmChainPromise =
+        this.llmConnnectionGateway.getLlmChainForCurrentSocket(client.id);
 
       // Wait for database save to complete
       try {
@@ -179,19 +181,24 @@ export class ChatGateway implements OnGatewayDisconnect {
       });
 
       // Save AI response to database in background
-      this.databaseService.addMessageToDatabase(
-        Role.AIAgent,
-        modelResponse,
-        this.clientIdToConversationDataMapping.get(client.id)
-          ?.conversationId,
-      ).then(([modelMessageId]) => {
-        messageId = modelMessageId;
-      }).catch((dbError) => {
-        this.logger.error('Database error while saving AI response:', dbError);
-        this.logger.warn(
-          'Response sent to user but not saved to database due to error',
-        );
-      });
+      this.databaseService
+        .addMessageToDatabase(
+          Role.AIAgent,
+          modelResponse,
+          this.clientIdToConversationDataMapping.get(client.id)?.conversationId,
+        )
+        .then(([modelMessageId]) => {
+          messageId = modelMessageId;
+        })
+        .catch((dbError) => {
+          this.logger.error(
+            'Database error while saving AI response:',
+            dbError,
+          );
+          this.logger.warn(
+            'Response sent to user but not saved to database due to error',
+          );
+        });
     } catch (unexpectedError) {
       this.logger.error(
         'Unexpected error in handleUserMessage:',

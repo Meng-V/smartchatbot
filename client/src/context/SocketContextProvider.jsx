@@ -77,8 +77,8 @@ const SocketContextProvider = ({ children }) => {
       console.error('Connection error:', error);
       setIsConnected(false);
       setAttemptedConnection(true);
-      setConnectionErrors(prev => prev + 1);
-      
+      setConnectionErrors((prev) => prev + 1);
+
       // Show librarian widget after 3 connection errors
       if (connectionErrors >= 2) {
         setShowLibrarianWidget(true);
@@ -89,8 +89,8 @@ const SocketContextProvider = ({ children }) => {
       console.warn('Connection timeout');
       setIsConnected(false);
       setAttemptedConnection(true);
-      setConnectionErrors(prev => prev + 1);
-      
+      setConnectionErrors((prev) => prev + 1);
+
       // Show librarian widget after connection timeout
       if (connectionErrors >= 2) {
         setShowLibrarianWidget(true);
@@ -102,7 +102,7 @@ const SocketContextProvider = ({ children }) => {
       socket.current.off('disconnect');
       socket.current.off('connect_error');
       socket.current.off('connect_timeout');
-      
+
       // Clear health check interval
       if (healthCheckInterval) {
         clearInterval(healthCheckInterval);
@@ -117,7 +117,7 @@ const SocketContextProvider = ({ children }) => {
         const response = await axios.get('/api/health', {
           timeout: 10000, // 10 second timeout
         });
-        
+
         if (response.status === 200 && response.data.status === 'healthy') {
           setServiceHealthy(true);
           setConnectionErrors(0);
@@ -125,7 +125,10 @@ const SocketContextProvider = ({ children }) => {
           if (isConnected) {
             setShowLibrarianWidget(false);
           }
-        } else if (response.status === 503 || response.data.status === 'degraded') {
+        } else if (
+          response.status === 503 ||
+          response.data.status === 'degraded'
+        ) {
           // Service is degraded/unhealthy
           setServiceHealthy(false);
           setShowLibrarianWidget(true);
@@ -134,8 +137,8 @@ const SocketContextProvider = ({ children }) => {
       } catch (error) {
         console.error('Health check failed:', error);
         setServiceHealthy(false);
-        setConnectionErrors(prev => prev + 1);
-        
+        setConnectionErrors((prev) => prev + 1);
+
         // Show librarian widget if health check fails multiple times
         if (connectionErrors >= 2) {
           setShowLibrarianWidget(true);
@@ -145,11 +148,11 @@ const SocketContextProvider = ({ children }) => {
 
     // Initial health check
     checkServiceHealth();
-    
+
     // Set up periodic health checks every 30 seconds
     const interval = setInterval(checkServiceHealth, 30000);
     setHealthCheckInterval(interval);
-    
+
     return () => {
       if (interval) {
         clearInterval(interval);
@@ -160,7 +163,7 @@ const SocketContextProvider = ({ children }) => {
   // Monitor for extended disconnection periods
   useEffect(() => {
     let disconnectionTimer;
-    
+
     if (!isConnected && attemptedConnection) {
       // Show librarian widget after 30 seconds of disconnection
       disconnectionTimer = setTimeout(() => {
@@ -172,7 +175,7 @@ const SocketContextProvider = ({ children }) => {
         clearTimeout(disconnectionTimer);
       }
     }
-    
+
     return () => {
       if (disconnectionTimer) {
         clearTimeout(disconnectionTimer);
@@ -221,7 +224,13 @@ const SocketContextProvider = ({ children }) => {
       sendMessageRating,
       sendUserFeedback,
     }),
-    [isConnected, attemptedConnection, serviceHealthy, connectionErrors, showLibrarianWidget],
+    [
+      isConnected,
+      attemptedConnection,
+      serviceHealthy,
+      connectionErrors,
+      showLibrarianWidget,
+    ],
   );
 
   return (
