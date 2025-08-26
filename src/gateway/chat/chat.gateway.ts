@@ -90,30 +90,44 @@ export class ChatGateway implements OnGatewayDisconnect {
         client.id,
       );
 
-      // Database operations with error handling
-      try {
-        const [, newConversationId] =
-          await this.databaseService.addMessageToDatabase(
-            Role.Customer,
-            sanitizedMessage,
-            conversationData?.conversationId,
-          );
-        conversationId = newConversationId;
+      // Start database save and LLM chain initialization in parallel
+      const dbPromise = (async () => {
+        try {
+          const [, newConversationId] =
+            await this.databaseService.addMessageToDatabase(
+              Role.Customer,
+              sanitizedMessage,
+              conversationData?.conversationId,
+            );
+          conversationId = newConversationId;
 
-        if (!this.clientIdToConversationDataMapping.has(client.id)) {
-          this.clientIdToConversationDataMapping.set(client.id, {
-            conversationId: newConversationId,
-          });
+          if (!this.clientIdToConversationDataMapping.has(client.id)) {
+            this.clientIdToConversationDataMapping.set(client.id, {
+              conversationId: newConversationId,
+            });
+          }
+          return newConversationId;
+        } catch (dbError) {
+          this.logger.error('Database error while saving user message:', dbError);
+          this.errorMonitoringService.logError(
+            'database-error',
+            'Failed to save user message to database',
+            'error',
+            { clientId: client.id, messageLength: sanitizedMessage.length },
+            dbError instanceof Error ? dbError.stack : undefined,
+          );
+          throw dbError;
         }
+      })();
+
+      const llmChainPromise = this.llmConnnectionGateway.getLlmChainForCurrentSocket(
+        client.id,
+      );
+
+      // Wait for database save to complete
+      try {
+        await dbPromise;
       } catch (dbError) {
-        this.logger.error('Database error while saving user message:', dbError);
-        this.errorMonitoringService.logError(
-          'database-error',
-          'Failed to save user message to database',
-          'error',
-          { clientId: client.id, messageLength: sanitizedMessage.length },
-          dbError instanceof Error ? dbError.stack : undefined,
-        );
         this.sendErrorResponse(
           client,
           "I'm having trouble saving your message. Please try again, or contact a librarian for immediate assistance.",
@@ -125,15 +139,12 @@ export class ChatGateway implements OnGatewayDisconnect {
       // LLM Chain operations with comprehensive error handling
       let modelResponse: string;
       try {
-        const llmChain: LlmChainService =
-          await this.llmConnnectionGateway.getLlmChainForCurrentSocket(
-            client.id,
-          );
+        const llmChain = await llmChainPromise;
 
-        // Set timeout for LLM response
+        // Set timeout for LLM response - reduced to 20s
         const responsePromise = llmChain.getModelResponse(sanitizedMessage);
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('LLM response timeout')), 30000); // 30 second timeout
+          setTimeout(() => reject(new Error('LLM response timeout')), 20000); // 20 second timeout
         });
 
         modelResponse = await Promise.race([responsePromise, timeoutPromise]);
@@ -160,28 +171,26 @@ export class ChatGateway implements OnGatewayDisconnect {
         success = false; // Mark as partial failure but still provide response
       }
 
-      // Save AI response to database
-      try {
-        const [modelMessageId] =
-          await this.databaseService.addMessageToDatabase(
-            Role.AIAgent,
-            modelResponse,
-            this.clientIdToConversationDataMapping.get(client.id)
-              ?.conversationId,
-          );
-        messageId = modelMessageId;
-      } catch (dbError) {
-        this.logger.error('Database error while saving AI response:', dbError);
-        // Still send the response to user even if we can't save it
-        this.logger.warn(
-          'Sending response without saving to database due to error',
-        );
-      }
-
-      // Send response to client
+      // Send response to client immediately
+      const tempMessageId = 'temp-' + Date.now();
       client.emit('message', {
-        messageId: messageId || 'temp-' + Date.now(),
+        messageId: tempMessageId,
         message: modelResponse,
+      });
+
+      // Save AI response to database in background
+      this.databaseService.addMessageToDatabase(
+        Role.AIAgent,
+        modelResponse,
+        this.clientIdToConversationDataMapping.get(client.id)
+          ?.conversationId,
+      ).then(([modelMessageId]) => {
+        messageId = modelMessageId;
+      }).catch((dbError) => {
+        this.logger.error('Database error while saving AI response:', dbError);
+        this.logger.warn(
+          'Response sent to user but not saved to database due to error',
+        );
       });
     } catch (unexpectedError) {
       this.logger.error(
@@ -204,7 +213,7 @@ export class ChatGateway implements OnGatewayDisconnect {
       );
       this.sendErrorResponse(
         client,
-        'I encountered an unexpected issue. Let me connect you with a real librarian who can help you right away.',
+        'I encountered an unexpected issue. Let me connect you with a human librarian who can help you right away.',
       );
       success = false;
     } finally {
@@ -236,7 +245,7 @@ export class ChatGateway implements OnGatewayDisconnect {
       lowerMessage.includes('open') ||
       lowerMessage.includes('close')
     ) {
-      return `I'm having trouble accessing current library hours right now. For the most up-to-date hours and information, please contact King Library directly at (513) 529-4141 or visit our website. You can also speak with a librarian using the "Talk to a Real Librarian" option below.`;
+      return `I'm having trouble accessing current library hours right now. For the most up-to-date hours and information, please contact King Library directly at (513) 529-4141 or visit our website. You can also speak with a librarian using the "Talk to a human librarian" option below.`;
     }
 
     if (
@@ -244,7 +253,7 @@ export class ChatGateway implements OnGatewayDisconnect {
       lowerMessage.includes('reserve') ||
       lowerMessage.includes('book')
     ) {
-      return `I'm currently unable to process room reservations due to a system issue. You can make reservations directly at www.lib.miamioh.edu or contact the library at (513) 529-4141. For immediate assistance, please use the "Talk to a Real Librarian" option.`;
+      return `I'm currently unable to process room reservations due to a system issue. You can make reservations directly at www.lib.miamioh.edu or contact the library at (513) 529-4141. For immediate assistance, please use the "Talk to a human librarian" option.`;
     }
 
     if (
@@ -252,7 +261,7 @@ export class ChatGateway implements OnGatewayDisconnect {
       lowerMessage.includes('help') ||
       lowerMessage.includes('research')
     ) {
-      return `I'm experiencing some technical difficulties right now, but I can still help you connect with the right person! Please use the "Talk to a Real Librarian" option below, or you can contact King Library directly at (513) 529-4141 for immediate research assistance.`;
+      return `I'm experiencing some technical difficulties right now, but I can still help you connect with the right person! Please use the "Talk to a human librarian" option below, or you can contact King Library directly at (513) 529-4141 for immediate research assistance.`;
     }
 
     if (
@@ -260,11 +269,11 @@ export class ChatGateway implements OnGatewayDisconnect {
       lowerMessage.includes('find') ||
       lowerMessage.includes('database')
     ) {
-      return `I'm having trouble accessing search functions at the moment. You can search the library catalog directly at www.lib.miamioh.edu or contact a librarian for research assistance. Please use the "Talk to a Real Librarian" option for immediate help.`;
+      return `I'm having trouble accessing search functions at the moment. You can search the library catalog directly at www.lib.miamioh.edu or contact a librarian for research assistance. Please use the "Talk to a human librarian" option for immediate help.`;
     }
 
     // Generic fallback response
-    return `I'm experiencing some technical difficulties and can't fully process your request right now. However, I don't want to leave you without help! Please use the "Talk to a Real Librarian" option below, or contact King Library directly at (513) 529-4141. Our librarians are available to assist you with research, reservations, and any other questions you may have.`;
+    return `I'm experiencing some technical difficulties and can't fully process your request right now. However, I don't want to leave you without help! Please use the "Talk to a human librarian" option below, or contact King Library directly at (513) 529-4141. Our librarians are available to assist you with research, reservations, and any other questions you may have.`;
   }
 
   @SubscribeMessage('messageRating')

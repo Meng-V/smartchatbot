@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 import { retrieveEnvironmentVariable } from '../services/RetrieveEnvironmentVariable';
 import { MessageContext } from './MessageContextProvider';
 import { useMemo } from 'react';
+import axios from 'axios';
 
 const SocketContext = createContext();
 
@@ -11,6 +12,10 @@ const SocketContextProvider = ({ children }) => {
   const curSession = useRef(true);
   const [isConnected, setIsConnected] = useState(false);
   const [attemptedConnection, setAttemptedConnection] = useState(false);
+  const [serviceHealthy, setServiceHealthy] = useState(true);
+  const [connectionErrors, setConnectionErrors] = useState(0);
+  const [showLibrarianWidget, setShowLibrarianWidget] = useState(false);
+  const [healthCheckInterval, setHealthCheckInterval] = useState(null);
   const { messageContextValues } = useContext(MessageContext);
 
   useEffect(() => {
@@ -72,12 +77,24 @@ const SocketContextProvider = ({ children }) => {
       console.error('Connection error:', error);
       setIsConnected(false);
       setAttemptedConnection(true);
+      setConnectionErrors(prev => prev + 1);
+      
+      // Show librarian widget after 3 connection errors
+      if (connectionErrors >= 2) {
+        setShowLibrarianWidget(true);
+      }
     });
 
     socket.current.on('connect_timeout', (timeout) => {
       console.warn('Connection timeout');
       setIsConnected(false);
       setAttemptedConnection(true);
+      setConnectionErrors(prev => prev + 1);
+      
+      // Show librarian widget after connection timeout
+      if (connectionErrors >= 2) {
+        setShowLibrarianWidget(true);
+      }
     });
 
     return () => {
@@ -85,8 +102,83 @@ const SocketContextProvider = ({ children }) => {
       socket.current.off('disconnect');
       socket.current.off('connect_error');
       socket.current.off('connect_timeout');
+      
+      // Clear health check interval
+      if (healthCheckInterval) {
+        clearInterval(healthCheckInterval);
+      }
     };
-  }, []);
+  }, [connectionErrors]);
+
+  // Health check monitoring
+  useEffect(() => {
+    const checkServiceHealth = async () => {
+      try {
+        const response = await axios.get('/api/health', {
+          timeout: 10000, // 10 second timeout
+        });
+        
+        if (response.status === 200 && response.data.status === 'healthy') {
+          setServiceHealthy(true);
+          setConnectionErrors(0);
+          // Hide librarian widget if service is healthy and connected
+          if (isConnected) {
+            setShowLibrarianWidget(false);
+          }
+        } else if (response.status === 503 || response.data.status === 'degraded') {
+          // Service is degraded/unhealthy
+          setServiceHealthy(false);
+          setShowLibrarianWidget(true);
+          console.warn('Service is degraded:', response.data);
+        }
+      } catch (error) {
+        console.error('Health check failed:', error);
+        setServiceHealthy(false);
+        setConnectionErrors(prev => prev + 1);
+        
+        // Show librarian widget if health check fails multiple times
+        if (connectionErrors >= 2) {
+          setShowLibrarianWidget(true);
+        }
+      }
+    };
+
+    // Initial health check
+    checkServiceHealth();
+    
+    // Set up periodic health checks every 30 seconds
+    const interval = setInterval(checkServiceHealth, 30000);
+    setHealthCheckInterval(interval);
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isConnected, connectionErrors]);
+
+  // Monitor for extended disconnection periods
+  useEffect(() => {
+    let disconnectionTimer;
+    
+    if (!isConnected && attemptedConnection) {
+      // Show librarian widget after 30 seconds of disconnection
+      disconnectionTimer = setTimeout(() => {
+        setShowLibrarianWidget(true);
+      }, 30000);
+    } else if (isConnected) {
+      // Clear timer if reconnected
+      if (disconnectionTimer) {
+        clearTimeout(disconnectionTimer);
+      }
+    }
+    
+    return () => {
+      if (disconnectionTimer) {
+        clearTimeout(disconnectionTimer);
+      }
+    };
+  }, [isConnected, attemptedConnection]);
 
   const sendUserMessage = (message) => {
     if (socket.current) {
@@ -120,12 +212,16 @@ const SocketContextProvider = ({ children }) => {
       setIsConnected,
       attemptedConnection,
       setAttemptedConnection,
+      serviceHealthy,
+      connectionErrors,
+      showLibrarianWidget,
+      setShowLibrarianWidget,
       sendUserMessage,
       offlineTicketSubmit,
       sendMessageRating,
       sendUserFeedback,
     }),
-    [isConnected, attemptedConnection],
+    [isConnected, attemptedConnection, serviceHealthy, connectionErrors, showLibrarianWidget],
   );
 
   return (

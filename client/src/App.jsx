@@ -14,7 +14,7 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
-import RealLibrarianWidget from './components/RealLibrarianWidget';
+import HumanLibrarianWidget from './components/HumanLibrarianWidget';
 import OfflineTicketWidget from './components/OfflineTicketWidget';
 import ChatBotComponent from './components/ChatBotComponent';
 import ErrorBoundaryComponent from './components/ErrorBoundaryComponent';
@@ -68,7 +68,7 @@ const App = () => {
         duration: 5000,
         isClosable: true,
       });
-      setStep('realLibrarian');
+      setStep('humanLibrarian');
     }
   }, [
     serverStatus,
@@ -84,11 +84,11 @@ const App = () => {
     if (!isOpen) {
       onOpen(); // Open the modal if it's not already open
     }
-    setStep('realLibrarian'); // Navigate to the librarian step
+    setStep('humanLibrarian'); // Navigate to the librarian step
 
     toast({
       title: 'Connecting to Librarian',
-      description: 'Redirecting you to chat with a real librarian.',
+      description: 'Redirecting you to chat with a human librarian.',
       status: 'info',
       duration: 3000,
       isClosable: true,
@@ -194,7 +194,7 @@ const App = () => {
                         duration: 5000,
                         isClosable: true,
                       });
-                      setStep('realLibrarian');
+                      setStep('humanLibrarian');
                     } else {
                       setStep('services');
                     }
@@ -218,7 +218,7 @@ const App = () => {
                       socketContextValues.attemptedConnection)) &&
                     '(Unavailable)'}
                 </Button>
-                <Button onClick={() => setStep('realLibrarian')}>
+                <Button onClick={() => setStep('humanLibrarian')}>
                   Talk to a human librarian
                 </Button>
                 <Button onClick={() => setStep('ticket')}>
@@ -242,14 +242,14 @@ const App = () => {
                   </Text>
                   <Button
                     colorScheme='blue'
-                    onClick={() => setStep('realLibrarian')}
+                    onClick={() => setStep('humanLibrarian')}
                     size='md'
                   >
                     Talk to a Human Librarian
                   </Button>
                 </VStack>
               ))}
-            {step === 'realLibrarian' && <RealLibrarianWidget />}
+            {step === 'humanLibrarian' && <HumanLibrarianWidget />}
             {step === 'ticket' && <OfflineTicketWidget />}
           </ModalBody>
           {step == 'services' && (
@@ -260,9 +260,9 @@ const App = () => {
               bottom={10}
               right={20}
               mr={4}
-              onClick={() => setStep('realLibrarian')}
+              onClick={() => setStep('humanLibrarian')}
             >
-              Chat with a real librarian
+              Chat with a human librarian
             </Button>
           )}
         </ModalContent>
