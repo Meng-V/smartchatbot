@@ -1,4 +1,17 @@
-import { Box, VStack, HStack, Input, Button, Text, Alert, AlertIcon, AlertTitle, AlertDescription, Flex, Spacer } from '@chakra-ui/react';
+import {
+  Box,
+  VStack,
+  HStack,
+  Input,
+  Button,
+  Text,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  Flex,
+  Spacer,
+} from '@chakra-ui/react';
 import MessageComponents from './ParseLinks';
 import { useContext, useRef, useEffect, useState } from 'react';
 import { SocketContext } from '../context/SocketContextProvider';
@@ -33,9 +46,11 @@ const ChatBotComponent = () => {
   }, [messageContextValues.message]);
 
   // Determine if we should show service issues alert
-  const shouldShowServiceAlert = !socketContextValues.serviceHealthy || 
-                                socketContextValues.connectionErrors >= 3 ||
-                                (!socketContextValues.isConnected && socketContextValues.attemptedConnection);
+  const shouldShowServiceAlert =
+    !socketContextValues.serviceHealthy ||
+    socketContextValues.connectionErrors >= 3 ||
+    (!socketContextValues.isConnected &&
+      socketContextValues.attemptedConnection);
 
   // Auto-show librarian widget based on service status
   useEffect(() => {
@@ -53,17 +68,16 @@ const ChatBotComponent = () => {
           <Box>
             <AlertTitle>Service Issue Detected!</AlertTitle>
             <AlertDescription>
-              {!socketContextValues.serviceHealthy 
+              {!socketContextValues.serviceHealthy
                 ? 'The chatbot service is experiencing technical difficulties. '
-                : 'Unable to connect to the chatbot service. '
-              }
+                : 'Unable to connect to the chatbot service. '}
               Please contect to a human librarian for immediate assistance.
             </AlertDescription>
           </Box>
           <Spacer />
-          <Button 
-            size='sm' 
-            colorScheme='blue' 
+          <Button
+            size='sm'
+            colorScheme='blue'
             onClick={() => setWidgetVisible(!widgetVisible)}
           >
             {widgetVisible ? 'Hide' : 'Chat with Human Librarian'}
@@ -73,10 +87,21 @@ const ChatBotComponent = () => {
 
       {/* Human Librarian Widget */}
       {widgetVisible && (
-        <Box mb={4} p={4} border='1px' borderColor='blue.200' borderRadius='md' bg='blue.50'>
+        <Box
+          mb={4}
+          p={4}
+          border='1px'
+          borderColor='blue.200'
+          borderRadius='md'
+          bg='blue.50'
+        >
           <Flex justify='space-between' align='center' mb={2}>
-            <Text fontWeight='bold' color='blue.700'>Chat with a Human Librarian</Text>
-            <Button size='xs' onClick={() => setWidgetVisible(false)}>✕</Button>
+            <Text fontWeight='bold' color='blue.700'>
+              Chat with a Human Librarian
+            </Text>
+            <Button size='xs' onClick={() => setWidgetVisible(false)}>
+              ✕
+            </Button>
           </Flex>
           <HumanLibrarianWidget />
         </Box>
