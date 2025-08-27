@@ -59,8 +59,7 @@ const HumanLibrarianWidget = () => {
   };
 
   useEffect(() => {
-    const baseURL =
-      'https://libanswers.lib.miamioh.edu/chat/widget/a24a929728c7ee2cfdef2df20cbbc2ee';
+    const baseURL = import.meta.env.VITE_LIBANSWERS_WIDGET_URL;
     // If the user has entered their name and email, add them to the URL
     // Before that, encode the name variable so that it can be safely included in a URL
     if (email !== '' && name !== '') {
