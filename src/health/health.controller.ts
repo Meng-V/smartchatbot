@@ -1,16 +1,22 @@
-import { Controller, Get, Post, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, Post, HttpStatus, Res, Logger } from '@nestjs/common';
 import { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
+import { DatabaseService } from '../database/database.service';
+import { Role } from '../llm-chain/memory/memory.interface';
 
 @Controller('health')
 export class HealthController {
+  private readonly logger = new Logger(HealthController.name);
+  constructor(private readonly databaseService: DatabaseService) {}
+
   private lastRateLimitLog: number | undefined;
   private restartAttempts: number = 0;
   private readonly maxRestartAttempts: number = 3;
   private lastRestartTime: number = 0;
   private readonly restartCooldown: number = 60000; // 1 minute cooldown between restarts
+
   @Get()
   async checkHealth(@Res() res: Response) {
     try {
@@ -49,7 +55,7 @@ export class HealthController {
           '🚨 Critical services are down:',
           Object.entries(healthData.services)
             .filter(
-              ([_, service]: [string, any]) => service.status !== 'healthy',
+              ([, service]: [string, any]) => service.status !== 'healthy',
             )
             .map(
               ([name, service]: [string, any]) =>
@@ -62,7 +68,7 @@ export class HealthController {
           'critical_service_failure',
           `Services down: ${Object.entries(healthData.services)
             .filter(
-              ([_, service]: [string, any]) => service.status !== 'healthy',
+              ([, service]: [string, any]) => service.status !== 'healthy',
             )
             .map(([name]) => name)
             .join(', ')}`,
@@ -99,9 +105,13 @@ export class HealthController {
   }> {
     try {
       const start = Date.now();
-      // Simple database ping - adjust based on your database setup
-      // If you have PrismaService injected, you can use it here
-      // await this.prisma.$queryRaw`SELECT 1`;
+      // Real database health check using Prisma
+      // Simple database connectivity check - use a method that exists
+      await this.databaseService.addMessageToDatabase(
+        Role.AIAgent,
+        'health-check',
+        undefined,
+      );
       const responseTime = Date.now() - start;
 
       return {
@@ -114,7 +124,7 @@ export class HealthController {
         error:
           error instanceof Error
             ? error.message
-            : 'OpenAI service check failed',
+            : 'Database health check failed',
       };
     }
   }
@@ -271,7 +281,7 @@ export class HealthController {
           !this.lastRateLimitLog ||
           Date.now() - this.lastRateLimitLog > 300000
         ) {
-          console.log(
+          this.logger.log(
             'External API rate limited (429) - this is expected behavior (suppressing further logs for 5 minutes)',
           );
           this.lastRateLimitLog = Date.now();
@@ -287,7 +297,7 @@ export class HealthController {
 
       // For any other errors, only log if it's actually an error (not rate limiting)
       if (error.response?.status !== 429) {
-        console.warn('External API health check failed:', error.message);
+        console.warn('Health check failed:', error.message);
       }
       return {
         status: 'unhealthy',
@@ -302,7 +312,7 @@ export class HealthController {
   @Post('restart')
   async triggerRestart(@Res() res: Response) {
     try {
-      console.log('🔄 Manual restart triggered via health endpoint');
+      this.logger.log('🔄 Manual restart requested via /health/restart');
 
       // Reset auto-restart counter for manual restarts
       this.restartAttempts = 0;
@@ -339,19 +349,19 @@ export class HealthController {
 
       // Trigger restart after sending response
       setTimeout(() => {
-        console.log('🔄 Initiating manual restart...');
+        this.logger.log('🚀 Starting SmartChatbot backend...');
         process.kill(process.pid, 'SIGTERM');
 
         // Fallback to force exit if SIGTERM doesn't work
         setTimeout(() => {
-          console.log('🔄 Force exiting...');
+          this.logger.log('Force exiting...');
           process.exit(1);
         }, 3000);
       }, 1000);
 
       return; // Explicit return to satisfy TypeScript
     } catch (error) {
-      console.error('❌ Failed to trigger restart:', error);
+      this.logger.error('Failed to trigger restart:', error);
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'restart_failed',
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -413,7 +423,7 @@ export class HealthController {
         status: overallStatus,
       });
     } catch (error) {
-      console.error('❌ Status check failed:', error);
+      this.logger.error('Status check failed:', error);
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'unhealthy',
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -467,14 +477,14 @@ export class HealthController {
   ): Promise<void> {
     if (!this.canAttemptRestart()) {
       if (this.restartAttempts >= this.maxRestartAttempts) {
-        console.error(
-          `🚫 Auto-restart disabled: Maximum attempts (${this.maxRestartAttempts}) reached`,
+        this.logger.error(
+          `Auto-restart disabled: Maximum attempts (${this.maxRestartAttempts}) reached`,
         );
       } else {
         const remainingCooldown =
           this.restartCooldown - (Date.now() - this.lastRestartTime);
-        console.warn(
-          `⏳ Auto-restart on cooldown: ${Math.ceil(remainingCooldown / 1000)}s remaining`,
+        this.logger.warn(
+          `Auto-restart on cooldown: ${Math.ceil(remainingCooldown / 1000)}s remaining`,
         );
       }
       return;
@@ -483,8 +493,8 @@ export class HealthController {
     this.restartAttempts++;
     this.lastRestartTime = Date.now();
 
-    console.log(
-      `🔄 Auto-restart attempt ${this.restartAttempts}/${this.maxRestartAttempts} triggered by: ${trigger}`,
+    this.logger.log(
+      `Auto-restart attempt ${this.restartAttempts}/${this.maxRestartAttempts} triggered by: ${trigger}`,
     );
 
     // Log the restart attempt
@@ -527,19 +537,19 @@ export class HealthController {
 
       // Delay restart to allow current requests to complete
       setTimeout(() => {
-        console.log(
-          `🔄 Executing auto-restart (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`,
+        this.logger.log(
+          `Executing auto-restart (attempt ${this.restartAttempts}/${this.maxRestartAttempts})...`,
         );
         process.kill(process.pid, 'SIGTERM');
 
         // Fallback force exit
         setTimeout(() => {
-          console.log('🔄 Force exiting...');
+          this.logger.log('Force exiting...');
           process.exit(1);
         }, 3000);
       }, 2000);
     } catch (error) {
-      console.error('❌ Failed to execute auto-restart:', error);
+      this.logger.error('❌ Failed to execute auto-restart:', error);
     }
   }
 

@@ -1,13 +1,19 @@
 import { Module } from '@nestjs/common';
 import { LlmChainModule } from '../llm-chain/llm-chain.module';
-import { SharedModule } from '../shared/shared.module';
-import { LlmConnectionGateway } from './connection/llm-connection.gateway';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ChatGateway } from './chat/chat.gateway';
+import { LlmConnectionGateway } from './connection/llm-connection.gateway';
+import { WebSocketMemoryMonitorService } from './websocket-memory-monitor.service';
 import { DatabaseModule } from '../database/database.module';
+import { SharedModule } from '../shared/shared.module';
 
 @Module({
-  imports: [LlmChainModule, DatabaseModule, SharedModule],
-  providers: [ChatGateway, LlmConnectionGateway],
-  exports: [ChatGateway, LlmConnectionGateway],
+  imports: [
+    DatabaseModule,
+    LlmChainModule,
+    SharedModule,
+    ScheduleModule.forRoot(),
+  ],
+  providers: [ChatGateway, LlmConnectionGateway, WebSocketMemoryMonitorService],
 })
 export class GatewayModule {}

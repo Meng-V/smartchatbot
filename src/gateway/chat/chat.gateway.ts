@@ -7,15 +7,15 @@ import {
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { LlmConnectionGateway } from '../connection/llm-connection.gateway';
-import { LlmChainService } from 'src/llm-chain/llm-chain.service';
-import { Logger } from '@nestjs/common';
+import { PerformanceMonitoringService } from '../../shared/services/performance-monitoring/performance-monitoring.service';
+import { ErrorMonitoringService } from '../../shared/services/error-monitoring/error-monitoring.service';
+import { WebSocketMemoryMonitorService } from '../websocket-memory-monitor.service';
 import { DatabaseService } from '../../database/database.service';
+import { Logger } from '@nestjs/common';
 import { Role } from '../../llm-chain/memory/memory.interface';
 import { TokenUsage } from '../../shared/services/token-usage/token-usage.service';
 import { LlmModelType } from '../../llm-chain/llm/llm.module';
-import { ErrorMonitoringService } from '../../shared/services/error-monitoring/error-monitoring.service';
-import { PerformanceMonitoringService } from '../../shared/services/performance-monitoring/performance-monitoring.service';
-import { RetrieveEnvironmentVariablesService } from '../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
+import { LlmChainService } from '../../llm-chain/llm-chain.service';
 
 export type UserFeedback = {
   userRating: number;
@@ -30,7 +30,14 @@ type ConversationData = {
 @WebSocketGateway({
   path: '/smartchatbot/socket.io',
   cors: {
-    origin: ['https://new.lib.miamioh.edu'],
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? [process.env.FRONTEND_URL || 'https://new.lib.miamioh.edu']
+        : [
+            process.env.FRONTEND_URL || 'https://new.lib.miamioh.edu',
+            'http://localhost:5173',
+            'http://localhost:3000',
+          ],
     credentials: true,
   },
 })
@@ -41,10 +48,11 @@ export class ChatGateway implements OnGatewayDisconnect {
     new Map<string, ConversationData>();
 
   constructor(
-    private llmConnnectionGateway: LlmConnectionGateway,
-    private databaseService: DatabaseService,
-    private errorMonitoringService: ErrorMonitoringService,
-    private performanceMonitoringService: PerformanceMonitoringService,
+    private readonly databaseService: DatabaseService,
+    private readonly llmConnnectionGateway: LlmConnectionGateway,
+    private readonly performanceMonitoringService: PerformanceMonitoringService,
+    private readonly errorMonitoringService: ErrorMonitoringService,
+    private readonly memoryMonitor: WebSocketMemoryMonitorService,
   ) {}
 
   @SubscribeMessage('message')
@@ -52,6 +60,8 @@ export class ChatGateway implements OnGatewayDisconnect {
     @MessageBody() userMessage: string,
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
+    // Track connection for memory monitoring
+    this.memoryMonitor.incrementConnection();
     // Start performance monitoring
     const endTimer = this.performanceMonitoringService.startTimer(
       'chat-message-handling',
@@ -61,9 +71,9 @@ export class ChatGateway implements OnGatewayDisconnect {
       },
     );
 
-    let conversationId: string | undefined;
-    let messageId: string | undefined;
-    let success = true;
+    // let conversationId: string | undefined;
+    // let messageId: string | undefined;
+    // let success = true;
 
     try {
       // Input validation
@@ -79,7 +89,6 @@ export class ChatGateway implements OnGatewayDisconnect {
           { clientId: client.id, messageType: typeof userMessage },
         );
         this.sendErrorResponse(client, 'Please provide a valid message.');
-        success = false;
         return;
       }
 
@@ -99,7 +108,7 @@ export class ChatGateway implements OnGatewayDisconnect {
               sanitizedMessage,
               conversationData?.conversationId,
             );
-          conversationId = newConversationId;
+          // conversationId = newConversationId;
 
           if (!this.clientIdToConversationDataMapping.has(client.id)) {
             this.clientIdToConversationDataMapping.set(client.id, {
@@ -107,19 +116,16 @@ export class ChatGateway implements OnGatewayDisconnect {
             });
           }
           return newConversationId;
-        } catch (dbError) {
-          this.logger.error(
-            'Database error while saving user message:',
-            dbError,
-          );
+        } catch (error) {
+          this.logger.error('Database error while saving user message:', error);
           this.errorMonitoringService.logError(
             'database-error',
             'Failed to save user message to database',
             'error',
             { clientId: client.id, messageLength: sanitizedMessage.length },
-            dbError instanceof Error ? dbError.stack : undefined,
+            error instanceof Error ? error.stack : undefined,
           );
-          throw dbError;
+          throw error;
         }
       })();
 
@@ -129,12 +135,12 @@ export class ChatGateway implements OnGatewayDisconnect {
       // Wait for database save to complete
       try {
         await dbPromise;
-      } catch (dbError) {
+      } catch {
         this.sendErrorResponse(
           client,
           "I'm having trouble saving your message. Please try again, or contact a librarian for immediate assistance.",
         );
-        success = false;
+        // success = false;
         return;
       }
 
@@ -170,7 +176,7 @@ export class ChatGateway implements OnGatewayDisconnect {
           sanitizedMessage,
           llmError,
         );
-        success = false; // Mark as partial failure but still provide response
+        // success = false; // Mark as partial failure but still provide response
       }
 
       // Send response to client immediately
@@ -188,7 +194,8 @@ export class ChatGateway implements OnGatewayDisconnect {
           this.clientIdToConversationDataMapping.get(client.id)?.conversationId,
         )
         .then(([modelMessageId]) => {
-          messageId = modelMessageId;
+          // messageId = modelMessageId;
+          this.logger.log('Message saved with ID:', modelMessageId);
         })
         .catch((dbError) => {
           this.logger.error(
@@ -222,7 +229,7 @@ export class ChatGateway implements OnGatewayDisconnect {
         client,
         'I encountered an unexpected issue. Let me connect you with a human librarian who can help you right away.',
       );
-      success = false;
+      // success = false;
     } finally {
       // Complete performance monitoring
       endTimer();
@@ -318,6 +325,10 @@ export class ChatGateway implements OnGatewayDisconnect {
   }
 
   async handleDisconnect(client: Socket): Promise<void> {
+    // Decrement connection count for memory monitoring
+    this.memoryMonitor.decrementConnection();
+
+    this.logger.log(`Client ${client.id} disconnected`);
     const llmChain: LlmChainService =
       await this.llmConnnectionGateway.getLlmChainForCurrentSocket(client.id);
 
@@ -348,7 +359,7 @@ export class ChatGateway implements OnGatewayDisconnect {
 
     // Add UserFeedback to the database
     if (conversationData.userFeedback !== undefined) {
-      this.databaseService.addUserFeedbackToDatabase(
+      await this.databaseService.addUserFeedbackToDatabase(
         conversationData.conversationId,
         conversationData.userFeedback,
       );
@@ -359,6 +370,9 @@ export class ChatGateway implements OnGatewayDisconnect {
       conversationData.conversationId,
       llmChain.getToolsUsed(),
     );
+
+    // Clean up client mapping to prevent memory leaks
+    this.clientIdToConversationDataMapping.delete(client.id);
 
     // Close the gateway
     this.llmConnnectionGateway.closeLlmChainForCurrentSocket(client.id);

@@ -1,5 +1,3 @@
-import { customsearch, customsearch_v1 } from '@googleapis/customsearch';
-
 import { Injectable } from '@nestjs/common';
 import { LlmTool, LlmToolInput } from '../llm-tool.interface';
 import { KingLibrarySiteSearchService } from './king-library-site-search.service';

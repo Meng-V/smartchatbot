@@ -2,10 +2,9 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   HttpCode,
   HttpStatus,
-  Inject,
-  Query,
 } from '@nestjs/common';
 import { ErrorMonitoringService } from '../shared/services/error-monitoring/error-monitoring.service';
 import { PerformanceMonitoringService } from '../shared/services/performance-monitoring/performance-monitoring.service';
@@ -169,8 +168,8 @@ export class EnhancedHealthController {
     );
 
     // Create restart flag for auto-restart script detection
-    const fs = require('fs');
-    const path = require('path');
+    const fs = await import('fs');
+    const path = await import('path');
     const restartFlagPath = path.join(process.cwd(), '.health-restart-flag');
 
     fs.writeFileSync(

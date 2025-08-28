@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LibcalAuthorizationService } from './libcal-authorization.service';
 import { HttpModule, HttpService } from '@nestjs/axios';
-import { of } from 'rxjs';
 import { AxiosResponse } from 'axios';
 import { SharedModule } from '../../shared/shared.module';
 import { LibraryApiModule } from '../library-api.module';
@@ -145,13 +144,8 @@ describe('LibcalAuthorizationService', () => {
       .refreshToken()
       .then(() => {
         // BehaviorSubject should immediately emit the current value to new subscribers
-        const tokenObservable = service.getAccessTokenObservable();
-        let tokenSubscription: any;
-        tokenSubscription = tokenObservable.subscribe((currentToken) => {
+        service.getAccessTokenObservable().subscribe((currentToken) => {
           expect(currentToken).toEqual(token);
-          if (tokenSubscription) {
-            tokenSubscription.unsubscribe();
-          }
           done();
         });
       })

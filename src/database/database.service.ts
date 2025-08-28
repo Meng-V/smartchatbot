@@ -214,4 +214,12 @@ export class DatabaseService {
       this.logger.error('Error updating message:', error);
     }
   }
+
+  /**
+   * Health check method for database connectivity
+   * @returns Promise that resolves if database is accessible
+   */
+  async healthCheck(): Promise<void> {
+    await this.prismaService.$queryRaw`SELECT 1`;
+  }
 }

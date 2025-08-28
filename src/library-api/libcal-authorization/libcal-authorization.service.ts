@@ -4,11 +4,10 @@ import {
   OnModuleDestroy,
   Logger,
 } from '@nestjs/common';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
-import { BehaviorSubject, Observable, map } from 'rxjs';
 
 import { RetrieveEnvironmentVariablesService } from '../../shared/services/retrieve-environment-variables/retrieve-environment-variables.service';
-import { AxiosResponse } from 'axios';
 
 interface LibCalTokenResponse {
   access_token: string;
