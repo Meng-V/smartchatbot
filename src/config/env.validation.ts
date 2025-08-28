@@ -5,8 +5,8 @@ export const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),
-  BACKEND_PORT: z.string().transform(Number).default(3000),
-  FRONTEND_PORT: z.string().transform(Number).default(5173),
+  BACKEND_PORT: z.string().transform(Number).default('3000'),
+  FRONTEND_PORT: z.string().transform(Number).default('5173'),
   FRONTEND_URL: z.string().url(),
   SOCKET_PATH: z.string().default('/smartchatbot'),
 

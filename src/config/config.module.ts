@@ -7,6 +7,8 @@ import { validateEnv } from './env.validation';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env', '.env.local'],
+      expandVariables: true,
       validate: validateEnv,
       validationOptions: {
         allowUnknown: false,

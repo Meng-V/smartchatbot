@@ -1,6 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { neon } from '@neondatabase/serverless';
-import { PrismaNeon } from '@prisma/adapter-neon';
 
 export function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
@@ -9,12 +7,10 @@ export function createPrismaClient(): PrismaClient {
     throw new Error('DATABASE_URL environment variable is required');
   }
 
-  // Configure Neon adapter for serverless
-  const neonClient = neon(connectionString);
-  const adapter = new PrismaNeon(neonClient);
+  // Use standard Prisma client without adapter for now
+  // TODO: Re-enable Neon adapter when type issues are resolved
 
   return new PrismaClient({
-    adapter,
     log:
       process.env.NODE_ENV === 'development'
         ? ['query', 'error', 'warn']

@@ -15,5 +15,6 @@ import { SharedModule } from '../shared/shared.module';
     ScheduleModule.forRoot(),
   ],
   providers: [ChatGateway, LlmConnectionGateway, WebSocketMemoryMonitorService],
+  exports: [WebSocketMemoryMonitorService],
 })
 export class GatewayModule {}
