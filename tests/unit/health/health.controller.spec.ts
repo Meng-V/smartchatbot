@@ -62,7 +62,9 @@ describe('HealthController', () => {
         json: jest.fn(),
       } as any;
 
-      await expect(controller.checkHealth(mockRes)).rejects.toThrow(HttpException);
+      await expect(controller.checkHealth(mockRes)).rejects.toThrow(
+        HttpException,
+      );
 
       try {
         await controller.checkHealth(mockRes);
@@ -105,7 +107,9 @@ describe('HealthController', () => {
         json: jest.fn(),
       } as any;
 
-      await expect(controller.checkHealth(mockRes)).rejects.toThrow(HttpException);
+      await expect(controller.checkHealth(mockRes)).rejects.toThrow(
+        HttpException,
+      );
 
       // Restore environment variable
       process.env.DATABASE_URL = originalEnv;
