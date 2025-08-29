@@ -18,6 +18,17 @@ describe('ChatGateway', () => {
         DatabaseService,
         ErrorMonitoringService,
         PerformanceMonitoringService,
+        {
+          provide: 'WebSocketMemoryMonitorService',
+          useValue: {
+            getStats: jest.fn().mockReturnValue({
+              connectionCount: 0,
+              heapUsedMB: 50,
+            }),
+            addConnection: jest.fn(),
+            removeConnection: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

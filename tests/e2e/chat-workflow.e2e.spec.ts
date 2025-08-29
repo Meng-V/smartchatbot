@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../../src/app.module';
-import * as request from 'supertest';
+import request from 'supertest';
 import * as fs from 'fs';
 
 describe('End-to-End Chat Workflow', () => {
@@ -25,7 +25,7 @@ describe('End-to-End Chat Workflow', () => {
       return request(app.getHttpServer())
         .get('/health')
         .expect(200)
-        .expect((res) => {
+        .expect((res: any) => {
           expect(res.body).toHaveProperty('status', 'healthy');
           expect(res.body).toHaveProperty('timestamp');
           expect(res.body).toHaveProperty('uptime');
@@ -37,7 +37,9 @@ describe('End-to-End Chat Workflow', () => {
       return request(app.getHttpServer())
         .get('/metrics')
         .expect(200)
-        .expect((res) => {
+        .expect((res: any) => {
+          expect(res.body).toHaveProperty('message');
+          expect(res.body.message).toContain('Metrics data');
           expect(res.body).toHaveProperty('timestamp');
           expect(res.body).toHaveProperty('memory');
           expect(res.body).toHaveProperty('websockets');
@@ -51,7 +53,7 @@ describe('End-to-End Chat Workflow', () => {
         .get('/metrics/prometheus')
         .expect(200)
         .expect('Content-Type', /text/)
-        .expect((res) => {
+        .expect((res: any) => {
           expect(res.text).toContain('smartchatbot_memory_heap_used_bytes');
           expect(res.text).toContain('smartchatbot_websocket_connections');
           expect(res.text).toContain('smartchatbot_database_healthy');
@@ -62,7 +64,7 @@ describe('End-to-End Chat Workflow', () => {
       return request(app.getHttpServer())
         .get('/readiness')
         .expect(200)
-        .expect((res) => {
+        .expect((res: any) => {
           expect(res.body).toHaveProperty('status', 'ready');
           expect(res.body).toHaveProperty('checks');
           expect(Array.isArray(res.body.checks)).toBe(true);
@@ -110,7 +112,7 @@ describe('End-to-End Chat Workflow', () => {
       return request(app.getHttpServer())
         .post('/health/restart')
         .expect(200)
-        .expect((res) => {
+        .expect((res: any) => {
           expect(res.body).toHaveProperty(
             'message',
             'Server restart initiated',

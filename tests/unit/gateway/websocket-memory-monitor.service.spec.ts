@@ -72,10 +72,11 @@ describe('WebSocketMemoryMonitorService', () => {
 
       // Mock high memory usage
       const originalMemoryUsage = process.memoryUsage;
-      process.memoryUsage = jest.fn().mockReturnValue({
+      (process.memoryUsage as any) = jest.fn().mockReturnValue({
         heapUsed: 600 * 1024 * 1024, // 600MB
         heapTotal: 800 * 1024 * 1024,
         rss: 700 * 1024 * 1024,
+        arrayBuffers: 10 * 1024 * 1024,
         external: 50 * 1024 * 1024,
       });
 
@@ -95,10 +96,11 @@ describe('WebSocketMemoryMonitorService', () => {
 
       // Mock high memory usage
       const originalMemoryUsage = process.memoryUsage;
-      process.memoryUsage = jest.fn().mockReturnValue({
+      (process.memoryUsage as any) = jest.fn().mockReturnValue({
         heapUsed: 600 * 1024 * 1024, // 600MB
         heapTotal: 800 * 1024 * 1024,
         rss: 700 * 1024 * 1024,
+        arrayBuffers: 10 * 1024 * 1024,
         external: 50 * 1024 * 1024,
       });
 

@@ -6,6 +6,7 @@ import { LlmModelType } from '../../../src/llm-chain/llm/llm.module';
 
 describe('DatabaseService', () => {
   let service: DatabaseService;
+  let prismaService: PrismaService;
 
   const mockPrismaService = {
     message: {
@@ -176,7 +177,7 @@ describe('DatabaseService', () => {
       const mockTokenUsage = {
         id: 'token-123',
         conversationId: 'conv-123',
-        llmModelType: LlmModelType.GPT_4,
+        llmModelType: 'GPT_4',
         completionTokens: 100,
         promptTokens: 50,
         totalTokens: 150,
@@ -186,7 +187,7 @@ describe('DatabaseService', () => {
 
       await service.addTokenDataInConversation(
         'conv-123',
-        LlmModelType.GPT_4,
+        'GPT_4',
         100,
         50,
         150,
@@ -195,7 +196,7 @@ describe('DatabaseService', () => {
       expect(mockPrismaService.tokenUsage.create).toHaveBeenCalledWith({
         data: {
           conversationId: 'conv-123',
-          llmModelType: LlmModelType.GPT_4,
+          llmModelType: 'GPT_4',
           completionTokens: 100,
           promptTokens: 50,
           totalTokens: 150,

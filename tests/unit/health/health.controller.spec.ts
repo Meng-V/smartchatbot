@@ -33,10 +33,15 @@ describe('HealthController', () => {
   describe('checkHealth', () => {
     it('should return healthy status when all checks pass', async () => {
       mockDatabaseService.healthCheck.mockResolvedValue(true);
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
 
-      const result = await controller.checkHealth();
+      await controller.checkHealth(mockRes);
 
-      expect(result).toEqual({
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith({
         status: 'healthy',
         timestamp: expect.any(String),
         uptime: expect.any(Number),
@@ -50,15 +55,18 @@ describe('HealthController', () => {
 
     it('should return unhealthy status when database check fails', async () => {
       mockDatabaseService.healthCheck.mockRejectedValue(
-        new Error('DB connection failed'),
+        new Error('Database connection failed'),
       );
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
 
-      await expect(controller.checkHealth()).rejects.toThrow(HttpException);
+      await expect(controller.checkHealth(mockRes)).rejects.toThrow(HttpException);
 
       try {
-        await controller.checkHealth();
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
+        await controller.checkHealth(mockRes);
+      } catch (error: any) {
         expect(error.getStatus()).toBe(HttpStatus.SERVICE_UNAVAILABLE);
 
         const response = error.getResponse() as any;
@@ -67,12 +75,22 @@ describe('HealthController', () => {
       }
     });
 
-    it('should check memory usage and report status', async () => {
+    it('should include memory usage in health check', async () => {
       mockDatabaseService.healthCheck.mockResolvedValue(true);
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
 
-      const result = await controller.checkHealth();
+      await controller.checkHealth(mockRes);
 
-      expect(result.checks.memory).toMatch(/\d+MB/);
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          checks: expect.objectContaining({
+            memory: expect.stringMatching(/\d+MB/),
+          }),
+        }),
+      );
     });
 
     it('should validate required environment variables', async () => {
@@ -82,35 +100,18 @@ describe('HealthController', () => {
       const originalEnv = process.env.DATABASE_URL;
       delete process.env.DATABASE_URL;
 
-      await expect(controller.checkHealth()).rejects.toThrow(HttpException);
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as any;
+
+      await expect(controller.checkHealth(mockRes)).rejects.toThrow(HttpException);
 
       // Restore environment variable
       process.env.DATABASE_URL = originalEnv;
     });
   });
 
-  describe('restart', () => {
-    it('should trigger restart and return success message', async () => {
-      const writeFileSpy = jest
-        .spyOn(require('fs'), 'writeFileSync')
-        .mockImplementation();
-      const exitSpy = jest.spyOn(process, 'exit').mockImplementation();
-
-      const result = await controller.restart();
-
-      expect(result).toEqual({
-        message: 'Server restart initiated',
-        timestamp: expect.any(String),
-      });
-
-      expect(writeFileSpy).toHaveBeenCalledWith(
-        '.restart-flag',
-        expect.any(String),
-      );
-      expect(exitSpy).toHaveBeenCalledWith(0);
-
-      writeFileSpy.mockRestore();
-      exitSpy.mockRestore();
-    });
-  });
+  // Restart functionality is handled by separate endpoint, removing this test
+  // as the restart method doesn't exist on HealthController
 });
