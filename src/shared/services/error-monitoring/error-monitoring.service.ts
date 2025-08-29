@@ -466,8 +466,6 @@ export class ErrorMonitoringService {
     this.logger.error(`🚨 TRIGGERING SERVER RESTART: ${reason}`);
 
     // Write restart flag for monitoring
-    const fs = require('fs');
-    const path = require('path');
     const restartFlagPath = path.join(process.cwd(), '.restart-flag');
 
     try {

@@ -29,6 +29,8 @@ log() {
 # Health check function
 check_server_health() {
     local response_code
+    local startup_time_limit=$1  # Pass startup time limit as parameter
+    
     response_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health 2>/dev/null)
     
     if [ "$response_code" = "200" ]; then
@@ -37,8 +39,13 @@ check_server_health() {
         log "${RED}🚨 Server returned $response_code status - unhealthy/degraded${NC}"
         return 1  # Unhealthy
     elif [ -z "$response_code" ] || [ "$response_code" = "000" ]; then
-        # Only log if this is a persistent issue (don't spam logs during startup)
-        return 2  # Not responding
+        # Check if we're still in startup grace period
+        if [ "$startup_time_limit" -gt 0 ]; then
+            return 2  # Not responding during startup (grace period)
+        else
+            log "${RED}🚨 Server not responding after startup period - likely crashed${NC}"
+            return 1  # Not responding after startup = unhealthy
+        fi
     else
         # Only log unexpected status codes that aren't temporary
         if [ "$response_code" != "503" ]; then
@@ -100,18 +107,26 @@ while [ $restart_count -lt $MAX_GLOBAL_RESTARTS ]; do
     # Wait for server to be ready
     sleep 5
     
-    # Health monitoring loop
+    # Health monitoring loop with startup grace period
     health_failure_count=0
+    startup_grace_period=60  # 60 seconds grace period for startup
+    startup_end_time=$(($(date +%s) + startup_grace_period))
     
     while kill -0 $BACKEND_PID 2>/dev/null; do
-        # Check server health
-        health_result=$(check_server_health)
+        # Calculate remaining startup time
+        current_time=$(date +%s)
+        remaining_startup_time=$((startup_end_time - current_time))
+        
+        # Check server health with startup grace period
+        health_result=$(check_server_health $remaining_startup_time)
         health_status=$?
         
         if [ $health_status -eq 0 ]; then
             health_failure_count=0  # Reset failure count on success
+            # Server is healthy, no more startup grace period needed
+            startup_end_time=0
         elif [ $health_status -eq 1 ]; then
-            # Only count actual unhealthy responses (not "not responding" during startup)
+            # Actual unhealthy response - count as failure
             health_failure_count=$((health_failure_count + 1))
             log "${YELLOW}📊 Health check failure $health_failure_count/$HEALTH_CHECK_FAILURES_THRESHOLD${NC}"
             
@@ -128,10 +143,9 @@ while [ $restart_count -lt $MAX_GLOBAL_RESTARTS ]; do
                 break
             fi
         else
-            # Status 2 = not responding (likely during startup) - don't increment counter immediately
-            # Only log if this persists
-            if [ $health_failure_count -gt 0 ]; then
-                log "${YELLOW}⚠️  Server not responding (startup or temporary issue)${NC}"
+            # Status 2 = not responding during startup grace period
+            if [ $remaining_startup_time -gt 0 ]; then
+                log "${YELLOW}⚠️  Server not responding (startup grace period: ${remaining_startup_time}s remaining)${NC}"
             fi
         fi
         

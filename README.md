@@ -1,309 +1,187 @@
-# 🤖 SmartChatbot - Enterprise AI Library Assistant
+# 🤖 SmartChatbot - AI Library Assistant
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Node.js-22-green" alt="Node.js Version" />
-  <img src="https://img.shields.io/badge/NestJS-11-red" alt="NestJS Version" />
-  <img src="https://img.shields.io/badge/React-19-blue" alt="React Version" />
+  <img src="https://img.shields.io/badge/Node.js-18-green" alt="Node.js" />
+  <img src="https://img.shields.io/badge/NestJS-11-red" alt="NestJS" />
+  <img src="https://img.shields.io/badge/React-18-blue" alt="React" />
   <img src="https://img.shields.io/badge/TypeScript-5-blue" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Docker-Ready-blue" alt="Docker" />
   <img src="https://img.shields.io/badge/LibCal-Integration-orange" alt="LibCal" />
-  <img src="https://img.shields.io/badge/Enterprise-Ready-purple" alt="Enterprise" />
+  <img src="https://img.shields.io/badge/Production-Ready-purple" alt="Production Ready" />
 </p>
 
-**SmartChatbot** is a production-ready, enterprise-grade AI library assistant that seamlessly integrates with library systems. Built for Miami University Libraries, it provides intelligent chat assistance with room reservations, library hours, research help, and automatic fallback to human librarians when needed.
+**SmartChatbot** is a production-ready AI library assistant built for Miami University Libraries. It provides intelligent chat assistance with room reservations, library hours, research help, and seamless fallback to human librarians when AI cannot help.
 
-## 🎯 **What Makes This Special**
+## 🎯 Problems We Solve
 
-- **🏢 Enterprise-Grade**: Production-ready with auto-restart, error monitoring, and comprehensive logging
-- **📚 Library-Focused**: Deep integration with LibCal API for room reservations and library services  
-- **🤖 Intelligent Fallback**: Automatically connects users to human librarians when AI can't help
-- **⚡ High Performance**: Optimized chat handling with parallel processing and background operations
-- **🔄 Self-Healing**: Auto-restart system with graceful error recovery
-- **🎨 Modern UX**: Beautiful, accessible interface with real-time chat capabilities
+**SmartChatbot** addresses critical challenges in modern library services:
+
+- **24/7 Availability**: Provides instant assistance when librarians aren't available
+- **Scalable Support**: Handles multiple users simultaneously without wait times
+- **Consistent Information**: Delivers accurate, up-to-date library information
+- **Seamless Integration**: Works with existing library systems (LibCal, databases)
+- **Intelligent Routing**: Knows when to escalate to human librarians
+- **Accessibility**: Ensures all users can access library services easily
 
 ## ✨ Core Features
 
-### 🤖 **AI-Powered Library Assistant**
+### 🤖 **AI-Powered Assistance**
 - **Smart Conversations**: OpenAI GPT-4 integration with library-specific knowledge
 - **Room Reservations**: Direct LibCal API integration for booking study rooms
-- **Library Hours**: Real-time library hours and service information
-- **Research Help**: Intelligent assistance with academic research queries
-- **Contextual Responses**: Maintains conversation context for natural interactions
+- **Library Information**: Real-time hours, services, and facility information
+- **Research Support**: Intelligent help with academic research queries
+- **Contextual Memory**: Maintains conversation context for natural interactions
 
-### 🔄 **Enterprise Reliability**
-- **Auto-Restart System**: Graceful server restart on critical errors
-- **Error Monitoring**: Comprehensive error tracking and alerting
-- **Performance Monitoring**: Real-time performance metrics and optimization
-- **Health Checks**: Automated system health monitoring
-- **Fallback Mechanisms**: Seamless handoff to human librarians when needed
+### 🔄 **Production Reliability**
+- **Auto-Restart System**: Self-healing architecture with graceful error recovery
+- **Health Monitoring**: Real-time system health checks and alerts
+- **Performance Tracking**: Memory usage, connection monitoring, and optimization
+- **Error Handling**: Comprehensive error tracking with fallback mechanisms
+- **Human Handoff**: Seamless transition to live librarians when needed
 
-### ⚡ **High-Performance Architecture**
-- **Parallel Processing**: Optimized database operations and LLM calls
-- **WebSocket Real-time**: Instant messaging with sub-second response times
-- **Background Operations**: Non-blocking database saves for better UX
-- **Connection Pooling**: Efficient database connection management
-- **Caching Layer**: Smart caching for frequently accessed data
+### ⚡ **High Performance**
+- **Real-time Chat**: WebSocket-based instant messaging
+- **Parallel Processing**: Optimized database and AI operations
+- **Memory Management**: Automatic cleanup and garbage collection
+- **Rate Limiting**: Protection against abuse (30 messages/minute per IP)
+- **Connection Pooling**: Efficient database connection management  
 
-### 🎨 **Modern User Experience**
-- **Responsive Design**: Works perfectly on desktop, tablet, and mobile
-- **Accessibility**: WCAG compliant with screen reader support
-- **Real-time Indicators**: Live typing indicators and connection status
-- **Error Recovery**: Graceful error handling with user-friendly messages
-- **Human Handoff**: One-click connection to human librarians  
+## 🏗️ Technical Architecture
 
-## 🏗️ Architecture
-
-### Backend (NestJS + TypeScript)
+### Backend Stack
 - **Framework**: NestJS 11 with TypeScript 5
 - **Database**: Neon serverless PostgreSQL with Prisma ORM
-- **AI Integration**: OpenAI API for chat responses
+- **AI Integration**: OpenAI GPT-4 API
+- **Library Integration**: LibCal API for room reservations
 - **Search**: Google Custom Search API
-- **Real-time**: WebSocket gateway for instant messaging
-- **Runtime**: Node.js 22 Alpine
+- **Real-time**: WebSocket gateway with Socket.io
+- **Runtime**: Node.js 18
 
-### Frontend (React + Vite)
-- **Framework**: React 19 with Vite 7
-- **UI Library**: Chakra UI for modern components
-- **Real-time**: Socket.io client for WebSocket connections
-- **Markdown**: Support for rich text responses
-- **Build Tool**: Vite for lightning-fast development
+### Frontend Stack
+- **Framework**: React 18 with Vite
+- **UI Library**: Chakra UI components
+- **Real-time**: Socket.io client
+- **State Management**: React Context
+- **Build Tool**: Vite for fast development
 
 ### Infrastructure
 - **Containerization**: Docker with multi-stage builds
-- **Orchestration**: Docker Compose with Nginx load balancer
-- **Scaling**: Multiple backend replicas with health checks
-- **SSL Ready**: Nginx configuration for HTTPS
+- **Orchestration**: Docker Compose with Nginx
+- **Auto-restart**: Custom shell script with health monitoring
+- **Monitoring**: Health endpoints, metrics, and error tracking
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Docker & Docker Compose** (recommended)
-- **Node.js 22+** (for local development)
-- **OpenAI API Key**
-- **Google Custom Search API Key & Engine ID**
-- **Neon Database URL**
+- Docker & Docker Compose (recommended)
+- Node.js 18+ (for local development)
+- OpenAI API Key
+- LibCal API credentials
+- Neon Database URL
 
-### 🐳 Docker Setup (Recommended)
-
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd smartchatbot
-   ```
-
-2. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys and database URL
-   ```
-
-3. **Start the application**
-   ```bash
-   # Quick restart script
-   ./restart.sh
-   
-   # Or manually
-   docker-compose down
-   docker-compose build
-   docker-compose up -d
-   ```
-
-4. **Access the application**
-   - Frontend: http://localhost
-   - Backend API: http://localhost/api
-   - Health Check: http://localhost/health
-
-### 💻 Local Development
-
-#### Backend Setup
+### One-Command Setup
 ```bash
-# Install dependencies
-npm install
-
-# Generate Prisma client
-npx prisma generate
-
-# Run database migrations
-npx prisma migrate deploy
-
-# Start development server
-npm run start:dev
+# Clone and start with auto-restart script
+git clone <your-repo-url>
+cd smartchatbot
+cp .env.example .env
+# Edit .env with your API keys
+bash auto-restart.sh
 ```
 
-#### Frontend Setup
-```bash
-# Navigate to client directory
-cd client
+### Access Points
+- **Frontend**: http://localhost (Nginx serves React app)
+- **Backend API**: http://localhost:3000
+- **Health Check**: http://localhost:3000/health
+- **Metrics**: http://localhost:3000/metrics
 
-# Install dependencies
-npm install
+## 🔧 Environment Setup
 
-# Start development server
-npm run start
-```
-
-## 🔧 Environment Configuration
-
-Create a `.env` file in the root directory:
+Required environment variables in `.env`:
 
 ```env
 # Database
-DATABASE_URL="postgresql://username:password@host/database?sslmode=require"
+DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
 
-# OpenAI
-OPENAI_API_KEY="your-openai-api-key"
+# OpenAI Integration
+OPENAI_API_KEY="sk-your-openai-key"
 
-# Google Custom Search
-GOOGLE_API_KEY="your-google-api-key"
-GOOGLE_SEARCH_ENGINE_ID="your-search-engine-id"
+# LibCal Integration (for room reservations)
+LIBCAL_CLIENT_ID="your-libcal-client-id"
+LIBCAL_CLIENT_SECRET="your-libcal-client-secret"
 
-# Application
-NODE_ENV="development"
-PORT=3000
+# Google Search Integration
+GOOGLE_CUSTOM_SEARCH_API_KEY="your-google-key"
+GOOGLE_CUSTOM_SEARCH_ENGINE_ID="your-engine-id"
+
+# Application Configuration
+NODE_ENV="production"
+FRONTEND_URL="https://your-domain.com"
 ```
 
-## 🧪 Testing the Application
+## 🧪 Testing Features
 
-### 🎯 Try These Features
+### Library Assistant Capabilities
+1. **Room Reservations**
+   - "I need to book a study room for tomorrow"
+   - "What rooms are available this afternoon?"
 
-1. **Basic Chat**
-   - Open the application in your browser
-   - Type "Hello!" and see the AI respond
-   - Try asking questions like "What's the weather like?"
+2. **Library Information**
+   - "What are your hours today?"
+   - "Where is the reference desk?"
 
-2. **Search Integration**
-   - Ask "What's the latest news about AI?"
-   - Try "Tell me about recent developments in technology"
-   - The bot will use Google Search for current information
+3. **Research Help**
+   - "Help me find sources on climate change"
+   - "How do I access academic databases?"
 
-3. **Real-time Features**
-   - Open multiple browser tabs
-   - Send messages and see real-time updates
-   - Test WebSocket connectivity
+4. **Fallback to Human**
+   - When AI can't help, users get "Talk to a real librarian" option
+   - Seamless handoff for complex questions
 
-4. **Advanced Conversations**
-   - Ask complex questions requiring reasoning
-   - Request code examples or explanations
-   - Test the AI's ability to maintain context
-
-### 🔍 Health Checks
-
+### System Health
 ```bash
-# Check backend health
-curl http://localhost/health
+# Check application health
+curl http://localhost:3000/health
 
-# Check database connection
-curl http://localhost/api/health
+# View real-time metrics
+curl http://localhost:3000/metrics
 
-# View logs
-docker-compose logs -f backend
-docker-compose logs -f frontend
+# Test auto-restart (manual trigger)
+curl -X POST http://localhost:3000/health/restart
 ```
 
-## 📚 API Documentation
+## 📚 API Reference
+
+### Health & Monitoring
+- `GET /health` - Application health status
+- `GET /metrics` - Performance metrics
+- `GET /readiness` - Kubernetes readiness probe
+- `POST /health/restart` - Manual restart trigger
 
 ### WebSocket Events
-- `message`: Send/receive chat messages
-- `connect`: Client connection established
-- `disconnect`: Client disconnection
+- `message` - Send/receive chat messages
+- `messageRating` - Rate AI responses
+- `userFeedback` - Submit conversation feedback
 
-### REST Endpoints
-- `GET /health`: Application health status
-- `POST /api/chat`: Send chat message (alternative to WebSocket)
-- `GET /api/search`: Google Custom Search endpoint
+## 🛠️ Development
 
-## 🛠️ Development Scripts
-
-### Backend
-```bash
-npm run start:dev      # Development with hot reload
-npm run build          # Build for production
-npm run start:prod     # Start production server
-npm run test           # Run unit tests
-npm run test:e2e       # Run end-to-end tests
-npm run lint:fix       # Fix linting issues
-```
-
-### Frontend
-```bash
-npm run start          # Development server
-npm run build          # Build for production
-npm run preview        # Preview production build
-npm run lint           # Check code quality
-```
-
-## 🐳 Docker Commands
-
-```bash
-# Build and start services
-docker-compose up -d
-
-# Rebuild without cache
-docker-compose build --no-cache
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-
-# Clean up
-docker system prune -f
-```
-
-## 🚀 Deployment
-
-The application is production-ready with:
-- Multi-replica backend scaling
-- Nginx load balancer
-- Health checks and auto-restart
-- SSL/HTTPS ready configuration
-- Environment-based configuration
+For detailed development and deployment instructions, see:
+- **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** - Complete setup and deployment guide
+- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Comprehensive testing instructions
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Run tests (`npm run test`)
+4. Commit changes (`git commit -m 'Add amazing feature'`)
+5. Push to branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License.
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-**Database Connection Issues**
-```bash
-# Check database URL format
-echo $DATABASE_URL
-
-# Test Prisma connection
-npx prisma db pull
-```
-
-**API Key Issues**
-```bash
-# Verify environment variables
-docker-compose exec backend env | grep API
-```
-
-**Port Conflicts**
-```bash
-# Check if ports are in use
-lsof -i :80 -i :3000 -i :5173
-```
-
-### Getting Help
-
-- Check the logs: `docker-compose logs -f`
-- Verify environment variables are set correctly
-- Ensure all API keys are valid and have proper permissions
-- Test database connectivity
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 
-**Ready to chat with AI? 🚀 Start the application and begin your conversation!**
+**🚀 Ready to enhance your library services with AI? Get started in minutes!**

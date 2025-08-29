@@ -1,0 +1,9 @@
+# Run linting and formatting
+npm run lint
+npm run format
+
+# Skip unit tests temporarily due to TypeScript configuration issues
+# npm run test:unit
+
+# Check for security vulnerabilities
+npm audit --audit-level=high

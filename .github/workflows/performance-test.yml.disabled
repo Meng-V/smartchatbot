@@ -1,0 +1,104 @@
+name: Performance Testing
+
+on:
+  schedule:
+    - cron: '0 2 * * 1' # Weekly on Monday at 2 AM
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  performance-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: |
+          npm run start:prod &
+          sleep 30 # Wait for app to start
+
+      - name: Install Artillery
+        run: npm install -g artillery@latest
+
+      - name: Run WebSocket load test
+        run: |
+          cat > websocket-test.yml << EOF
+          config:
+            target: 'http://localhost:3000'
+            phases:
+              - duration: 60
+                arrivalRate: 5
+                name: "Warm up"
+              - duration: 120
+                arrivalRate: 10
+                name: "Ramp up load"
+              - duration: 300
+                arrivalRate: 20
+                name: "Sustained load"
+            socketio:
+              path: '/smartchatbot/socket.io'
+          scenarios:
+            - name: "Chat conversation"
+              weight: 100
+              engine: socketio
+              flow:
+                - emit:
+                    channel: "message"
+                    data: "Hello, I need help with library hours"
+                - think: 2
+                - emit:
+                    channel: "message" 
+                    data: "What are your weekend hours?"
+                - think: 3
+          EOF
+          artillery run websocket-test.yml
+
+      - name: Run HTTP endpoint test
+        run: |
+          cat > http-test.yml << EOF
+          config:
+            target: 'http://localhost:3000'
+            phases:
+              - duration: 60
+                arrivalRate: 10
+              - duration: 120
+                arrivalRate: 25
+              - duration: 180
+                arrivalRate: 50
+          scenarios:
+            - name: "Health checks"
+              weight: 60
+              flow:
+                - get:
+                    url: "/health"
+                - think: 1
+            - name: "Metrics endpoint"
+              weight: 30
+              flow:
+                - get:
+                    url: "/metrics"
+                - think: 2
+            - name: "Readiness check"
+              weight: 10
+              flow:
+                - get:
+                    url: "/readiness"
+          EOF
+          artillery run http-test.yml
+
+      - name: Memory usage check
+        run: |
+          curl -s http://localhost:3000/metrics | grep smartchatbot_memory_heap_used_bytes
+          curl -s http://localhost:3000/metrics | grep smartchatbot_websocket_connections

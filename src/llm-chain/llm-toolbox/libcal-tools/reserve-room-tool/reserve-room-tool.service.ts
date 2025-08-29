@@ -122,9 +122,7 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
   }> {
     const isProductionMode =
       this.retrieveEnvironmentVariablesService.retrieve('NODE_ENV') ===
-      'production'
-        ? 1
-        : 0;
+      'production';
 
     const payload = {
       start: startTimestamp.toISOString(),
@@ -137,7 +135,8 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
           to: endTimestamp.toISOString(),
         },
       ],
-      test: !isProductionMode,
+      // Only include test parameter in non-production mode
+      ...(isProductionMode ? {} : { test: 1 }),
     };
     const header = {
       Authorization: `Bearer ${this.accessToken}`,
@@ -173,17 +172,25 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
           continue;
         }
         if (error.response !== undefined && error.response.data !== undefined) {
-          const errorData = error.response.data as string;
+          const errorData = error.response.data;
+          this.logger.error('LibCal API Error Response:', errorData);
+
+          // Handle string error responses
+          const errorMessage =
+            typeof errorData === 'string'
+              ? errorData
+              : JSON.stringify(errorData);
+
           if (
-            errorData.includes('not a valid starting slot') ||
-            errorData.includes('not a valid ending slot')
+            errorMessage.includes('not a valid starting slot') ||
+            errorMessage.includes('not a valid ending slot')
           ) {
             return {
               succeed: false,
               message: 'Time slot is not available for your room',
             };
           } else if (
-            errorData.includes('this exceeds the 120 minute booking limit')
+            errorMessage.includes('this exceeds the 120 minute booking limit')
           ) {
             return {
               succeed: false,
@@ -191,16 +198,38 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
                 'Booking exceeds the 120 minute booking limit.Each person only has 120 minute booking limit everyday.',
             };
           } else {
-            this.logger.error(error);
-            throw error;
+            this.logger.error('Unhandled LibCal API error:', error);
+            return {
+              succeed: false,
+              message: `Booking failed: ${errorMessage}`,
+            };
           }
+        } else {
+          this.logger.error('LibCal API request failed:', error);
+          return {
+            succeed: false,
+            message: 'Booking failed: Unable to connect to reservation system',
+          };
         }
       }
     }
 
+    // Log the response for debugging
+    this.logger.log(`API Response: ${JSON.stringify(response?.data)}`);
+
+    // Check if booking_id exists in response
+    const bookingId = response?.data?.booking_id;
+    if (!bookingId) {
+      this.logger.error('No booking_id found in API response', response?.data);
+      return {
+        succeed: false,
+        message: 'Booking failed: No booking ID received from the system',
+      };
+    }
+
     return {
       succeed: true,
-      bookingId: response!.data.booking_id,
+      bookingId: bookingId,
     };
   }
 

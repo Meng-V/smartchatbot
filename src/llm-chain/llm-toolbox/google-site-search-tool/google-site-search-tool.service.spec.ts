@@ -4,7 +4,7 @@ import { KingLibrarySiteSearchService } from './king-library-site-search.service
 
 describe('GoogleSiteSearchToolService', () => {
   let service: GoogleSiteSearchToolService;
-  let mockKingLibrarySiteSearchService = {
+  const mockKingLibrarySiteSearchService = {
     search: jest.fn(),
   };
 
