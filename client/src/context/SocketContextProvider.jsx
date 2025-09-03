@@ -114,7 +114,7 @@ const SocketContextProvider = ({ children }) => {
   useEffect(() => {
     const checkServiceHealth = async () => {
       try {
-        const response = await axios.get('/api/health', {
+        const response = await axios.get('/health', {
           timeout: 10000, // 10 second timeout
         });
 
