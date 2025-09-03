@@ -27,9 +27,9 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
         'string[REQUIRED][@miamioh.edu email][This has to be provided by the customer.Ask them if they have not provided.NEVER predict!]',
       date: 'string[REQUIRED][format YYYY-MM-DD][This has to be provided by the customer.Ask them if they have not provided.NEVER predict!]',
       startTime:
-        'string[REQUIRED][format HH-MM ranging from 00:00 to 23:59][This has to be provided by the customer.Ask them if they have not provided.NEVER predict!]',
+        'string[REQUIRED][format HH-MM in 24-hour format ranging from 00:00 to 23:59. Convert AM/PM times: 3pm=15:00, 5pm=17:00, 9am=09:00, etc.][This has to be provided by the customer.Ask them if they have not provided.NEVER predict!]',
       endTime:
-        'string[REQUIRED][format HH-MM ranging from 00:00 to 23:59][This has to be provided by the customer.Ask them if they have not provided.NEVER predict!]',
+        'string[REQUIRED][format HH-MM in 24-hour format ranging from 00:00 to 23:59. Convert AM/PM times: 3pm=15:00, 5pm=17:00, 9am=09:00, etc.][This has to be provided by the customer.Ask them if they have not provided.NEVER predict!]',
       roomCapacity:
         'string[OPTIONAL][capacity(number of people using the room)of the room you wish to reserve.]',
       roomCodeName:
@@ -256,14 +256,25 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
 
     let selectedRoom: { id: string; roomCodeName: string; capacity: number };
 
-    //Filter room based on roomCodeName
+    //Filter room based on roomCodeName - now using LibCal API directly
     if (!this.isNullAndUndefined(llmToolInput.roomCodeName)) {
-      const roomResult = await this.databaseService.getRoomIdFromRoomCodeName(
-        llmToolInput.roomCodeName!,
-        this.DEFAULT_BUILDING_ID,
+      // Get available rooms from LibCal API and find the requested room
+      const availableRooms =
+        await this.checkRoomAvailabilityToolService.fetchAvailableRooms(
+          llmToolInput.date!,
+          llmToolInput.startTime!,
+          llmToolInput.endTime!,
+          null, // No capacity filter when searching by room name
+        );
+
+      const roomResult = availableRooms.find((room) =>
+        room.roomCodeName
+          .toLowerCase()
+          .includes(llmToolInput.roomCodeName!.toLowerCase()),
       );
-      if (roomResult === null) {
-        return `There is no room called ${llmToolInput.roomCodeName}`;
+
+      if (!roomResult) {
+        return `Room ${llmToolInput.roomCodeName} is not available for the requested time slot`;
       }
       selectedRoom = roomResult;
     } else {
@@ -287,12 +298,25 @@ export class ReserveRoomToolService implements LlmTool, OnModuleDestroy {
     const endTimeFormatted = llmToolInput.endTime!.replace('-', ':');
 
     // Create proper Date objects with timezone handling
+    // Use Intl.DateTimeFormat to determine if we're in EST or EDT for the given date
+    const testDate = new Date(`${llmToolInput.date}T12:00:00`);
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: this.TIMEZONE,
+      timeZoneName: 'short',
+    });
+    const timeZoneName = formatter
+      .formatToParts(testDate)
+      .find((part) => part.type === 'timeZoneName')?.value;
+    const isDST = timeZoneName === 'EDT';
+    const offset = isDST ? '-04:00' : '-05:00';
+
+    // Create timestamps with correct timezone offset
     const startTimestamp = new Date(
-      `${llmToolInput.date}T${startTimeFormatted}:00-05:00`,
-    ); // EST is UTC-5
+      `${llmToolInput.date}T${startTimeFormatted}:00${offset}`,
+    );
     const endTimestamp = new Date(
-      `${llmToolInput.date}T${endTimeFormatted}:00-05:00`,
-    ); // EST is UTC-5
+      `${llmToolInput.date}T${endTimeFormatted}:00${offset}`,
+    );
 
     // Validate that dates are valid
     if (isNaN(startTimestamp.getTime()) || isNaN(endTimestamp.getTime())) {

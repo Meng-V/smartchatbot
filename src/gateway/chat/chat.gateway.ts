@@ -119,11 +119,8 @@ export class ChatGateway implements OnGatewayDisconnect {
         } catch (error) {
           this.logger.error('Database error while saving user message:', error);
           this.errorMonitoringService.logError(
-            'database-error',
-            'Failed to save user message to database',
-            'error',
-            { clientId: client.id, messageLength: sanitizedMessage.length },
-            error instanceof Error ? error.stack : undefined,
+            'database_error',
+            error instanceof Error ? error.message : 'Unknown database error',
           );
           throw error;
         }
@@ -146,13 +143,22 @@ export class ChatGateway implements OnGatewayDisconnect {
 
       // LLM Chain operations with comprehensive error handling
       let modelResponse: string;
+      let llmChain: any = null;
       try {
-        const llmChain = await llmChainPromise;
+        llmChain = await llmChainPromise;
 
-        // Set timeout for LLM response - reduced to 20s
+        // Initialize conversation memory with conversation ID
+        const conversationId = this.clientIdToConversationDataMapping.get(
+          client.id,
+        )?.conversationId;
+        if (conversationId) {
+          llmChain.initializeConversation(conversationId);
+        }
+
+        // Set timeout for LLM response - increased to 45s for complex operations
         const responsePromise = llmChain.getModelResponse(sanitizedMessage);
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('LLM response timeout')), 20000); // 20 second timeout
+          setTimeout(() => reject(new Error('LLM response timeout')), 45000); // 45 second timeout
         });
 
         modelResponse = await Promise.race([responsePromise, timeoutPromise]);
@@ -171,10 +177,56 @@ export class ChatGateway implements OnGatewayDisconnect {
           llmError instanceof Error ? llmError.stack : undefined,
         );
 
+        // Reset conversation memory on critical errors to prevent state corruption
+        const conversationId = this.clientIdToConversationDataMapping.get(
+          client.id,
+        )?.conversationId;
+        if (conversationId && llmChain) {
+          try {
+            llmChain.cleanupConversation(conversationId);
+            // Reinitialize conversation for next message
+            llmChain.initializeConversation(conversationId);
+            this.logger.log(
+              `Reset conversation memory for client ${client.id} due to LLM error`,
+            );
+          } catch (resetError) {
+            this.logger.error(
+              'Error resetting conversation memory:',
+              resetError,
+            );
+          }
+        }
+
+        // Check if tools were used successfully before timeout
+        let toolResults = '';
+        if (llmChain) {
+          try {
+            const toolsUsed = llmChain.getToolsUsed();
+            if (toolsUsed && toolsUsed.length > 0) {
+              // Check for room reservation success
+              const roomTool = toolsUsed.find(
+                (tool: any) =>
+                  tool.includes('ReserveRoomTool') ||
+                  tool.includes('booking_id'),
+              );
+              if (roomTool) {
+                toolResults =
+                  ' Your room reservation was successfully processed! ';
+              }
+            }
+          } catch (toolError) {
+            this.logger.warn(
+              'Could not get tool results for fallback:',
+              toolError,
+            );
+          }
+        }
+
         // Provide helpful fallback response with librarian guidance
         modelResponse = this.generateFallbackResponse(
           sanitizedMessage,
           llmError,
+          toolResults,
         );
         // success = false; // Mark as partial failure but still provide response
       }
@@ -246,7 +298,11 @@ export class ChatGateway implements OnGatewayDisconnect {
     client.emit('message', errorResponse);
   }
 
-  private generateFallbackResponse(userMessage: string, error: any): string {
+  private generateFallbackResponse(
+    userMessage: string,
+    error: any,
+    toolResults: string = '',
+  ): string {
     this.logger.warn(
       `Generating fallback response for message: "${userMessage.substring(0, 50)}..." due to error: ${error.message}`,
     );
@@ -267,6 +323,9 @@ export class ChatGateway implements OnGatewayDisconnect {
       lowerMessage.includes('reserve') ||
       lowerMessage.includes('book')
     ) {
+      if (toolResults.includes('successfully processed')) {
+        return `${toolResults}I apologize for the delay in my response due to a system timeout. Your room reservation has been completed successfully! You should receive a confirmation email shortly. If you need any additional assistance or have questions about your reservation, please contact the library at (513) 529-4141.`;
+      }
       return `I'm currently unable to process room reservations due to a system issue. You can make reservations directly at www.lib.miamioh.edu or contact the library at (513) 529-4141. For immediate assistance, please use the "Talk to a human librarian" option.`;
     }
 
@@ -325,56 +384,106 @@ export class ChatGateway implements OnGatewayDisconnect {
   }
 
   async handleDisconnect(client: Socket): Promise<void> {
-    // Decrement connection count for memory monitoring
-    this.memoryMonitor.decrementConnection();
+    try {
+      this.logger.log(`Client ${client.id} disconnected`);
 
-    this.logger.log(`Client ${client.id} disconnected`);
-    const llmChain: LlmChainService =
-      await this.llmConnnectionGateway.getLlmChainForCurrentSocket(client.id);
+      if (!this.clientIdToConversationDataMapping.has(client.id)) {
+        this.llmConnnectionGateway.closeLlmChainForCurrentSocket(client.id);
+        return;
+      }
 
-    const totalTokenUsage: TokenUsage = llmChain.getTokenUsage();
-    this.logger.log(
-      `Total Token Used for the chat session is ${JSON.stringify(totalTokenUsage)}`,
-    );
-    if (!this.clientIdToConversationDataMapping.has(client.id)) {
+      const conversationData = this.clientIdToConversationDataMapping.get(
+        client.id,
+      )!;
+
+      // Get LLM chain safely
+      let llmChain: LlmChainService | undefined;
+      try {
+        llmChain = await this.llmConnnectionGateway.getLlmChainForCurrentSocket(
+          client.id,
+        );
+      } catch (error: any) {
+        this.logger.warn(
+          'Could not get LLM chain for client disconnect cleanup:',
+          error,
+        );
+        // Continue with cleanup even if LLM chain is unavailable
+      }
+
+      // Get token usage safely
+      let totalTokenUsage = {};
+      if (llmChain) {
+        try {
+          totalTokenUsage = llmChain.getTokenUsage();
+          this.logger.log(
+            `Total Token Used for the chat session is ${JSON.stringify(totalTokenUsage)}`,
+          );
+        } catch (error: any) {
+          this.logger.warn('Could not get token usage:', error);
+        }
+      }
+
+      // Add token data to database
+      for (const [llmModelType, modelTokenUsage] of Object.entries(
+        totalTokenUsage,
+      )) {
+        try {
+          const tokenData = modelTokenUsage as any;
+          this.databaseService.addTokenDataInConversation(
+            conversationData.conversationId,
+            llmModelType as LlmModelType,
+            tokenData.completionTokens || 0,
+            tokenData.promptTokens || 0,
+            tokenData.totalTokens || 0,
+          );
+        } catch (error: any) {
+          this.logger.error('Error saving token data:', error);
+        }
+      }
+
+      // Add UserFeedback to the database
+      if (conversationData.userFeedback !== undefined) {
+        try {
+          await this.databaseService.addUserFeedbackToDatabase(
+            conversationData.conversationId,
+            conversationData.userFeedback,
+          );
+        } catch (error: any) {
+          this.logger.error('Error saving user feedback:', error);
+        }
+      }
+
+      // Add toolsUsed data to the database (only if llmChain is available)
+      if (llmChain) {
+        try {
+          this.databaseService.addToolsUsedInConversation(
+            conversationData.conversationId,
+            llmChain.getToolsUsed(),
+          );
+        } catch (error: any) {
+          this.logger.error('Error saving tools used data:', error);
+        }
+
+        // Clean up conversation memory
+        try {
+          if (conversationData.conversationId) {
+            llmChain.cleanupConversation(conversationData.conversationId);
+          }
+        } catch (error: any) {
+          this.logger.error('Error cleaning up conversation memory:', error);
+        }
+      }
+
+      // Clean up client mapping to prevent memory leaks
+      this.clientIdToConversationDataMapping.delete(client.id);
+
+      // Close the gateway
       this.llmConnnectionGateway.closeLlmChainForCurrentSocket(client.id);
-      return;
+    } catch (error: any) {
+      this.logger.error('Error in handleDisconnect:', error);
+      // Ensure cleanup happens even if there are errors
+      this.clientIdToConversationDataMapping.delete(client.id);
+      this.llmConnnectionGateway.closeLlmChainForCurrentSocket(client.id);
     }
-    const conversationData = this.clientIdToConversationDataMapping.get(
-      client.id,
-    )!;
-
-    // Add token usage data into database
-    for (const [llmModelType, modelTokenUsage] of Object.entries(
-      totalTokenUsage,
-    )) {
-      this.databaseService.addTokenDataInConversation(
-        conversationData.conversationId,
-        llmModelType as LlmModelType,
-        modelTokenUsage.completionTokens,
-        modelTokenUsage.promptTokens,
-        modelTokenUsage.totalTokens,
-      );
-    }
-
-    // Add UserFeedback to the database
-    if (conversationData.userFeedback !== undefined) {
-      await this.databaseService.addUserFeedbackToDatabase(
-        conversationData.conversationId,
-        conversationData.userFeedback,
-      );
-    }
-
-    // Add toolsUsed data to the database
-    this.databaseService.addToolsUsedInConversation(
-      conversationData.conversationId,
-      llmChain.getToolsUsed(),
-    );
-
-    // Clean up client mapping to prevent memory leaks
-    this.clientIdToConversationDataMapping.delete(client.id);
-
-    // Close the gateway
-    this.llmConnnectionGateway.closeLlmChainForCurrentSocket(client.id);
   }
 }

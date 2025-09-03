@@ -257,26 +257,14 @@ export class HealthController {
         };
       }
 
-      // Test Google Custom Search API
-      const testUrl = 'https://www.googleapis.com/customsearch/v1';
-      const testParams = {
-        key: process.env.GOOGLE_API_KEY,
-        cx: process.env.GOOGLE_LIBRARY_SEARCH_CSE_ID,
-        q: 'library',
-        num: 1,
-      };
-
-      const response = await axios.get(testUrl, {
-        params: testParams,
-        timeout: 5000,
-      });
-
+      // Skip actual API call during health checks to avoid rate limiting
+      // Just validate credentials are present
       return {
         status: 'healthy',
         details: {
           apiName: 'Google Custom Search API',
-          responseStatus: response.status,
-          responseTime: 'OK',
+          credentialsPresent: true,
+          note: 'Credentials validated, API calls skipped to avoid rate limiting',
         },
       };
     } catch (error: any) {

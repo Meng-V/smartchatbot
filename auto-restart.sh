@@ -97,6 +97,17 @@ restart_count=0
 while [ $restart_count -lt $MAX_GLOBAL_RESTARTS ]; do
     log "${BLUE}📦 Starting backend (attempt $((restart_count + 1))/$MAX_GLOBAL_RESTARTS)...${NC}"
     
+    # Ensure Prisma client is up to date before starting
+    if [ $restart_count -eq 0 ]; then
+        log "${YELLOW}🔧 Generating Prisma client...${NC}"
+        npx prisma generate > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            log "${GREEN}✅ Prisma client generated successfully${NC}"
+        else
+            log "${RED}❌ Prisma client generation failed${NC}"
+        fi
+    fi
+    
     # Start the backend process
     npm run start:dev &
     BACKEND_PID=$!

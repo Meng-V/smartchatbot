@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Message, ModelTokenUsage, Room } from '@prisma/client';
+import { Message, ModelTokenUsage } from '@prisma/client';
 import { UserFeedback } from '../gateway/chat/chat.gateway';
 import { Role } from '../llm-chain/memory/memory.interface';
 import { LlmModelType } from 'src/llm-chain/llm/llm.module';
@@ -13,28 +13,8 @@ export class DatabaseService {
   private readonly logger = new Logger(DatabaseService.name);
   constructor(private readonly prismaService: PrismaService) {}
 
-  /**
-   * Get room ID from the database by fuzzy matching the roomCodeName and exact matching the buildingId
-   * @param roomCodeName
-   * @param buildingId
-   * @returns if no room satisfies the input condition, return null
-   */
-  async getRoomIdFromRoomCodeName(
-    roomCodeName: string,
-    buildingId: string,
-  ): Promise<{ id: string; roomCodeName: string; capacity: number } | null> {
-    const rooms: Room[] = await this.prismaService
-      .$queryRaw`SELECT * FROM "Room" WHERE "buildingId" = ${buildingId} AND "codeName" LIKE ${`%${roomCodeName}%`}`;
-
-    if (rooms.length === 0) {
-      return null;
-    }
-    return {
-      id: rooms[0].id,
-      roomCodeName: rooms[0].codeName,
-      capacity: rooms[0].capacity,
-    };
-  }
+  // Room data methods removed - Room/Building tables don't exist in Neon database
+  // Room information is now handled directly via LibCal API
 
   /**
    *
@@ -104,25 +84,32 @@ export class DatabaseService {
   }
 
   /**
-   * Add user Feed back to the existing conversation with the input conversationId
+   * Add or update user feedback for the existing conversation with the input conversationId
    * @param conversationId
    * @param userFeedback
-   * @returns the id of the newly created conversation feedback
+   * @returns the id of the created or updated conversation feedback
    */
   async addUserFeedbackToDatabase(
     conversationId: string,
     userFeedback: UserFeedback,
   ): Promise<string> {
-    const createdFeedback =
-      await this.prismaService.conversationFeedback.create({
-        data: {
+    const upsertedFeedback =
+      await this.prismaService.conversationFeedback.upsert({
+        where: {
+          conversationId: conversationId,
+        },
+        update: {
+          rating: userFeedback.userRating,
+          userComment: userFeedback.userComment ? userFeedback.userComment : '',
+        },
+        create: {
           rating: userFeedback.userRating,
           userComment: userFeedback.userComment ? userFeedback.userComment : '',
           conversationId: conversationId,
         },
       });
 
-    return createdFeedback.id;
+    return upsertedFeedback.id;
   }
 
   /**
@@ -206,12 +193,20 @@ export class DatabaseService {
     isPositiveRated: boolean,
   ): Promise<void> {
     try {
+      // Use update since isPositiveRated is a field on the Message model
+      // This will work for both first-time ratings and updates
       await this.prismaService.message.update({
         where: { id: messageId },
         data: { isPositiveRated: isPositiveRated },
       });
-    } catch (error) {
-      this.logger.error('Error updating message:', error);
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        this.logger.warn(
+          `Message with ID ${messageId} not found for rating update`,
+        );
+      } else {
+        this.logger.error('Error updating message rating:', error);
+      }
     }
   }
 

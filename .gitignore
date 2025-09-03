@@ -64,3 +64,8 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Nginx
 nginx_AI.conf
 nginx.conf
+
+last-error.json
+auto-restart.log
+.backend.pid
+restart-log.json

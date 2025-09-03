@@ -9,25 +9,21 @@ import { ConversationSummarizationPromptService } from '../../prompt/conversatio
 import { LlmService } from '../../../llm-chain/llm/llm.service';
 import { OpenAiModelType } from '../../../llm-chain/llm/openai-api/openai-api.service';
 
-@Injectable({ scope: Scope.REQUEST })
+@Injectable({ scope: Scope.DEFAULT })
 export class ConversationMemoryService implements ConversationMemory {
-  private conversationQueue: CustomQueue<[Role | null, string]> =
-    new CustomQueue<[Role | null, string]>();
+  // Map to store conversation memory per client/conversation ID
+  private conversationMemories: Map<
+    string,
+    {
+      conversationQueue: CustomQueue<[Role | null, string]>;
+      maxContextWindow: number | undefined;
+      conversationBufferSize: number | undefined;
+      conversationSummarizationMode: boolean;
+      tokenUsage: TokenUsage;
+    }
+  > = new Map();
 
-  /**
-   * Maximum conversation line would be keep in the memory. Oldest conversation would be tossed if exceed maxContextWindow. In other word, this is the size of the fixed-size queue for the conversation. If null, the queue can grow to whatever size
-   */
-  private maxContextWindow: number | undefined;
-  /**
-   * Number of conversation line (most recent) that we would not summarize, allowing model to have the full context of most recent conversation
-   */
-  private conversationBufferSize: number | undefined;
-
-  /**
-   * True: will summarize the conversation based on maxContextWindow and conversationBufferSize. False: will not summarize
-   */
-  private conversationSummarizationMode: boolean = false;
-  private tokenUsage: TokenUsage = {};
+  private currentConversationId: string | null = null;
 
   constructor(
     private conversationSummarizationPromptService: ConversationSummarizationPromptService,
@@ -35,12 +31,38 @@ export class ConversationMemoryService implements ConversationMemory {
     private tokenUsageService: TokenUsageService,
   ) {}
 
+  // Set conversation ID for current operations
+  public setConversationId(conversationId: string): void {
+    this.currentConversationId = conversationId;
+    if (!this.conversationMemories.has(conversationId)) {
+      this.conversationMemories.set(conversationId, {
+        conversationQueue: new CustomQueue<[Role | null, string]>(),
+        maxContextWindow: undefined,
+        conversationBufferSize: undefined,
+        conversationSummarizationMode: false,
+        tokenUsage: {},
+      });
+    }
+  }
+
+  private getCurrentMemory() {
+    if (
+      !this.currentConversationId ||
+      !this.conversationMemories.has(this.currentConversationId)
+    ) {
+      throw new Error('No conversation ID set or conversation not found');
+    }
+    return this.conversationMemories.get(this.currentConversationId)!;
+  }
+
   public setConversationSummarizationMode(shouldSummarize: boolean): void {
-    this.conversationSummarizationMode = shouldSummarize;
+    const memory = this.getCurrentMemory();
+    memory.conversationSummarizationMode = shouldSummarize;
   }
 
   public getConversationSummarizationMode(): boolean {
-    return this.conversationSummarizationMode;
+    const memory = this.getCurrentMemory();
+    return memory.conversationSummarizationMode;
   }
 
   /**
@@ -49,26 +71,29 @@ export class ConversationMemoryService implements ConversationMemory {
    * @throw Error in case contextWindowSize < conversation buffer size (if defined)
    */
   public setMaxContextWindow(contextWindowSize: number | undefined) {
+    const memory = this.getCurrentMemory();
     if (
       contextWindowSize !== undefined &&
-      this.conversationBufferSize !== undefined &&
-      contextWindowSize < this.conversationBufferSize
+      memory.conversationBufferSize !== undefined &&
+      contextWindowSize < memory.conversationBufferSize
     ) {
       throw new Error(
         'Context window size cannot be smaller than conversation buffer size',
       );
     }
 
-    this.maxContextWindow = contextWindowSize;
-    this.conversationQueue.setMaxSize(this.maxContextWindow);
+    memory.maxContextWindow = contextWindowSize;
+    memory.conversationQueue.setMaxSize(memory.maxContextWindow);
   }
 
   public getMaxContextWindow(): number | undefined {
-    return this.maxContextWindow;
+    const memory = this.getCurrentMemory();
+    return memory.maxContextWindow;
   }
 
   public addToConversation(role: Role, message: string): void {
-    this.conversationQueue.enqueue([role, message]);
+    const memory = this.getCurrentMemory();
+    memory.conversationQueue.enqueue([role, message]);
   }
 
   /**
@@ -77,25 +102,28 @@ export class ConversationMemoryService implements ConversationMemory {
    * @throws Error in case bufferSize is larger than this.maxContextWindow(if defined)
    */
   public setConversationBufferSize(bufferSize: number | undefined) {
+    const memory = this.getCurrentMemory();
     if (
       bufferSize !== undefined &&
-      this.maxContextWindow !== undefined &&
-      bufferSize > this.maxContextWindow
+      memory.maxContextWindow !== undefined &&
+      bufferSize > memory.maxContextWindow
     ) {
       throw new Error(
         'Conversation Buffer size cannot be larger than max context window',
       );
     }
 
-    this.conversationBufferSize = bufferSize;
+    memory.conversationBufferSize = bufferSize;
   }
 
   public getConversationBufferSize(): number | undefined {
-    return this.conversationBufferSize;
+    const memory = this.getCurrentMemory();
+    return memory.conversationBufferSize;
   }
 
   private setTokenUsage(tokenUsage: TokenUsage) {
-    this.tokenUsage = tokenUsage;
+    const memory = this.getCurrentMemory();
+    memory.tokenUsage = tokenUsage;
   }
 
   /**
@@ -160,22 +188,23 @@ export class ConversationMemoryService implements ConversationMemory {
     start: number = 0,
     end?: number,
   ): Promise<string> {
-    const slicedConversation = this.conversationQueue.slice(start, end);
+    const memory = this.getCurrentMemory();
+    const slicedConversation = memory.conversationQueue.slice(start, end);
 
     //If bufferSize is undefined, we don't summarize anything
     const conversationToUnchange =
-      this.conversationBufferSize !== undefined
-        ? slicedConversation.slice((start = -this.conversationBufferSize))
+      memory.conversationBufferSize !== undefined
+        ? slicedConversation.slice((start = -memory.conversationBufferSize))
         : slicedConversation;
     const conversationToSummarize =
-      this.conversationBufferSize !== undefined
+      memory.conversationBufferSize !== undefined
         ? slicedConversation.slice(
             (start = 0),
-            (end = -this.conversationBufferSize),
+            (end = -memory.conversationBufferSize),
           )
         : [];
 
-    const conversationSummary = this.conversationSummarizationMode
+    const conversationSummary = memory.conversationSummarizationMode
       ? await this.summarizeConversation(conversationToSummarize)
       : this.stringifyConversation(conversationToSummarize);
 
@@ -187,6 +216,15 @@ export class ConversationMemoryService implements ConversationMemory {
    * @returns
    */
   public getTokenUsage(): TokenUsage {
-    return this.tokenUsage;
+    const memory = this.getCurrentMemory();
+    return memory.tokenUsage;
+  }
+
+  // Clean up conversation memory when client disconnects
+  public clearConversation(conversationId: string): void {
+    this.conversationMemories.delete(conversationId);
+    if (this.currentConversationId === conversationId) {
+      this.currentConversationId = null;
+    }
   }
 }

@@ -45,19 +45,8 @@ model ModelTokenUsage {
   conversationId   String
 }
 
-model Building {
-  id       String @id
-  name     String
-  roomList Room[]
-}
-
-model Room {
-  id         String   @id
-  codeName   String   @unique @db.VarChar(10)
-  capacity   Int
-  building   Building @relation(fields: [buildingId], references: [id])
-  buildingId String
-}
+// Building and Room tables removed - not present in Neon database
+// Room data is now handled via LibCal API directly
 
 model ConversationFeedback {
   id             String       @id @default(uuid())

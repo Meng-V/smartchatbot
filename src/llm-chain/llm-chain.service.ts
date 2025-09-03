@@ -47,11 +47,6 @@ export class LlmChainService {
     private cancelReservationToolService: CancelReservationToolService,
     private googleSiteSearchToolService: GoogleSiteSearchToolService,
   ) {
-    this.memoryService.setMaxContextWindow(6);
-    this.memoryService.setConversationBufferSize(3);
-    this.memoryService.setConversationSummarizationMode(true);
-    this.promptService.setConversationMemory(this.memoryService);
-
     this.setAvailableTools(
       new Set<LlmTool>([
         this.librarianSubjectLookupToolService,
@@ -63,6 +58,26 @@ export class LlmChainService {
         this.googleSiteSearchToolService,
       ]),
     );
+  }
+
+  /**
+   * Initialize conversation memory for a specific conversation ID
+   * @param conversationId
+   */
+  public initializeConversation(conversationId: string): void {
+    this.memoryService.setConversationId(conversationId);
+    this.memoryService.setMaxContextWindow(6);
+    this.memoryService.setConversationBufferSize(3);
+    this.memoryService.setConversationSummarizationMode(true);
+    this.promptService.setConversationMemory(this.memoryService);
+  }
+
+  /**
+   * Clean up conversation memory
+   * @param conversationId
+   */
+  public cleanupConversation(conversationId: string): void {
+    this.memoryService.clearConversation(conversationId);
   }
 
   /**
