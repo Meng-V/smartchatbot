@@ -202,7 +202,7 @@ export class HealthController {
 
     // Determine overall status
     const hasUnhealthyApis = Object.values(apiResults).some(
-      (api: any) => api.status !== 'healthy'
+      (api: any) => api.status !== 'healthy',
     );
 
     if (hasUnhealthyApis) {
@@ -217,7 +217,7 @@ export class HealthController {
         apis: apiResults,
         details: {
           unhealthyCount: Object.values(apiResults).filter(
-            (api: any) => api.status !== 'healthy'
+            (api: any) => api.status !== 'healthy',
           ).length,
           totalCount: Object.keys(apiResults).length,
         },
@@ -247,7 +247,8 @@ export class HealthController {
       ) {
         return {
           status: 'unhealthy',
-          error: 'Missing credentials (GOOGLE_API_KEY or GOOGLE_LIBRARY_SEARCH_CSE_ID)',
+          error:
+            'Missing credentials (GOOGLE_API_KEY or GOOGLE_LIBRARY_SEARCH_CSE_ID)',
           details: {
             missingApiKey: !process.env.GOOGLE_API_KEY,
             missingCseId: !process.env.GOOGLE_LIBRARY_SEARCH_CSE_ID,
@@ -293,7 +294,8 @@ export class HealthController {
       if (!process.env.LIBCAL_CLIENT_ID || !process.env.LIBCAL_CLIENT_SECRET) {
         return {
           status: 'unhealthy',
-          error: 'Missing credentials (LIBCAL_CLIENT_ID or LIBCAL_CLIENT_SECRET)',
+          error:
+            'Missing credentials (LIBCAL_CLIENT_ID or LIBCAL_CLIENT_SECRET)',
           details: {
             missingClientId: !process.env.LIBCAL_CLIENT_ID,
             missingClientSecret: !process.env.LIBCAL_CLIENT_SECRET,
@@ -314,7 +316,7 @@ export class HealthController {
         {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           timeout: 5000,
-        }
+        },
       );
 
       return {
@@ -330,7 +332,10 @@ export class HealthController {
     }
   }
 
-  private handleApiError(error: any, apiName: string): {
+  private handleApiError(
+    error: any,
+    apiName: string,
+  ): {
     status: string;
     error: string;
     details: any;
