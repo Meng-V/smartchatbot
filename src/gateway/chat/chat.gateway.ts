@@ -411,7 +411,7 @@ export class ChatGateway implements OnGatewayDisconnect {
       }
 
       // Get token usage safely
-      let totalTokenUsage = {};
+      let totalTokenUsage: TokenUsage = {};
       if (llmChain) {
         try {
           totalTokenUsage = llmChain.getTokenUsage();
@@ -428,7 +428,7 @@ export class ChatGateway implements OnGatewayDisconnect {
         totalTokenUsage,
       )) {
         try {
-          const tokenData = modelTokenUsage as any;
+          const tokenData = modelTokenUsage;
           this.databaseService.addTokenDataInConversation(
             conversationData.conversationId,
             llmModelType as LlmModelType,

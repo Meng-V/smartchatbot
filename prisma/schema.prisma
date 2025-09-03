@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
@@ -12,8 +6,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  // uncomment next line if you use Prisma <5.10
-  // directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model Message {
@@ -21,37 +13,33 @@ model Message {
   type            String       @db.VarChar(10)
   content         String
   timestamp       DateTime     @default(now())
-  conversation    Conversation @relation(fields: [conversationId], references: [id])
   conversationId  String
   isPositiveRated Boolean?
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
 }
 
 model Conversation {
   id                   String                @id @default(uuid())
   toolUsed             String[]
-  messageList          Message[]
-  tokenUsages          ModelTokenUsage[] // One conversation might use multiple models
   conversationFeedback ConversationFeedback?
+  messageList          Message[]
+  tokenUsages          ModelTokenUsage[]
 }
 
-//Token Usage of each LLM model
 model ModelTokenUsage {
-  id               String        @id @default(uuid())
+  id               String       @id @default(uuid())
   llmModelName     String
   completionTokens Int
   promptTokens     Int
   totalTokens      Int
-  conversation     Conversation? @relation(fields: [conversationId], references: [id])
   conversationId   String
+  conversation     Conversation @relation(fields: [conversationId], references: [id])
 }
-
-// Building and Room tables removed - not present in Neon database
-// Room data is now handled via LibCal API directly
 
 model ConversationFeedback {
   id             String       @id @default(uuid())
   rating         Int
   userComment    String
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
   conversationId String       @unique
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
 }
