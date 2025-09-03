@@ -193,6 +193,51 @@ export class HealthController {
     status: string;
     error?: string;
     details?: any;
+    apis?: any;
+  }> {
+    const apiResults = {
+      googleCustomSearch: await this.checkGoogleCustomSearchApi(),
+      libcalApi: await this.checkLibcalApi(),
+    };
+
+    // Determine overall status
+    const hasUnhealthyApis = Object.values(apiResults).some(
+      (api: any) => api.status !== 'healthy'
+    );
+
+    if (hasUnhealthyApis) {
+      const unhealthyApis = Object.entries(apiResults)
+        .filter(([, api]: [string, any]) => api.status !== 'healthy')
+        .map(([name, api]: [string, any]) => `${name}: ${api.error}`)
+        .join('; ');
+
+      return {
+        status: 'unhealthy',
+        error: `APIs down: ${unhealthyApis}`,
+        apis: apiResults,
+        details: {
+          unhealthyCount: Object.values(apiResults).filter(
+            (api: any) => api.status !== 'healthy'
+          ).length,
+          totalCount: Object.keys(apiResults).length,
+        },
+      };
+    }
+
+    return {
+      status: 'healthy',
+      apis: apiResults,
+      details: {
+        allApisHealthy: true,
+        totalCount: Object.keys(apiResults).length,
+      },
+    };
+  }
+
+  private async checkGoogleCustomSearchApi(): Promise<{
+    status: string;
+    error?: string;
+    details?: any;
   }> {
     try {
       // Check if required environment variables are present
@@ -202,16 +247,16 @@ export class HealthController {
       ) {
         return {
           status: 'unhealthy',
-          error:
-            'Google API credentials not configured (missing GOOGLE_API_KEY or GOOGLE_LIBRARY_SEARCH_CSE_ID)',
+          error: 'Missing credentials (GOOGLE_API_KEY or GOOGLE_LIBRARY_SEARCH_CSE_ID)',
           details: {
             missingApiKey: !process.env.GOOGLE_API_KEY,
             missingCseId: !process.env.GOOGLE_LIBRARY_SEARCH_CSE_ID,
+            apiName: 'Google Custom Search API',
           },
         };
       }
 
-      // Test Google Custom Search API since that's the main external API we use
+      // Test Google Custom Search API
       const testUrl = 'https://www.googleapis.com/customsearch/v1';
       const testParams = {
         key: process.env.GOOGLE_API_KEY,
@@ -222,91 +267,146 @@ export class HealthController {
 
       const response = await axios.get(testUrl, {
         params: testParams,
-        timeout: 5000, // 5 second timeout
+        timeout: 5000,
       });
 
       return {
         status: 'healthy',
         details: {
+          apiName: 'Google Custom Search API',
           responseStatus: response.status,
-          testUrl: testUrl,
+          responseTime: 'OK',
         },
       };
     } catch (error: any) {
-      // Mark as unhealthy for any API errors that indicate configuration issues
-      // This includes missing/invalid API keys, forbidden access, server errors
-      const criticalStatuses = [400, 401, 403, 500, 503];
+      return this.handleApiError(error, 'Google Custom Search API');
+    }
+  }
 
-      if (
-        error.response?.status &&
-        criticalStatuses.includes(error.response.status)
-      ) {
-        const statusMessages: { [key: number]: string } = {
-          400: 'Bad Request - Invalid API parameters',
-          401: 'Unauthorized - Invalid API key',
-          403: 'Forbidden - API access denied',
-          500: 'Internal Server Error',
-          503: 'Service Unavailable',
-        };
-
+  private async checkLibcalApi(): Promise<{
+    status: string;
+    error?: string;
+    details?: any;
+  }> {
+    try {
+      // Check if required environment variables are present
+      if (!process.env.LIBCAL_CLIENT_ID || !process.env.LIBCAL_CLIENT_SECRET) {
         return {
           status: 'unhealthy',
-          error: `External API returned ${error.response.status}: ${statusMessages[error.response.status] || error.response.data}`,
+          error: 'Missing credentials (LIBCAL_CLIENT_ID or LIBCAL_CLIENT_SECRET)',
           details: {
-            responseStatus: error.response.status,
-            responseData: error.response.data,
+            missingClientId: !process.env.LIBCAL_CLIENT_ID,
+            missingClientSecret: !process.env.LIBCAL_CLIENT_SECRET,
+            apiName: 'LibCal API',
           },
         };
       }
 
-      // Handle network errors, timeouts, and connection failures as unhealthy
-      if (
-        error.code === 'ENOTFOUND' ||
-        error.code === 'ECONNREFUSED' ||
-        error.code === 'ETIMEDOUT'
-      ) {
-        return {
-          status: 'unhealthy',
-          error: `External API connection failed: ${error.message}`,
-          details: {
-            errorCode: error.code,
-            errorType: 'connection_failure',
-          },
-        };
-      }
-
-      // For rate limiting (429), don't trigger restart - it's expected behavior
-      if (error.response?.status === 429) {
-        if (
-          !this.lastRateLimitLog ||
-          Date.now() - this.lastRateLimitLog > 300000
-        ) {
-          this.logger.log(
-            'External API rate limited (429) - this is expected behavior (suppressing further logs for 5 minutes)',
-          );
-          this.lastRateLimitLog = Date.now();
+      // Test LibCal API token endpoint
+      const tokenUrl = 'https://muohio.libcal.com/api/1.1/oauth/token';
+      const response = await axios.post(
+        tokenUrl,
+        {
+          client_id: process.env.LIBCAL_CLIENT_ID,
+          client_secret: process.env.LIBCAL_CLIENT_SECRET,
+          grant_type: 'client_credentials',
+        },
+        {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          timeout: 5000,
         }
-        return {
-          status: 'healthy', // Don't restart for rate limiting
-          error: `External API rate limited: ${error.message}`,
-          details: {
-            errorType: 'rate_limited',
-          },
-        };
-      }
+      );
 
-      // For any other errors, only log if it's actually an error (not rate limiting)
-      if (error.response?.status !== 429) {
-        console.warn('Health check failed:', error.message);
-      }
+      return {
+        status: 'healthy',
+        details: {
+          apiName: 'LibCal API',
+          responseStatus: response.status,
+          tokenValid: !!response.data?.access_token,
+        },
+      };
+    } catch (error: any) {
+      return this.handleApiError(error, 'LibCal API');
+    }
+  }
+
+  private handleApiError(error: any, apiName: string): {
+    status: string;
+    error: string;
+    details: any;
+  } {
+    const criticalStatuses = [400, 401, 403, 500, 503];
+
+    if (
+      error.response?.status &&
+      criticalStatuses.includes(error.response.status)
+    ) {
+      const statusMessages: { [key: number]: string } = {
+        400: 'Bad Request - Invalid parameters',
+        401: 'Unauthorized - Invalid credentials',
+        403: 'Forbidden - Access denied',
+        500: 'Internal Server Error',
+        503: 'Service Unavailable',
+      };
+
       return {
         status: 'unhealthy',
-        error: `External API error: ${error.message}`,
+        error: `${error.response.status}: ${statusMessages[error.response.status]}`,
         details: {
-          errorType: 'unknown_error',
+          apiName,
+          responseStatus: error.response.status,
+          responseData: error.response.data,
+          errorType: 'api_error',
         },
       };
     }
+
+    // Handle network errors
+    if (
+      error.code === 'ENOTFOUND' ||
+      error.code === 'ECONNREFUSED' ||
+      error.code === 'ETIMEDOUT'
+    ) {
+      return {
+        status: 'unhealthy',
+        error: `Connection failed: ${error.message}`,
+        details: {
+          apiName,
+          errorCode: error.code,
+          errorType: 'connection_failure',
+        },
+      };
+    }
+
+    // For rate limiting (429), don't trigger restart
+    if (error.response?.status === 429) {
+      if (
+        !this.lastRateLimitLog ||
+        Date.now() - this.lastRateLimitLog > 300000
+      ) {
+        this.logger.log(
+          `${apiName} rate limited (429) - suppressing logs for 5 minutes`,
+        );
+        this.lastRateLimitLog = Date.now();
+      }
+      return {
+        status: 'healthy', // Don't restart for rate limiting
+        error: `Rate limited: ${error.message}`,
+        details: {
+          apiName,
+          errorType: 'rate_limited',
+        },
+      };
+    }
+
+    return {
+      status: 'unhealthy',
+      error: `Unknown error: ${error.message}`,
+      details: {
+        apiName,
+        errorType: 'unknown_error',
+      },
+    };
   }
 
   @Post('restart')
