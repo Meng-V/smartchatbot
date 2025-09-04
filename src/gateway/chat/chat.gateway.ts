@@ -155,10 +155,10 @@ export class ChatGateway implements OnGatewayDisconnect {
           llmChain.initializeConversation(conversationId);
         }
 
-        // Set timeout for LLM response - increased to 45s for complex operations
+        // Set timeout for LLM response - increased to 75s to accommodate API resilience retries
         const responsePromise = llmChain.getModelResponse(sanitizedMessage);
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('LLM response timeout')), 45000); // 45 second timeout
+          setTimeout(() => reject(new Error('LLM response timeout')), 75000); // 75 second timeout
         });
 
         modelResponse = await Promise.race([responsePromise, timeoutPromise]);

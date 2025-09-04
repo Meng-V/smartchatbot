@@ -38,7 +38,7 @@ export class ApiResilienceService {
     baseDelayMs: 1000,
     maxDelayMs: 10000,
     backoffMultiplier: 2,
-    timeoutMs: 30000,
+    timeoutMs: 60000, // Increased to 60s for slow OpenAI responses
   };
 
   private readonly defaultCircuitBreakerConfig: CircuitBreakerConfig = {
