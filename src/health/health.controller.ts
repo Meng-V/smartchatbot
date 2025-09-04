@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
 import { DatabaseService } from '../database/database.service';
-import { Role } from '../llm-chain/memory/memory.interface';
+// import { Role } from '../llm-chain/memory/memory.interface';
 
 @Controller('health')
 export class HealthController {
@@ -105,13 +105,8 @@ export class HealthController {
   }> {
     try {
       const start = Date.now();
-      // Real database health check using Prisma
-      // Simple database connectivity check - use a method that exists
-      await this.databaseService.addMessageToDatabase(
-        Role.AIAgent,
-        'health-check',
-        undefined,
-      );
+      // Use proper health check method that doesn't create database records
+      await this.databaseService.healthCheck();
       const responseTime = Date.now() - start;
 
       return {

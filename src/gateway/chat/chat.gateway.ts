@@ -356,11 +356,30 @@ export class ChatGateway implements OnGatewayDisconnect {
       messageId: string;
       isPositiveRated: boolean;
     },
+    @ConnectedSocket() client: Socket,
   ) {
-    this.databaseService.updateMessageRating(
-      messageRating.messageId,
-      messageRating.isPositiveRated,
-    );
+    try {
+      await this.databaseService.updateMessageRating(
+        messageRating.messageId,
+        messageRating.isPositiveRated,
+      );
+      this.logger.log(
+        `Message rating updated: ${messageRating.messageId} - ${messageRating.isPositiveRated ? 'positive' : 'negative'}`,
+      );
+    } catch (error) {
+      this.logger.error('Error updating message rating:', error);
+      this.errorMonitoringService.logError(
+        'message-rating',
+        'Failed to update message rating in database',
+        'error',
+        {
+          clientId: client.id,
+          messageId: messageRating.messageId,
+          isPositiveRated: messageRating.isPositiveRated,
+        },
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   @SubscribeMessage('userFeedback')
@@ -368,19 +387,46 @@ export class ChatGateway implements OnGatewayDisconnect {
     @MessageBody() userFeedback: UserFeedback,
     @ConnectedSocket() client: Socket,
   ) {
-    if (!this.clientIdToConversationDataMapping.has(client.id)) {
-      const error = new Error(
-        'Cannot find cliend Id in the clientIdToConversationDataMapping',
+    try {
+      if (!this.clientIdToConversationDataMapping.has(client.id)) {
+        const error = new Error(
+          'Cannot find client Id in the clientIdToConversationDataMapping',
+        );
+        this.logger.error(error);
+        throw error;
+      }
+      const conversationData = this.clientIdToConversationDataMapping.get(
+        client.id,
+      )!;
+
+      // Store in memory for disconnect cleanup
+      conversationData.userFeedback = userFeedback;
+      this.clientIdToConversationDataMapping.set(client.id, conversationData);
+
+      // Immediately save to database to prevent data loss
+      await this.databaseService.addUserFeedbackToDatabase(
+        conversationData.conversationId,
+        userFeedback,
       );
-      this.logger.error(error);
+
+      this.logger.log(
+        `User feedback saved: conversation ${conversationData.conversationId} - rating: ${userFeedback.userRating}`,
+      );
+    } catch (error) {
+      this.logger.error('Error saving user feedback:', error);
+      this.errorMonitoringService.logError(
+        'user-feedback',
+        'Failed to save user feedback to database',
+        'error',
+        {
+          clientId: client.id,
+          userRating: userFeedback.userRating,
+          hasComment: !!userFeedback.userComment,
+        },
+        error instanceof Error ? error.stack : undefined,
+      );
       throw error;
     }
-    const conversationData = this.clientIdToConversationDataMapping.get(
-      client.id,
-    )!;
-
-    conversationData.userFeedback = userFeedback;
-    this.clientIdToConversationDataMapping.set(client.id, conversationData);
   }
 
   async handleDisconnect(client: Socket): Promise<void> {
@@ -429,15 +475,32 @@ export class ChatGateway implements OnGatewayDisconnect {
       )) {
         try {
           const tokenData = modelTokenUsage;
-          this.databaseService.addTokenDataInConversation(
+          await this.databaseService.addTokenDataInConversation(
             conversationData.conversationId,
             llmModelType as LlmModelType,
             tokenData.completionTokens || 0,
             tokenData.promptTokens || 0,
             tokenData.totalTokens || 0,
           );
+          this.logger.log(
+            `Token usage saved for ${llmModelType}: ${JSON.stringify(tokenData)}`,
+          );
         } catch (error: any) {
           this.logger.error('Error saving token data:', error);
+          this.errorMonitoringService.logError(
+            'token-usage',
+            'Failed to save token usage to database',
+            'error',
+            {
+              clientId: client.id,
+              conversationId: conversationData.conversationId,
+              llmModelType,
+              completionTokens: modelTokenUsage.completionTokens || 0,
+              promptTokens: modelTokenUsage.promptTokens || 0,
+              totalTokens: modelTokenUsage.totalTokens || 0,
+            },
+            error instanceof Error ? error.stack : undefined,
+          );
         }
       }
 

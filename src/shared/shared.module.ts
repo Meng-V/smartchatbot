@@ -6,12 +6,15 @@ import { TokenUsageService } from './services/token-usage/token-usage.service';
 import { ApiResilienceService } from './services/api-resilience/api-resilience.service';
 import { ErrorMonitoringService } from './services/error-monitoring/error-monitoring.service';
 import { PerformanceMonitoringService } from './services/performance-monitoring/performance-monitoring.service';
+import { DatabaseCleanupService } from './services/database-cleanup/database-cleanup.service';
+import { DatabaseModule } from '../database/database.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: '.env',
     }),
+    DatabaseModule,
   ],
   providers: [
     RetrieveEnvironmentVariablesService,
@@ -20,6 +23,7 @@ import { PerformanceMonitoringService } from './services/performance-monitoring/
     ApiResilienceService,
     ErrorMonitoringService,
     PerformanceMonitoringService,
+    DatabaseCleanupService,
   ],
   exports: [
     RetrieveEnvironmentVariablesService,
@@ -28,6 +32,7 @@ import { PerformanceMonitoringService } from './services/performance-monitoring/
     ApiResilienceService,
     ErrorMonitoringService,
     PerformanceMonitoringService,
+    DatabaseCleanupService,
   ],
 })
 export class SharedModule {}

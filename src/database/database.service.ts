@@ -217,4 +217,138 @@ export class DatabaseService {
   async healthCheck(): Promise<void> {
     await this.prismaService.$queryRaw`SELECT 1`;
   }
+
+  /**
+   * Clean up health-check messages created by health endpoint
+   * Keeps the most recent 100 health-check messages, deletes the rest
+   * Runs every hour at :00 minutes to prevent database pollution
+   */
+  async cleanupHealthCheckMessages(): Promise<number> {
+    try {
+      // First, count total health-check messages
+      const totalCount = await this.prismaService.message.count({
+        where: {
+          content: 'health-check',
+          type: 'AIAgent',
+        },
+      });
+
+      // If we have 100 or fewer messages, no cleanup needed
+      if (totalCount <= 100) {
+        this.logger.debug(
+          `Health-check cleanup: ${totalCount} messages found, no cleanup needed (keeping up to 100)`,
+        );
+        return 0;
+      }
+
+      // Find the most recent 100 health-check messages to keep
+      const messagesToKeep = await this.prismaService.message.findMany({
+        where: {
+          content: 'health-check',
+          type: 'AIAgent',
+        },
+        orderBy: {
+          timestamp: 'desc',
+        },
+        take: 100,
+        select: {
+          id: true,
+        },
+      });
+
+      const keepIds = messagesToKeep.map((msg) => msg.id);
+
+      // Delete all health-check messages except the most recent 100
+      const result = await this.prismaService.message.deleteMany({
+        where: {
+          content: 'health-check',
+          type: 'AIAgent',
+          id: {
+            notIn: keepIds,
+          },
+        },
+      });
+
+      if (result.count > 0) {
+        this.logger.log(
+          `Cleaned up ${result.count} old health-check messages (kept most recent 100 of ${totalCount} total)`,
+        );
+      }
+
+      return result.count;
+    } catch (error) {
+      this.logger.error('Error cleaning up health-check messages:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Clean up orphaned conversations that only contain old health-check messages
+   * Only removes conversations with health-check messages that are not among the recent 100 kept
+   */
+  async cleanupOrphanedHealthCheckConversations(): Promise<number> {
+    try {
+      // Get the IDs of the most recent 100 health-check messages that we keep
+      const recentHealthCheckMessages =
+        await this.prismaService.message.findMany({
+          where: {
+            content: 'health-check',
+            type: 'AIAgent',
+          },
+          orderBy: {
+            timestamp: 'desc',
+          },
+          take: 100,
+          select: {
+            id: true,
+          },
+        });
+
+      const recentMessageIds = recentHealthCheckMessages.map((msg) => msg.id);
+
+      // Find conversations that only have health-check messages AND none of those messages are in the recent 100
+      const orphanedConversations =
+        await this.prismaService.conversation.findMany({
+          where: {
+            messageList: {
+              every: {
+                content: 'health-check',
+                type: 'AIAgent',
+              },
+              none: {
+                id: {
+                  in: recentMessageIds,
+                },
+              },
+            },
+          },
+          include: {
+            messageList: true,
+          },
+        });
+
+      let deletedCount = 0;
+      for (const conversation of orphanedConversations) {
+        // Delete the conversation (messages will be cascade deleted)
+        await this.prismaService.conversation.delete({
+          where: { id: conversation.id },
+        });
+        deletedCount++;
+      }
+
+      if (deletedCount > 0) {
+        this.logger.log(
+          `Cleaned up ${deletedCount} orphaned health-check conversations (containing only old health-check messages)`,
+        );
+      }
+
+      return deletedCount;
+    } catch (error) {
+      this.logger.error(
+        'Error cleaning up orphaned health-check conversations:',
+        error,
+      );
+      throw error;
+    }
+  }
 }
