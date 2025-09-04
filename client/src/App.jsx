@@ -115,10 +115,45 @@ const App = () => {
           textAlign='center'
           mb={8}
           opacity={isOpen ? 0.3 : 1}
-          transition='opacity 0.3s ease'
+          transition='all 0.3s ease'
           cursor={!isOpen ? 'pointer' : 'default'}
           onClick={!isOpen ? onOpen : undefined}
-          _hover={!isOpen ? { opacity: 0.8 } : {}}
+          onKeyDown={!isOpen ? (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onOpen();
+            }
+          } : undefined}
+          tabIndex={!isOpen ? 0 : -1}
+          role={!isOpen ? 'button' : undefined}
+          aria-label={!isOpen ? 'Open Smart Chatbot services' : undefined}
+          _hover={!isOpen ? { opacity: 0.8, transform: 'translateY(-2px)' } : {}}
+          _focus={!isOpen ? {
+            outline: 'none',
+            boxShadow: '0 0 0 4px rgba(66, 153, 225, 0.6), 0 0 20px rgba(66, 153, 225, 0.3)',
+            transform: 'scale(1.02) translateY(-2px)',
+            bg: 'rgba(66, 153, 225, 0.05)'
+          } : {}}
+          _focusVisible={!isOpen ? {
+            outline: 'none',
+            boxShadow: '0 0 0 4px rgba(66, 153, 225, 0.6), 0 0 20px rgba(66, 153, 225, 0.3)',
+            transform: 'scale(1.02) translateY(-2px)',
+            bg: 'rgba(66, 153, 225, 0.05)'
+          } : {}}
+          sx={!isOpen ? {
+            '&:focus': {
+              outline: 'none !important',
+              boxShadow: '0 0 0 4px rgba(66, 153, 225, 0.6), 0 0 20px rgba(66, 153, 225, 0.3) !important',
+              transform: 'scale(1.02) translateY(-2px) !important',
+              backgroundColor: 'rgba(66, 153, 225, 0.05) !important'
+            },
+            '&:focus-visible': {
+              outline: 'none !important',
+              boxShadow: '0 0 0 4px rgba(66, 153, 225, 0.6), 0 0 20px rgba(66, 153, 225, 0.3) !important',
+              transform: 'scale(1.02) translateY(-2px) !important',
+              backgroundColor: 'rgba(66, 153, 225, 0.05) !important'
+            }
+          } : {}}
         >
           <img
             src='https://libapps.s3.amazonaws.com/accounts/190074/images/0721_STier1_Libraries_HS_186KW_K_Digital.png'
@@ -128,7 +163,7 @@ const App = () => {
             style={{ margin: '0 auto 20px' }}
           />
           <Text fontSize='2xl' fontWeight='bold' color='gray.700' mb={2}>
-            Welcome to Smart Chatbot
+            Welcome to the Smart Chatbot
           </Text>
           <Text fontSize='md' color='gray.600'>
             Get help with research, ask questions, or talk to a librarian
