@@ -246,8 +246,13 @@ export class ChatGateway implements OnGatewayDisconnect {
           this.clientIdToConversationDataMapping.get(client.id)?.conversationId,
         )
         .then(([modelMessageId]) => {
-          // messageId = modelMessageId;
           this.logger.log('Message saved with ID:', modelMessageId);
+
+          // Update the frontend with the real messageId for rating functionality
+          client.emit('messageIdUpdate', {
+            tempMessageId: tempMessageId,
+            realMessageId: modelMessageId,
+          });
         })
         .catch((dbError) => {
           this.logger.error(

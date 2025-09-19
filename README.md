@@ -26,7 +26,7 @@
 ## ✨ Core Features
 
 ### 🤖 **AI-Powered Assistance**
-- **Smart Conversations**: OpenAI GPT-4 integration with library-specific knowledge
+- **Smart Conversations**: OpenAI o4-mini integration with library-specific knowledge
 - **Room Reservations**: Direct LibCal API integration for booking study rooms
 - **Library Information**: Real-time hours, services, and facility information
 - **Research Support**: Intelligent help with academic research queries
@@ -51,14 +51,14 @@
 ### Backend Stack
 - **Framework**: NestJS 11 with TypeScript 5
 - **Database**: Neon serverless PostgreSQL with Prisma ORM
-- **AI Integration**: OpenAI GPT-4 API
+- **AI Integration**: OpenAI o4-mini API
 - **Library Integration**: LibCal API for room reservations
 - **Search**: Google Custom Search API
 - **Real-time**: WebSocket gateway with Socket.io
-- **Runtime**: Node.js 18
+- **Runtime**: Node.js 22
 
 ### Frontend Stack
-- **Framework**: React 18 with Vite
+- **Framework**: React 22 with Vite
 - **UI Library**: Chakra UI components
 - **Real-time**: Socket.io client
 - **State Management**: React Context
@@ -74,7 +74,7 @@
 
 ### Prerequisites
 - Docker & Docker Compose (recommended)
-- Node.js 18+ (for local development)
+- Node.js 22+ (for local development)
 - OpenAI API Key
 - LibCal API credentials
 - Neon Database URL

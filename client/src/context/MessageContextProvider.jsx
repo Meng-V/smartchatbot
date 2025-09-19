@@ -28,6 +28,18 @@ const MessageContextProvider = ({ children }) => {
     });
   };
 
+  const updateMessageId = (tempMessageId, realMessageId) => {
+    setMessage((prevMessages) => {
+      const updatedMessages = prevMessages.map((msg) =>
+        msg.messageId === tempMessageId
+          ? { ...msg, messageId: realMessageId }
+          : msg
+      );
+      sessionStorage.setItem('chat_messages', JSON.stringify(updatedMessages));
+      return updatedMessages;
+    });
+  };
+
   const messageContextValues = useMemo(
     () => ({
       message,
@@ -37,6 +49,7 @@ const MessageContextProvider = ({ children }) => {
       isTyping,
       setIsTyping,
       addMessage,
+      updateMessageId,
       resetState,
     }),
     [message, inputMessage, isTyping],
