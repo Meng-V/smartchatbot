@@ -61,6 +61,11 @@ const SocketContextProvider = ({ children }) => {
       messageContextValues.addMessage(message, 'chatbot', messageId);
     });
 
+    socket.current.on('messageIdUpdate', ({ tempMessageId, realMessageId }) => {
+      console.log('Updating messageId:', tempMessageId, '->', realMessageId);
+      messageContextValues.updateMessageId(tempMessageId, realMessageId);
+    });
+
     socket.current.on('disconnect', (reason) => {
       console.log('Socket disconnected:', reason);
       if (reason === 'io client disconnect') {
@@ -99,6 +104,7 @@ const SocketContextProvider = ({ children }) => {
 
     return () => {
       socket.current.off('message');
+      socket.current.off('messageIdUpdate');
       socket.current.off('disconnect');
       socket.current.off('connect_error');
       socket.current.off('connect_timeout');
