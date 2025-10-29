@@ -50,7 +50,23 @@ export const envSchema = z.object({
   QUEUE_ID: z.string().min(1, 'QUEUE_ID is required'),
 
   // Weaviate
-  WEAVIATE_API_KEY: z.string().min(1, 'WEAVIATE_API_KEY is required'),
+  WEAVIATE_API_KEY: z.string().optional(),
+  WEAVIATE_SCHEME: z.string().default('https'),
+  WEAVIATE_HOST: z.string().optional(),
+
+  // RAG config
+  RAG_EMBEDDING_MODEL: z.string().default('text-embedding-3-small'),
+  RAG_TOP_K: z.string().default('6'),
+  RAG_HYBRID_ALPHA: z.string().default('0.6'),
+  RAG_MIN_SCORE: z.string().default('0.70'),
+  RAG_DEFAULT_INSTITUTION_ID: z.string().optional(),
+  RAG_DEFAULT_CAMPUS: z.string().optional(),
+  RAG_MULTI_QUERY: z.string().default('false'),
+  RAG_RECENCY_HALFLIFE_DAYS: z.string().default('180'),
+
+  // Router thresholds
+  ROUTER_RULE_THRESHOLD: z.string().default('0.85'),
+  ROUTER_EMBED_THRESHOLD: z.string().default('0.8'),
 
   // EBSCO (Legacy - TODO: Switch to PRIMO)
   EBSCO_USER_ID: z.string().optional(),

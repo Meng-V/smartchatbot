@@ -69,3 +69,5 @@ last-error.json
 auto-restart.log
 .backend.pid
 restart-log.json
+subjectLibrariansReview - subjectLibrariansReview.csv
+2025_reduce.csv

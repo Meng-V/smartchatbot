@@ -11,6 +11,10 @@ import {
   AlertDescription,
   Flex,
   Spacer,
+  Link,
+  List,
+  ListItem,
+  Heading,
 } from '@chakra-ui/react';
 import MessageComponents from './ParseLinks';
 import { useContext, useRef, useEffect, useState } from 'react';
@@ -71,7 +75,7 @@ const ChatBotComponent = () => {
               {!socketContextValues.serviceHealthy
                 ? 'The chatbot service is experiencing technical difficulties. '
                 : 'Unable to connect to the chatbot service. '}
-              Please contect to a human librarian for immediate assistance.
+              Please contact a human librarian for immediate assistance.
             </AlertDescription>
           </Box>
           <Spacer />
@@ -114,6 +118,20 @@ const ChatBotComponent = () => {
               typeof message.text === 'object'
                 ? message.text.response.join('')
                 : message.text;
+
+            // Split out References block if present to render nicer citations
+            const parts = adjustedMessage.split(/\nReferences:\n/i);
+            const bodyText = parts[0] || '';
+            const refsBlock = parts[1] || '';
+            const references = refsBlock
+              .split('\n')
+              .map((l) => l.trim())
+              .filter((l) => l.length > 0)
+              .slice(0, 5);
+
+            const lowConfidenceHint = /No strong matches found|Institutional knowledge service is temporarily unavailable|ask a clarifying question/i.test(
+              adjustedMessage,
+            );
             return (
               <Box
                 key={index}
@@ -136,13 +154,66 @@ const ChatBotComponent = () => {
                   >
                     {typeof message.text === 'object' ? (
                       <div className='half-line-height'>
-                        <MessageComponents msg={adjustedMessage} />
+                        <MessageComponents msg={bodyText} />
                       </div>
                     ) : (
-                      <MessageComponents msg={adjustedMessage} />
+                      <MessageComponents msg={bodyText} />
                     )}
                   </Box>
                 </Box>
+                {/* Render nicely formatted citations when available */}
+                {message.sender !== 'user' && references.length > 0 && (
+                  <Box
+                    maxW='md'
+                    mt={2}
+                    px={4}
+                    py={3}
+                    border='1px'
+                    borderColor='gray.300'
+                    rounded='md'
+                    bg='gray.50'
+                  >
+                    <Heading as='h4' size='xs' mb={2} color='gray.700'>
+                      Sources
+                    </Heading>
+                    <List spacing={1} styleType='disc' pl={4}>
+                      {references.map((line, i) => {
+                        const urlMatch = line.match(/https?:\/\/\S+/);
+                        const url = urlMatch ? urlMatch[0] : undefined;
+                        return (
+                          <ListItem key={i} color='gray.700'>
+                            {url ? (
+                              <Link href={url} isExternal color='blue.600'>
+                                {url}
+                              </Link>
+                            ) : (
+                              <Text as='span'>{line}</Text>
+                            )}
+                          </ListItem>
+                        );
+                      })}
+                    </List>
+                  </Box>
+                )}
+                {/* Suggest human librarian when confidence appears low */}
+                {message.sender !== 'user' && lowConfidenceHint && (
+                  <Box mt={2}>
+                    <Alert status='info' variant='left-accent'>
+                      <AlertIcon />
+                      <Text fontSize='sm'>
+                        This answer may be uncertain. You can chat with a human librarian for faster help.
+                      </Text>
+                      <Spacer />
+                      <Button
+                        size='xs'
+                        colorScheme='blue'
+                        onClick={() => setWidgetVisible(true)}
+                      >
+                        Chat with Human Librarian
+                      </Button>
+                    </Alert>
+                  </Box>
+                )}
                 {message.sender !== 'user' && index !== 0 && (
                   <MessageRatingComponent message={message} />
                 )}

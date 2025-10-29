@@ -11,9 +11,17 @@ import { ReserveRoomToolService } from './libcal-tools/reserve-room-tool/reserve
 import { DatabaseModule } from '../../database/database.module';
 import { GoogleSiteSearchToolService } from './google-site-search-tool/google-site-search-tool.service';
 import { KingLibrarySiteSearchService } from './google-site-search-tool/king-library-site-search.service';
+import { RagFaqToolService } from './rag-faq-tool/rag-faq-tool.service';
+import { WeaviateModule } from '../../weaviate/weaviate.module';
 
 @Module({
-  imports: [DatabaseModule, LibraryApiModule, HttpModule, SharedModule],
+  imports: [
+    DatabaseModule,
+    LibraryApiModule,
+    HttpModule,
+    SharedModule,
+    WeaviateModule,
+  ],
   providers: [
     LibrarianSubjectLookupToolService,
     CitationAssistToolService,
@@ -25,6 +33,7 @@ import { KingLibrarySiteSearchService } from './google-site-search-tool/king-lib
     CheckOpenHourToolService,
     GoogleSiteSearchToolService,
     KingLibrarySiteSearchService,
+    RagFaqToolService,
   ],
   exports: [
     LibrarianSubjectLookupToolService,
@@ -34,6 +43,7 @@ import { KingLibrarySiteSearchService } from './google-site-search-tool/king-lib
     CancelReservationToolService,
     CheckOpenHourToolService,
     GoogleSiteSearchToolService,
+    RagFaqToolService,
   ],
 })
 export class LlmToolboxModule {}

@@ -74,6 +74,44 @@ npm run dev
 - Backend: http://localhost:3000
 - Health: http://localhost:3000/health
 
+### Step-by-step replication (No Docker)
+1. Clone and install
+   ```bash
+   git clone <repository-url>
+   cd smartchatbot
+   npm install
+   npx prisma generate
+   cd client && npm install && cd ..
+   ```
+2. Create and fill `.env`
+   - Required: `DATABASE_URL`, `OPENAI_API_KEY`, `FRONTEND_URL`
+   - Weaviate: `WEAVIATE_SCHEME`, `WEAVIATE_HOST`, `WEAVIATE_API_KEY` (if needed)
+   - RAG tuning: `RAG_TOP_K`, `RAG_HYBRID_ALPHA`, `RAG_MIN_SCORE`, optional defaults (institution/campus)
+   - Router thresholds: `ROUTER_RULE_THRESHOLD`, `ROUTER_EMBED_THRESHOLD`
+3. Start in development
+   ```bash
+   # Terminal A (backend)
+   npm run start:dev
+   # Terminal B (frontend)
+   cd client && npm run dev
+   ```
+4. Ingest RAG FAQs to Weaviate (after setting Weaviate env)
+   ```bash
+   npm run build
+   npx ts-node src/scripts/ingest-faqs.ts ./faqs.json
+   ```
+5. Evaluate routing (optional)
+   ```bash
+   npx ts-node src/scripts/evaluate-routing.ts ./routing-eval.json
+   ```
+6. Production (Node-only)
+   ```bash
+   cd client && npm run build && cd ..
+   npm run build
+   npm run start:prod
+   # Serve client/dist with your web server (Nginx/Apache/static host)
+   ```
+
 ## 🔧 Environment Configuration
 
 Create a `.env` file in the root directory with these variables:
@@ -97,6 +135,24 @@ GOOGLE_CUSTOM_SEARCH_ENGINE_ID="your-search-engine-id"
 # Application Settings
 NODE_ENV="production"
 FRONTEND_URL="https://your-domain.com"
+```
+
+### Weaviate & RAG Configuration
+```env
+# Weaviate (Vector DB)
+WEAVIATE_SCHEME="https"
+WEAVIATE_HOST="your-cluster.weaviate.network"
+WEAVIATE_API_KEY="your-weaviate-key"   # optional if private network
+
+# RAG tuning
+RAG_EMBEDDING_MODEL="text-embedding-3-small"
+RAG_TOP_K="6"
+RAG_HYBRID_ALPHA="0.6"
+RAG_MIN_SCORE="0.70"
+RAG_DEFAULT_INSTITUTION_ID="miami-oh"  # optional default filter
+RAG_DEFAULT_CAMPUS="oxford"            # optional default filter
+RAG_MULTI_QUERY="false"                # set true to use query variants
+RAG_RECENCY_HALFLIFE_DAYS="180"        # recency boost half-life in days
 ```
 
 ### Optional Performance Settings

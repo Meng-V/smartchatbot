@@ -8,6 +8,7 @@ import { ErrorMonitoringService } from './services/error-monitoring/error-monito
 import { PerformanceMonitoringService } from './services/performance-monitoring/performance-monitoring.service';
 import { DatabaseCleanupService } from './services/database-cleanup/database-cleanup.service';
 import { DatabaseModule } from '../database/database.module';
+import { EmbeddingService } from './services/embedding/embedding.service';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { DatabaseModule } from '../database/database.module';
     ErrorMonitoringService,
     PerformanceMonitoringService,
     DatabaseCleanupService,
+    EmbeddingService,
   ],
   exports: [
     RetrieveEnvironmentVariablesService,
@@ -33,6 +35,7 @@ import { DatabaseModule } from '../database/database.module';
     ErrorMonitoringService,
     PerformanceMonitoringService,
     DatabaseCleanupService,
+    EmbeddingService,
   ],
 })
 export class SharedModule {}

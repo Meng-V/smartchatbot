@@ -18,6 +18,8 @@ import { ReserveRoomToolService } from './llm-toolbox/libcal-tools/reserve-room-
 import { GoogleSiteSearchToolService } from './llm-toolbox/google-site-search-tool/google-site-search-tool.service';
 import { CancelReservationToolService } from './llm-toolbox/libcal-tools/cancel-reservation-tool/cancel-reservation-tool.service';
 import { CheckOpenHourToolService } from './llm-toolbox/libcal-tools/check-open-hour-tool/check-open-hour-tool.service';
+import { RagFaqToolService } from './llm-toolbox/rag-faq-tool/rag-faq-tool.service';
+import { RouterService } from '../routing/router.service';
 
 /**
  * Service for using the LLM Chain
@@ -46,6 +48,8 @@ export class LlmChainService {
     private reserveRoomToolService: ReserveRoomToolService,
     private cancelReservationToolService: CancelReservationToolService,
     private googleSiteSearchToolService: GoogleSiteSearchToolService,
+    private ragFaqToolService: RagFaqToolService,
+    private routerService: RouterService,
   ) {
     this.setAvailableTools(
       new Set<LlmTool>([
@@ -56,6 +60,7 @@ export class LlmChainService {
         this.cancelReservationToolService,
         this.reserveRoomToolService,
         this.googleSiteSearchToolService,
+        this.ragFaqToolService,
       ]),
     );
   }
@@ -128,6 +133,29 @@ export class LlmChainService {
       Role.Customer,
       this.llmAnswerParserService.trimDoubleQuotes(userMessage),
     );
+
+    // Route message and restrict tools if applicable
+    try {
+      const decision = await this.routerService.route(userMessage);
+      if (decision.allowedTools && decision.allowedTools.length > 0) {
+        const subset: LlmTool[] = [];
+        decision.allowedTools.forEach((name) => {
+          const tool = this.toolsMap.get(name);
+          if (tool) subset.push(tool);
+        });
+        if (subset.length > 0) {
+          this.promptService.setTools(subset);
+        } else {
+          this.promptService.setTools([...this.toolsMap.values()]);
+        }
+      } else {
+        this.promptService.setTools([...this.toolsMap.values()]);
+      }
+    } catch {
+      // On routing failure, expose all tools as a safe fallback
+      this.promptService.setTools([...this.toolsMap.values()]);
+    }
+
     let { response: llmResponse, tokenUsage } =
       await this.llmService.getModelResponse(
         this.promptService,

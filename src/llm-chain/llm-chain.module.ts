@@ -6,11 +6,13 @@ import { LlmChainService } from './llm-chain.service';
 import { LlmModule } from './llm/llm.module';
 import { SharedModule } from '../shared/shared.module';
 import { LlmAnswerParserService } from './llm-answer-parser/llm-answer-parser.service';
+import { RoutingModule } from '../routing/routing.module';
 
 @Module({
   imports: [
     LlmModule,
     LlmToolboxModule,
+    RoutingModule,
     MemoryModule,
     PromptModule,
     LlmToolboxModule,

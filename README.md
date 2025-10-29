@@ -86,30 +86,44 @@
 - **Testing**: Jest with unit, integration, and E2E test suites
 - **Code Quality**: ESLint, Prettier, and pre-commit hooks
 
-## 🚀 Quick Start
+## 🚀 Quick Start (No Docker)
 
 ### Prerequisites
-- Docker & Docker Compose (recommended)
-- Node.js 22+ (for local development)
-- OpenAI API Key
-- LibCal API credentials (Client ID & Secret)
-- Neon Database URL
+- Node.js 22+
+- OpenAI API key
+- PostgreSQL database (Neon recommended) and `DATABASE_URL`
+- Weaviate cluster (host + optional API key)
+- LibCal API credentials (optional features)
 - Google Custom Search API credentials (optional)
 
-### One-Command Setup
+### Setup
 ```bash
-# Clone and start with auto-restart script
+# 1) Clone
 git clone <your-repo-url>
 cd smartchatbot
+
+# 2) Install backend deps and generate Prisma client
+npm install
+npx prisma generate
+
+# 3) Install frontend deps
+cd client && npm install && cd ..
+
+# 4) Copy env and fill values
 cp .env.example .env
-# Edit .env with your API keys
-bash auto-restart.sh
+# Edit .env: DATABASE_URL, OPENAI_API_KEY, FRONTEND_URL, WEAVIATE_HOST, WEAVIATE_API_KEY (if needed), GOOGLE keys (optional)
+
+# 5) Run in development
+# Terminal A: backend
+npm run start:dev
+# Terminal B: frontend
+cd client && npm run dev
 ```
 
-### Access Points
-- **Frontend**: http://localhost (Nginx serves React app)
+### Access Points (Dev)
+- **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:3000
-- **Health Check**: http://localhost:3000/health
+- **Health**: http://localhost:3000/health
 - **Metrics**: http://localhost:3000/metrics
 
 ## 🔧 Environment Setup
@@ -122,12 +136,32 @@ DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
 
 # OpenAI Integration
 OPENAI_API_KEY="sk-your-openai-key"
+OPENAI_ORGANIZATION_ID="org-optional"
 
-# LibCal Integration (for room reservations)
+# Weaviate (Vector DB)
+WEAVIATE_SCHEME="https"
+WEAVIATE_HOST="your-cluster.weaviate.network"  # required to enable RAG
+WEAVIATE_API_KEY="your-weaviate-key"           # optional if private network
+
+# RAG tuning
+RAG_EMBEDDING_MODEL="text-embedding-3-small"
+RAG_TOP_K="6"
+RAG_HYBRID_ALPHA="0.6"
+RAG_MIN_SCORE="0.70"
+RAG_DEFAULT_INSTITUTION_ID="miami-oh"          # optional default filter
+RAG_DEFAULT_CAMPUS="oxford"                    # optional default filter
+RAG_MULTI_QUERY="false"                        # set true to use query variants
+RAG_RECENCY_HALFLIFE_DAYS="180"                # recency boost half-life in days
+
+# Router thresholds (intent routing)
+ROUTER_RULE_THRESHOLD="0.85"
+ROUTER_EMBED_THRESHOLD="0.8"
+
+# LibCal Integration (optional)
 LIBCAL_CLIENT_ID="your-libcal-client-id"
 LIBCAL_CLIENT_SECRET="your-libcal-client-secret"
 
-# Google Search Integration
+# Google Search Integration (optional)
 GOOGLE_API_KEY="your-google-api-key"
 GOOGLE_LIBRARY_SEARCH_CSE_ID="your-custom-search-engine-id"
 
@@ -135,6 +169,39 @@ GOOGLE_LIBRARY_SEARCH_CSE_ID="your-custom-search-engine-id"
 NODE_ENV="production"
 FRONTEND_URL="https://your-domain.com"
 ```
+
+## 📘 RAG (Weaviate) Setup & Ingestion
+
+1) Ensure `.env` has `WEAVIATE_HOST` (and optional `WEAVIATE_API_KEY`).
+
+2) Prepare a JSON array of FAQ entries:
+```json
+[
+  {
+    "question": "How can I access the New York Times?",
+    "answer": "Register with your university email at <link>.",
+    "category": "Newspapers",
+    "tags": ["nyt", "new york times"],
+    "institutionId": "miami-oh",
+    "campus": "oxford",
+    "sourceUrl": "https://library.miamioh.edu/nyt",
+    "updatedAt": "2025-10-20T00:00:00.000Z"
+  }
+]
+```
+
+3) Ingest your data:
+```bash
+npm run build
+npx ts-node src/scripts/ingest-faqs.ts ./faqs.json
+```
+
+4) Optional: Evaluate routing quality on your examples
+```bash
+npx ts-node src/scripts/evaluate-routing.ts ./routing-eval.json
+```
+
+5) Ask routed questions (e.g., “Adobe license”, “NYT access”, “3D printing”). Answers will include a Sources section when citations are available.
 
 ## 🧪 Testing Features
 
@@ -220,16 +287,20 @@ npm run lint              # ESLint check
 npm run format            # Prettier formatting
 ```
 
-### Production Deployment
+### Production (Node-only)
 ```bash
-# Full deployment with auto-restart
-bash auto-restart.sh
+# 1) Build frontend (serves static files via your web server)
+cd client && npm install && npm run build && cd ..
 
-# Development mode
-bash auto-restart.sh --dev
+# 2) Build backend
+npm install
+npx prisma generate
+npm run build
 
-# Skip builds (faster restarts)
-bash auto-restart.sh --skip-build
+# 3) Start backend server (port 3000)
+npm run start:prod
+
+# 4) Serve client/dist with your preferred web server (e.g., Nginx, Apache, or a static host)
 ```
 
 For detailed development and deployment instructions, see:
